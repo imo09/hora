@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>hora - marchio</title>
+<style>
+{{FONTS}}
+:root{--bg:#F3F4F1;--card:#FBFBF8;--ink:#0E1D2A;--muted:#5A6873;--line:#DDE2DF;--teal:#2F9184;--tealInk:#23786D;--brass:#C99A4E;--splash:#EEF1EF}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 16px 48px}
+header h1{font-family:Poppins,sans-serif;font-weight:600;font-size:26px;letter-spacing:-.4px;margin:0 0 4px}
+header p{margin:0;color:var(--muted)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:20px;margin-top:22px}
+.opt{background:var(--card);border-radius:22px;padding:20px;border:1px solid var(--line)}
+.opt h2{margin:0;font-size:18px;font-weight:600}
+.opt h2 span{font:400 12px 'Space Mono',monospace;color:var(--muted);margin-right:6px}
+.opt .why{margin:6px 0 16px;color:var(--muted);font-size:14px}
+.row{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.phone{width:220px;height:440px;border-radius:34px;background:var(--splash);border:7px solid #1B2730;position:relative;overflow:hidden;flex:none;margin:0 auto}
+.phone .mid{position:absolute;top:118px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+.phone .word{font-family:Poppins,sans-serif;font-weight:600;font-size:36px;letter-spacing:-.8px;line-height:1;opacity:0}
+.phone .foot{position:absolute;bottom:26px;left:0;right:0;text-align:center;font-size:11px;font-weight:600;opacity:0}
+.play .word{animation:fade .8s ease-out 1.5s forwards}.play .foot{animation:fade .8s ease-out 1.8s forwards}
+.side{flex:1;min-width:200px;display:flex;flex-direction:column;gap:16px}
+.lbl{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px}
+.tiles{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.tile{background:var(--splash);display:grid;place-items:center;flex:none;box-shadow:0 1px 2px rgba(14,29,42,.12)}
+.tile.dark{background:#0E1D2A}
+.fav{display:flex;gap:10px;align-items:center}
+.lock{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:14px;background:var(--bg)}
+.lock b{font-family:Poppins,sans-serif;font-weight:600;font-size:26px;letter-spacing:-.5px}
+.lock.dark{background:#0E1D2A;color:#F3F4F1}
+.replay{height:40px;padding:0 16px;border-radius:20px;border:1px solid #CCD3D0;background:var(--card);font:inherit;font-weight:600;cursor:pointer;align-self:flex-start}
+.note{margin-top:22px;color:var(--muted);font-size:13.5px}
+/* opzione 18: lancetta-onda */
+.play .a-arc{stroke-dasharray:99.5 200;stroke-dashoffset:99.5;animation:draw 1.3s cubic-bezier(.65,0,.35,1) .1s forwards}
+.play .a-hour{transform-box:view-box;transform-origin:24px 24px;animation:hour 1.3s cubic-bezier(.3,.7,.2,1) .1s both}
+.play .a-min{transform-box:view-box;transform-origin:24px 24px;animation:minute 1.6s cubic-bezier(.2,.7,.2,1) .1s both,sway 3.6s ease-in-out 1.9s infinite}
+.play .a-pin{transform-box:view-box;transform-origin:24px 24px;animation:pop .35s ease-out .1s both}
+.play .a-moon{transform-box:fill-box;transform-origin:center;animation:pop .45s cubic-bezier(.3,1.6,.5,1) 1.25s both}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes hour{from{transform:rotate(-140deg)}to{transform:rotate(0)}}
+@keyframes minute{from{transform:rotate(-450deg)}to{transform:rotate(0)}}
+@keyframes sway{0%,100%{transform:rotate(0)}50%{transform:rotate(-5deg)}}
+@keyframes pop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+/* opzione 15: meridiana */
+.play .b-hz{stroke-dasharray:36 40;stroke-dashoffset:36;animation:draw .6s ease-out .1s forwards}
+.play .b-arc{stroke-dasharray:48 60;stroke-dashoffset:48;animation:draw 1s cubic-bezier(.65,0,.35,1) .35s forwards}
+.play .b-t1{animation:fade .3s ease-out .9s both}.play .b-t2{animation:fade .3s ease-out 1s both}.play .b-t3{animation:fade .3s ease-out 1.1s both}
+.play .b-sun{transform-box:view-box;transform-origin:24px 36px;animation:rise 1.5s cubic-bezier(.3,.7,.2,1) .35s both}
+.play .b-sh{transform-box:view-box;transform-origin:24px 36px;animation:shadow 1.5s cubic-bezier(.3,.7,.2,1) .35s both}
+@keyframes rise{from{opacity:0;transform:rotate(58deg)}25%{opacity:1}to{opacity:1;transform:rotate(0)}}
+@keyframes shadow{from{transform:rotate(40deg)}to{transform:rotate(-35deg)}}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.phone .word,.phone .foot{opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>hora - marchio</h1>
+    <p>Due proposte in stile nautargo: tratto unico petrolio e punto ottone. Per ognuna: splash animato, icone dell'app, favicon e logo con il nome.</p>
+  </header>
+  <div class="opts" id="opts"></div>
+  <p class="note">Le animazioni durano circa 1,6 secondi, come lo splash attuale, e si fermano se il telefono chiede di ridurre il movimento. Il pulsante "Rivedi" le fa ripartire.</p>
+</div>
+<script>
+const C = { c: '#2F9184', moon: '#C99A4E' }, D = { c: '#54B7A9', moon: '#E0B063' };
+const S = 'fill="none" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"';
+/* 18: quadrante quasi chiuso, lancetta corta e lancetta lunga che finisce in onda, luna ottone nello spazio aperto */
+const markA = (k) => `
+  <circle class="a-arc" cx="24" cy="24" r="19" ${S} stroke="${k.c}" stroke-dasharray="99.5 200" transform="rotate(-90 24 24)"/>
+  <g class="a-hour"><path d="M24 24V13.6" ${S} stroke="${k.c}" stroke-opacity=".55"/></g>
+  <g class="a-min"><path d="M24 24q3-3.6 6 0t6 0" ${S} stroke="${k.c}"/></g>
+  <g class="a-pin"><circle cx="24" cy="24" r="2.6" fill="${k.c}"/></g>
+  <circle class="a-moon" cx="7.55" cy="14.5" r="4.2" fill="${k.moon}"/>`;
+/* 15: meridiana, orizzonte, quadrante con tre tacche, ombra dello gnomone, sole ottone */
+const markB = (k) => `
+  <path class="b-hz" d="M6 36h36" ${S} stroke="${k.c}"/>
+  <path class="b-arc" d="M9 36a15 15 0 0 1 30 0" ${S} stroke="${k.c}" stroke-opacity=".55"/>
+  <path class="b-t1" d="M16.6 28.6l-1.4-1.4" fill="none" stroke="${k.c}" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".55"/>
+  <path class="b-t2" d="M24 25.5v-2" fill="none" stroke="${k.c}" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".55"/>
+  <path class="b-t3" d="M31.4 28.6l1.4-1.4" fill="none" stroke="${k.c}" stroke-width="2.4" stroke-linecap="round" stroke-opacity=".55"/>
+  <g class="b-sh" transform="rotate(-35 24 36)"><path d="M24 36V25" ${S} stroke="${k.c}"/></g>
+  <g class="b-sun"><circle cx="36.5" cy="14.4" r="4.2" fill="${k.moon}"/></g>`;
+const svg = (m, k, size) => `<svg width="${size}" height="${size}" viewBox="0 0 48 48" aria-hidden="true">${m(k)}</svg>`;
+const OPTS = [
+  ['18', 'Lancetta-onda', markA, 'Continuità con il marchio di marea: lo stesso quadrante quasi chiuso con la luna ottone, ma ora con due lancette. La lunga finisce in un\'onda e, nello splash, fa un giro completo prima di posarsi sulle tre.'],
+  ['15', 'Meridiana', markB, 'La forma più antica di "hora": linea d\'orizzonte, quadrante con tre tacche e l\'ombra dello gnomone. Nello splash il sole sorge dal lato destro e l\'ombra ruota fino a fermarsi.']
+];
+const tile = (m, size, dark) => `<span class="tile${dark ? ' dark' : ''}" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.23)}px">${svg(m, dark ? D : C, Math.round(size * 0.66))}</span>`;
+document.getElementById('opts').innerHTML = OPTS.map(([n, name, m, why], i) => `
+  <section class="opt" id="o${i}">
+    <h2><span>${n}</span>${name}</h2>
+    <p class="why">${why}</p>
+    <div class="row">
+      <div class="phone play" data-p><div class="mid">${svg(m, C, 104).replace('<svg', '<svg class="mk"')}<div class="word">hora</div></div><div class="foot">nautargo</div></div>
+      <div class="side">
+        <div><div class="lbl">Icona dell'app</div><div class="tiles">${tile(m, 96)}${tile(m, 64)}${tile(m, 44)}${tile(m, 64, true)}</div></div>
+        <div><div class="lbl">Favicon</div><div class="fav">${svg(m, C, 32)}${svg(m, C, 16)}</div></div>
+        <div><div class="lbl">Logo</div><div class="lock">${svg(m, C, 34)}<b>hora</b></div><div class="lock dark" style="margin-top:8px">${svg(m, D, 34)}<b>hora</b></div></div>
+        <button class="replay" data-r="${i}">Rivedi l'animazione</button>
+      </div>
+    </div>
+  </section>`).join('');
+document.querySelectorAll('[data-r]').forEach((b) => b.addEventListener('click', () => {
+  const p = document.querySelector('#o' + b.dataset.r + ' [data-p]');
+  p.classList.remove('play'); void p.offsetWidth; p.classList.add('play');
+}));
+</script>
+</body>
+</html>
