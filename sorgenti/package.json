@@ -1,0 +1,22 @@
+{
+  "name": "hora",
+  "version": "1.2.0",
+  "private": true,
+  "description": "hora - calendario calmo e locale di nautargo",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "sh test/run-all.sh"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "jsdom": "25.0.1",
+    "@fontsource/space-grotesk": "^5.0.0",
+    "@fontsource/poppins": "^5.0.0",
+    "@fontsource/space-mono": "^5.0.0"
+  }
+}

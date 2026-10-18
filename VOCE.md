@@ -157,4 +157,4 @@ Dire `salva` o `conferma` come ultima parola: l'elemento viene aggiunto subito, 
 3. Link a voce (si incollano nel campo Link).
 4. Durate oltre un giorno con orario (si usa "dal ... al ..." o il modulo).
 5. Comandi per annullare o modificare un elemento esistente.
-6. Riconoscimento vocale in inglese: l'interfaccia in inglese ascolta in inglese, ma la grammatica è solo italiana.
+6. Grammatica in inglese: il microfono ascolta sempre in italiano, anche con l'interfaccia in inglese.
