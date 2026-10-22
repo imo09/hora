@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 const html = fs.readFileSync(new URL('../dist/index.html', import.meta.url), 'utf8');
 const today = new Date(); const pad = (x) => String(x).padStart(2, '0');
 const T = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-const seed = { v: 1, items: [{ id: 'a1', type: 'evento', title: 'Prova', date: T, endDate: null, start: 540, end: 600, cat: null, alert: null, repeat: { f: 'none', days: [], until: null }, address: '', link: '', notes: '', doneDates: {} }], cats: [], settings: { lang: 'it', ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], defaultCat: null, notify: false } };
+const seed = { v: 1, items: [{ id: 'a1', type: 'evento', title: 'Prova', date: T, endDate: null, start: 540, end: 600, cat: null, alert: null, repeat: { f: 'none', days: [], until: null }, address: '', link: '', notes: '', doneDates: {} }, { id: 'r1', type: 'promemoria', title: 'Nota', date: T, endDate: null, start: 540, end: null, cat: null, alert: null, repeat: { f: 'none', days: [], until: null }, address: '', link: '', notes: '', doneDates: {} }], cats: [], settings: { lang: 'it', ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], defaultCat: null, notify: false } };
 const errors = [];
 const dom = new JSDOM(html, {
   runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://hora.nautargo.com/',
@@ -32,6 +32,8 @@ await wait(450);
 const sc = $('.g-scroll');
 let ev = $('.ev');
 assert.ok(ev);
+// evento e promemoria alla stessa ora: affiancati in due corsie
+assert.ok($('.rem').style.left !== ev.style.left); console.log('  ok evento e promemoria affiancati');
 // tocco breve: apre la scheda
 touch(sc, 'touchstart', [[200, 440]], ev); await wait(50); touch(sc, 'touchend', [[200, 440]], ev); await wait(150);
 assert.ok($('.sheet')); console.log('  ok tocco breve apre');
@@ -53,6 +55,18 @@ s = JSON.parse(w.localStorage.getItem('hora.v1'));
 const tm = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 const TM = `${tm.getFullYear()}-${pad(tm.getMonth() + 1)}-${pad(tm.getDate())}`;
 assert.deepEqual([s.items[0].date, s.items[0].start], [TM, 660]); console.log('  ok bordo: giorno successivo');
+// maniglia visibile: si trascina subito (resta nel DOM anche durante il trascinamento)
+const hd = $('.hd.bot'); assert.ok(hd, 'maniglie dopo il trascinamento');
+touch(sc, 'touchstart', [[200, 576]], hd); await wait(30);
+assert.ok(hd.isConnected, 'maniglia ancora nel DOM');
+touch(sc, 'touchmove', [[200, 600]], hd); await wait(30); touch(sc, 'touchend', [[200, 600]], hd); await wait(100);
+s = JSON.parse(w.localStorage.getItem('hora.v1'));
+assert.deepEqual([s.items[0].start, s.items[0].end], [660, 750]); console.log('  ok maniglia: durata in un solo gesto');
+// elemento selezionato: si sposta subito, senza pressione lunga
+const evs = $('.ev.sel'); assert.ok(evs);
+touch(sc, 'touchstart', [[200, 540]], evs); touch(sc, 'touchmove', [[200, 560]], evs); touch(sc, 'touchmove', [[200, 588]], evs); await wait(30); touch(sc, 'touchend', [[200, 588]], evs); await wait(100);
+s = JSON.parse(w.localStorage.getItem('hora.v1'));
+assert.deepEqual([s.items[0].start, s.items[0].end], [720, 810]); console.log('  ok selezionato: spostamento immediato');
 // pizzico verticale: altezza ora da 48 a ~96
 touch(sc, 'touchstart', [[200, 300], [200, 400]]); touch(sc, 'touchmove', [[200, 250], [200, 450]]); await wait(50);
 touch(sc, 'touchend', [[200, 250], [200, 450]]); await wait(100);
@@ -67,5 +81,5 @@ assert.equal($$('.g-day').length, 5); console.log('  ok pizzico orizzontale: 5 g
 await pinch();
 assert.equal($$('.g-day').length, 7); console.log('  ok pizzico orizzontale: settimana');
 assert.deepEqual(errors, []);
-console.log('touch: 8 test superati');
+console.log('touch: 11 test superati');
 w.close();

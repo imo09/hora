@@ -290,15 +290,21 @@ export function App() {
     if (dir > 0) { if (i < seq.length - 1) toDays(seq[i + 1]); else setView('month'); }
     else if (i > 0) toDays(seq[i - 1]);
   };
+  const [gRange, setGRange] = useState(null);
   let title;
-  if (view === 'grid') title = days === 1 ? fmtDayLong(anchor) : fmtRange(vis[0], vis[vis.length - 1]);
+  if (view === 'grid') title = fmtSpan(vis[0], vis[vis.length - 1]);
   else if (view === 'month') title = fmtMonthYear(anchor);
-  else {
-    const a = gScale === 'week' ? addDays(startOfWeek(anchor), -14) : addMonths(monthStart(anchor), -2);
-    const b = gScale === 'week' ? addDays(a, 111) : addDays(addMonths(a, 12), -1);
-    const lab = (s) => `${MONTHS[LANG][mnum(s)].slice(0, 3)} ${s.slice(0, 4)}`;
-    title = `${lab(a)} - ${lab(b)}`;
-  }
+  else title = gRange ? fmtSpan(gRange[0], gRange[1]) : fmtMonthYear(anchor);
+  /* viste: solo icone quando i nomi non ci stanno */
+  const navRef = useRef(null);
+  const [compact, setCompact] = useState(false);
+  useLayoutEffect(() => {
+    const m = () => { const n = navRef.current; if (n) setCompact(n.clientWidth < 330); };
+    m();
+    window.addEventListener('resize', m);
+    return () => window.removeEventListener('resize', m);
+  }, []);
+  const goDate = (v) => { if (!v) return; setAnchor(v); setNonce((n) => n + 1); };
 
   const openOcc = (o) => setSheet({ item: o.it, occDate: o.date, isNew: false });
   const newDate = () => (view === 'gantt' ? today : view === 'month' ? anchor : vis.includes(today) ? today : vis[0]);
@@ -340,8 +346,9 @@ export function App() {
   return (
     <div className="app">
       <header className="hdr">
-        <div className="hdr1">
-          <nav className="seg tabs" aria-label={t('views')}>
+        <div className={'hdr1' + (compact ? ' compact' : '')}>
+          <span className="logo" aria-label="hora"><Mark size={30} /><b className="wm">hora</b></span>
+          <nav className="seg tabs" ref={navRef} aria-label={t('views')}>
             <button className={view === 'grid' && days < 7 ? 'on' : ''} aria-label={view === 'grid' ? dayTab : t('day')} onClick={() => { setView('grid'); setDays(1); }}><UIcon n={view === 'grid' ? dayIcon : 'day1'} size={18} sw={1.7} /><span>{view === 'grid' ? dayTab : t('day')}</span></button>
             <button className={view === 'grid' && days === 7 ? 'on' : ''} aria-label={t('week')} onClick={() => { setView('grid'); toDays(7); }}><UIcon n="week" size={18} sw={1.7} /><span>{t('week')}</span></button>
             <button className={view === 'month' ? 'on' : ''} aria-label={t('month')} onClick={() => setView('month')}><UIcon n="month" size={18} sw={1.7} /><span>{t('month')}</span></button>
@@ -352,17 +359,27 @@ export function App() {
         </div>
         <div className="hdr2">
           <h1>{title}</h1>
-          <div className="row-c">
+          <div className="row-c gap6">
             {view !== 'gantt' && (
-              <button className={'ib filt' + (fOn ? ' on' : '')} aria-label={t('filter')} aria-pressed={fOn} onClick={() => setFilterOpen(true)}><UIcon n="filter" size={20} />{fOn && <i />}</button>
+              <button className={'ctl filt' + (fOn ? ' on' : '')} aria-label={t('filter')} aria-pressed={fOn} onClick={() => setFilterOpen(true)}><UIcon n="filter" size={18} />{fOn && <i />}</button>
             )}
-            <button className="pill" onClick={goToday}>{t('today')}</button>
-            <button className="ib muted" aria-label={t('prev')} onClick={() => step(-1)}><UIcon n="left" size={18} sw={2} /></button>
-            <button className="ib muted" aria-label={t('next')} onClick={() => step(1)}><UIcon n="right" size={18} sw={2} /></button>
+            {view === 'gantt' && (
+              <label className="ctl date" aria-label={t('goDate')} title={t('goDate')}>
+                <UIcon n="cal" size={17} /><span>{t('goDate')}</span>
+                <input type="date" value="" onChange={(e) => goDate(e.target.value)} />
+              </label>
+            )}
+            <button className="ctl txt" onClick={goToday}>{t('today')}</button>
+            {view !== 'gantt' && (
+              <span className="ctl-pair">
+                <button className="ctl" aria-label={t('prev')} onClick={() => step(-1)}><UIcon n="left" size={17} sw={2.1} /></button>
+                <button className="ctl" aria-label={t('next')} onClick={() => step(1)}><UIcon n="right" size={17} sw={2.1} /></button>
+              </span>
+            )}
           </div>
         </div>
       </header>
-      <main className="main" ref={mainRef}>
+      <main className="main" ref={mainRef} data-range={view === 'grid' ? vis[0] + '/' + vis[vis.length - 1] : undefined}>
         {view === 'grid' && (
           <GridView st={st} dates={dates} anchor={anchor} sx={sx} visN={days} pass={pass} newCat={newCat} sun={sun} hourH={hourH} setHourH={setHourH} commitHourH={commitHourH} onOpen={openOcc}
             onSave={(it) => saveItem(it)} onToggle={toggleDone} onShift={(dir) => setAnchor((a) => addDays(a, dir * (days === 7 ? 7 : 1)))} onPinchDays={pinchDays}
@@ -375,7 +392,8 @@ export function App() {
             onPinchOut={() => { setView('grid'); toDays(7); }} onSwipe={step} />
         )}
         {view === 'gantt' && (
-          <GanttView st={st} anchor={anchor} scale={gScale} setScale={(v) => setSettings({ ganttScale: v })} onOpenItem={openOcc} onCats={() => setGanttCats(true)} nonce={nonce} />
+          <GanttView st={st} anchor={anchor} scale={gScale} setScale={(v) => setSettings({ ganttScale: v })} onOpenItem={openOcc} onCats={() => setGanttCats(true)} nonce={nonce}
+            onRecenter={setAnchor} onRange={(a, b) => setGRange((r) => (r && r[0] === a && r[1] === b ? r : [a, b]))} />
         )}
       </main>
       <button ref={fabRef} className="fab" aria-label={t('add')} onClick={() => newSheet(true)}><UIcon n="plus" size={26} sw={2.2} /></button>

@@ -1,6 +1,14 @@
-# hora 1.2
+# hora 1.3
 
 Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src/hora.jsx` (React, generato da `src/parts/`), stile in `src/style.css`.
+
+## Novità della 1.3
+
+1. Durata dal calendario: con le maniglie visibili si trascinano subito (prima si perdeva il primo tocco); un elemento già selezionato si sposta senza pressione lunga.
+2. Intestazione dei giorni su una riga, secondo lo spazio: "giovedì 22 ottobre 2026" nella vista Giorno, "gio 22/10" in 3 giorni e Settimana, "gio 22" o "G 22" se stretta; oggi in evidenza. Sopra, il mese o i mesi guardati.
+3. Barra in alto: marchio a sinistra, viste solo con icone quando i nomi non ci stanno, Attività scura con barre ottone, comandi della seconda riga uniformi (filtro, Oggi, frecce accoppiate).
+4. Attività: scorrimento infinito, senza frecce; Oggi e Vai a data. Il titolo segue il periodo visibile.
+5. Sovrapposizioni: eventi e promemoria alla stessa ora si dividono la colonna e si allargano negli spazi liberi; se la colonna è stretta vanno a cascata, con titolo e ora su una riga. Gli eventi di più giorni senza orario sono una barra continua.
 
 ## Novità della 1.2
 
@@ -26,7 +34,7 @@ Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src
 ## Pubblicazione su hora.nautargo.com
 
 1. Crea su GitHub il repository `hora`.
-2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.2.zip` (index.html, manifest, sw.js, icone, CNAME).
+2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.3.zip` (index.html, manifest, sw.js, icone, CNAME).
 3. In Settings > Pages scegli il ramo `main` e la cartella `/ (root)`.
 4. Su Aruba aggiungi un record CNAME: nome `hora`, valore `imo09.github.io`.
 5. Torna in Settings > Pages, attendi il controllo del dominio e attiva "Enforce HTTPS".
