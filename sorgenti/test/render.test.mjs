@@ -152,14 +152,14 @@ click($('button[aria-label="Filtro"]')); await wait();
 click(byText('.sheet .chip', 'Sveglie')); await wait();
 click(byText('.sheet .li', 'Lavoro')); await wait();
 click(byText('.sheet .btn', 'Fatto')); await wait();
-assert.ok($('.ib.filt.on'), 'filtro acceso');
+assert.ok($('.ctl.filt.on'), 'filtro acceso');
 assert.equal($$('.alm').length, 0); assert.ok(!$$('.ev').some((e) => e.textContent.includes('Trasferta')));
 click($('.fab')); await wait(300);
 assert.ok(byText('.sheet .fl.btnrow', 'Lavoro'), 'nuovo elemento già in Lavoro');
 click($('.sheet button[aria-label="Chiudi"]')); await wait();
 click($('button[aria-label="Filtro"]')); await wait();
 click(byText('.sheet .btn', 'Mostra tutto')); click(byText('.sheet .btn', 'Fatto')); await wait();
-assert.ok(!$('.ib.filt.on')); ok('filtro per tipi e categorie');
+assert.ok(!$('.ctl.filt.on')); ok('filtro per tipi e categorie');
 click(byText('.tabs button', 'Giorno')); await wait();
 
 // incolla un blocco da Claude
@@ -213,7 +213,10 @@ click(byText('.sheet .btn', 'Fatto')); await wait();
 assert.ok(!byText('.gt-label', 'Non assegnate')); ok('Non assegnate spenta');
 assert.ok(!$$('.gt-row').some((r) => r.textContent.includes('Sveglia')), 'sveglie fuori dalle attività');
 click(byText('.seg.sm button', 'Mesi')); await wait();
-assert.equal($$('.gh-mm').length, 12); ok('scala mesi');
+assert.equal($$('.gh-mm').length, 48); ok('scala mesi (4 anni, scorrimento infinito)');
+assert.ok(!$('button[aria-label="Successivo"]') && $('.ctl.date input'), 'Attività: senza frecce, con Vai a data');
+type($('.ctl.date input'), '2027-03-10'); await wait();
+assert.ok($('.hdr2 h1').textContent.includes('2027')); ok('vai a data');
 
 // impostazioni e categorie
 click($('button[aria-label="Impostazioni"]')); await wait();

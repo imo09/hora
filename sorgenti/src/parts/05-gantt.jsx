@@ -7,30 +7,62 @@ function Diamond({ x, c, size = 14 }) {
 function Dot({ x, c, done, size = 13 }) {
   return <svg className="gm" width={size} height={size} viewBox="0 0 14 14" style={{ left: x - size / 2 }} aria-hidden="true"><circle cx="7" cy="7" r="5" fill={done ? c : '#FBFBF8'} stroke={c} strokeWidth="2.2" /></svg>;
 }
-function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, nonce }) {
+/* scorrimento infinito: una finestra larga attorno alla data guardata, che si ricentra quando ci si avvicina ai bordi */
+const G_WEEKS = 52, G_MONTHS = 48, DW = 20, MW = 64;
+function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter, onRange, nonce }) {
   const today = todayStr();
   const [open, setOpen] = useState(() => new Set());
-  const scRef = useRef(null);
+  const scRef = useRef(null), keep = useRef(null);
   const geo = useMemo(() => {
     if (scale === 'week') {
-      const from = addDays(startOfWeek(anchor), -14), dw = 20, n = 16 * 7;
-      return { from, to: addDays(from, n - 1), W: n * dw, x: (d) => diffDays(from, d) * dw };
+      const from = addDays(startOfWeek(anchor), -7 * (G_WEEKS / 2)), n = G_WEEKS * 7;
+      return { from, to: addDays(from, n - 1), W: n * DW, x: (d) => diffDays(from, d) * DW, at: (x) => addDays(from, Math.floor(x / DW)) };
     }
-    const from = addMonths(monthStart(anchor), -2), mw = 64;
+    const from = addMonths(monthStart(anchor), -G_MONTHS / 2);
     const fy = +from.slice(0, 4), fm = +from.slice(5, 7);
     return {
-      from, to: addDays(addMonths(from, 12), -1), W: 12 * mw,
-      x: (d) => ((+d.slice(0, 4) - fy) * 12 + (+d.slice(5, 7) - fm)) * mw + ((dnum(d) - 1) / daysInMonth(d)) * mw
+      from, to: addDays(addMonths(from, G_MONTHS), -1), W: G_MONTHS * MW,
+      x: (d) => ((+d.slice(0, 4) - fy) * 12 + (+d.slice(5, 7) - fm)) * MW + ((dnum(d) - 1) / daysInMonth(d)) * MW,
+      at: (x) => { const m = addMonths(from, Math.floor(x / MW)); return m.slice(0, 8) + pad(Math.min(daysInMonth(m), 1 + Math.floor(((x % MW) / MW) * daysInMonth(m)))); }
     };
   }, [scale, anchor]);
   const { from, to, W } = geo;
   const X = (d) => Math.max(0, Math.min(W, geo.x(d)));
   const XE = (d) => Math.max(0, Math.min(W, geo.x(addDays(d, 1))));
-
+  const R = useRef({});
+  R.current = { geo, onRecenter, onRange };
+  const report = () => {
+    const el = scRef.current;
+    if (!el) return;
+    const g = R.current.geo, w = Math.max(60, el.clientWidth - LW);
+    R.current.onRange(g.at(el.scrollLeft), g.at(Math.min(g.W - 1, el.scrollLeft + w)));
+  };
+  // Oggi, Vai a data, cambio di scala: la data guardata a sinistra; ricentro: la vista resta ferma
   useLayoutEffect(() => {
     const el = scRef.current;
-    if (el) el.scrollLeft = Math.max(0, geo.x(today) - 60);
-  }, [nonce, scale]);
+    if (!el) return;
+    if (keep.current) { el.scrollLeft = geo.x(keep.current.d) - keep.current.off; keep.current = null; }
+    else el.scrollLeft = Math.max(0, geo.x(anchor) - 40);
+    report();
+  }, [nonce, scale, from]);
+  useEffect(() => {
+    const el = scRef.current;
+    let tm = null;
+    const on = () => {
+      clearTimeout(tm);
+      tm = setTimeout(() => {
+        report();
+        const g = R.current.geo, w = el.clientWidth - LW;
+        if (el.scrollLeft < g.W * 0.2 || el.scrollLeft + w > g.W * 0.8) {
+          const d = g.at(el.scrollLeft + w / 2);
+          keep.current = { d, off: g.x(d) - el.scrollLeft };
+          R.current.onRecenter(d);
+        }
+      }, 140);
+    };
+    el.addEventListener('scroll', on, { passive: true });
+    return () => { clearTimeout(tm); el.removeEventListener('scroll', on); };
+  }, []);
 
   const occ = useMemo(() => expand(st.items.filter((it) => it.type !== 'sveglia'), from, to), [st.items, from, to]);
   const rows = useMemo(() => {
@@ -74,22 +106,22 @@ function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, nonce }) {
     for (let d = from; d <= to; d = addDays(d, 1)) {
       const x = geo.x(d);
       if (dnum(d) === 1 || d === from) head.push(<span key={'m' + d} className="gh-m" style={{ left: x + 2 }}>{MONTHS[LANG][mnum(d)].slice(0, 3)} {d.slice(2, 4)}</span>);
-      head.push(<span key={d} className={'gh-d' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')} style={{ left: x, width: 20 }}><i>{WD_LETTER[LANG][wd(d)]}</i>{dnum(d)}</span>);
+      head.push(<span key={d} className={'gh-d' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')} style={{ left: x, width: DW }}><i>{WD_LETTER[LANG][wd(d)]}</i>{dnum(d)}</span>);
     }
   } else {
     for (let m = from; m <= to; m = addMonths(m, 1)) {
       const x = geo.x(m);
-      head.push(<span key={m} className={'gh-mm' + (m.slice(0, 7) === today.slice(0, 7) ? ' today' : '')} style={{ left: x, width: 64 }}><i>{m.slice(5, 7) === '01' || m === from ? m.slice(0, 4) : ' '}</i>{MONTHS[LANG][mnum(m)].slice(0, 3)}</span>);
+      head.push(<span key={m} className={'gh-mm' + (m.slice(0, 7) === today.slice(0, 7) ? ' today' : '')} style={{ left: x, width: MW }}><i>{m.slice(5, 7) === '01' || m === from ? m.slice(0, 4) : ' '}</i>{MONTHS[LANG][mnum(m)].slice(0, 3)}</span>);
     }
   }
   const bg = [];
   if (scale === 'week') {
-    for (let d = from; d <= to; d = addDays(d, 1)) if (wd(d) === 5) bg.push(<i key={d} className="gb-we" style={{ left: geo.x(d), width: 40 }} />);
+    for (let d = from; d <= to; d = addDays(d, 1)) if (wd(d) === 5) bg.push(<i key={d} className="gb-we" style={{ left: geo.x(d), width: 2 * DW }} />);
   } else {
     let k = 0;
-    for (let m = from; m <= to; m = addMonths(m, 1), k++) if (k % 2) bg.push(<i key={m} className="gb-we" style={{ left: geo.x(m), width: 64 }} />);
+    for (let m = from; m <= to; m = addMonths(m, 1), k++) if (k % 2) bg.push(<i key={m} className="gb-we" style={{ left: geo.x(m), width: MW }} />);
   }
-  const todayX = today >= from && today <= to ? (scale === 'week' ? geo.x(today) + 10 : geo.x(today)) : null;
+  const todayX = today >= from && today <= to ? (scale === 'week' ? geo.x(today) + DW / 2 : geo.x(today)) : null;
 
   const marker = (o, tn, done) => {
     const it = o.it;

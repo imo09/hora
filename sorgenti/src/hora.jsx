@@ -1,9 +1,9 @@
-/* hora 1.2 - calendario locale di nautargo
+/* hora 1.3 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.2';
+export const VERSION = '1.3';
 
 /* ============ Testi IT / EN ============ */
 const STR = {
@@ -50,7 +50,7 @@ const STR = {
     views: 'Viste', sCal: 'Calendario', sFree: 'Scorrimento continuo', sFreeTxt: 'Spento: si passa al periodo prima o dopo. Acceso: scorre liberamente. Attività scorre sempre.',
     sCatsTxt: 'Nomi, icone, colori e ordine', manage: 'Gestisci', voiceHelp: 'Come dettare', voiceTxt: 'Parla in modo semplice, poi controlla i campi qui sotto. Di\' "salva" alla fine per aggiungere subito.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|ricordami di pagare le bollette lunedì avvisami un\'ora prima|sveglia alle 6 e 45 dal lunedì al venerdì|cena da Anna in via Roma 10 sabato alle 20 con nota portare il vino',
-    expData: 'Esporta', impData: 'Importa', gantt2: 'Attività', ganttTxt: 'Cronoprogramma per categorie'
+    goDate: 'Vai a data', expData: 'Esporta', impData: 'Importa', gantt2: 'Attività', ganttTxt: 'Cronoprogramma per categorie'
   },
   en: {
     today: 'Today', day: 'Day', days3: '3 days', days5: '5 days', week: 'Week', month: 'Month', gantt: 'Timeline',
@@ -95,7 +95,7 @@ const STR = {
     views: 'Views', sCal: 'Calendar', sFree: 'Continuous scrolling', sFreeTxt: 'Off: swipe to the previous or next period. On: scrolls freely. Timeline always scrolls.',
     sCatsTxt: 'Names, icons, colors and order', manage: 'Manage', voiceHelp: 'How to dictate', voiceTxt: 'The microphone always listens in Italian. Check the fields below; say "salva" at the end to add right away.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|sveglia alle 6 e 45 dal lunedì al venerdì',
-    expData: 'Export', impData: 'Import', gantt2: 'Timeline', ganttTxt: 'Schedule by category'
+    goDate: 'Go to date', expData: 'Export', impData: 'Import', gantt2: 'Timeline', ganttTxt: 'Schedule by category'
   }
 };
 let LANG = 'it';
@@ -106,6 +106,7 @@ export const t = (k, v) => {
   return s;
 };
 const WD_SHORT = { it: ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'], en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] };
+const WD_LONG = { it: ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'], en: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] };
 const WD_LETTER = { it: ['L', 'M', 'M', 'G', 'V', 'S', 'D'], en: ['M', 'T', 'W', 'T', 'F', 'S', 'S'] };
 const MONTHS = {
   it: ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'],
@@ -143,6 +144,21 @@ const mab = (s) => MONTHS[LANG][mnum(s)].slice(0, 3);
 export const fmtRange = (a, b) => {
   if (a.slice(0, 7) === b.slice(0, 7)) return `${dnum(a)} - ${dnum(b)} ${MONTHS[LANG][mnum(a)]}`;
   return `${dnum(a)} ${mab(a)} - ${dnum(b)} ${mab(b)}`;
+};
+/* intestazione di una colonna su una riga, secondo lo spazio: lunedì 8 settembre 2026, lun 8 settembre, lun 8/09, lun 8, L 8 */
+export const fmtHead = (s, w) => {
+  const n = dnum(s), ws = WD_SHORT[LANG][wd(s)].toLowerCase();
+  if (w >= 230) return `${WD_LONG[LANG][wd(s)]} ${n} ${MONTHS[LANG][mnum(s)]} ${s.slice(0, 4)}`;
+  if (w >= 150) return `${ws} ${n} ${MONTHS[LANG][mnum(s)]}`;
+  if (w >= 92) return `${ws} ${n}/${pad(mnum(s) + 1)}`;
+  if (w >= 56) return `${ws} ${n}`;
+  return `${WD_LETTER[LANG][wd(s)]} ${n}`;
+};
+/* titolo di un intervallo: Ottobre 2026, Ott - Nov 2026, Dic 2026 - Gen 2027 */
+export const fmtSpan = (a, b) => {
+  if (a.slice(0, 7) === b.slice(0, 7)) return fmtMonthYear(a);
+  const m = (s) => cap(mab(s));
+  return a.slice(0, 4) === b.slice(0, 4) ? `${m(a)} - ${m(b)} ${a.slice(0, 4)}` : `${m(a)} ${a.slice(0, 4)} - ${m(b)} ${b.slice(0, 4)}`;
 };
 export const fmtFull = (s) => `${fmtDayLong(s)} ${s.slice(0, 4)}`;
 
@@ -1187,13 +1203,19 @@ function Splash({ onDone }) {
 /* ============ Griglia oraria: 1, 3 o 7 giorni ============ */
 const SNAP = 15;
 function layoutDay(list) {
-  const ev = list.map(({ o, s, e }) => ({ o, s, e: Math.max(e, s + 15) })).sort((a, b) => a.s - b.s || b.e - a.e);
+  const ev = list.map((x) => ({ ...x, e: Math.max(x.e, x.s + 15) })).sort((a, b) => a.s - b.s || b.e - a.e);
   const out = [];
   let group = [], gEnd = -1;
   const flush = () => {
     const lanes = [];
     for (const x of group) { let i = lanes.findIndex((le) => le <= x.s); if (i < 0) { i = lanes.length; lanes.push(0); } lanes[i] = x.e; x.lane = i; }
-    for (const x of group) x.n = lanes.length;
+    // ogni elemento si allarga nelle corsie libere alla sua destra
+    const n = lanes.length;
+    for (const x of group) {
+      let span = 1;
+      while (x.lane + span < n && !group.some((y) => y.lane === x.lane + span && y.s < x.e && y.e > x.s)) span++;
+      x.n = n; x.span = span;
+    }
     out.push(...group); group = [];
   };
   for (const x of ev) { if (group.length && x.s >= gEnd) { flush(); gEnd = -1; } group.push(x); gEnd = Math.max(gEnd, x.e); }
@@ -1204,25 +1226,28 @@ const gridBg = (h) => h >= 96
   ? { backgroundImage: 'linear-gradient(to bottom, #DDE2DF 1px, transparent 1px), linear-gradient(to bottom, #EEF0EE 1px, transparent 1px)', backgroundSize: `100% ${h}px, 100% ${h / 4}px` }
   : { backgroundImage: 'linear-gradient(to bottom, #DDE2DF 1px, transparent 1px)', backgroundSize: `100% ${h}px` };
 
-function EvBlock({ o, lane = 0, nl = 1, start, end, hourH, cats, selected, ghost, faded, fixed }) {
+const laneBox = (lane, nl, span) => ({ left: `calc(${(lane / nl) * 100}% + 1px)`, width: `calc(${(span / nl) * 100}% - 3px)` });
+function EvBlock({ o, lane = 0, nl = 1, span = 1, box, start, end, hourH, cats, selected, ghost, faded, fixed }) {
   const tn = catTone(cats, o.it.cat);
   const top = (start / 60) * hourH, h = Math.max(((end - start) / 60) * hourH, 18);
   return (
     <div className={'ev' + (selected ? ' sel' : '') + (ghost ? ' ghost' : '') + (faded ? ' faded' : '') + (o.draft ? ' draft' : '')} data-key={ghost ? undefined : o.key}
-      style={{ top, height: h, left: `calc(${(lane / nl) * 100}% + 1px)`, width: `calc(${100 / nl}% - 3px)`, background: tn.tint, color: tn.ink, borderColor: tn.c }}>
-      <b>{o.it.title || t('noTitle')}</b>
-      {h >= 34 && <span>{fmtTime(start)} - {fmtTime(end)}</span>}
+      style={{ top, height: h, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), background: tn.tint, color: tn.ink, borderColor: tn.c }}>
+      {box && box.cc
+        ? <b>{o.it.title || t('noTitle')} <small>{fmtTime(start)}</small></b>
+        : <><b>{o.it.title || t('noTitle')}</b>{h >= 34 && <span>{fmtTime(start)} - {fmtTime(end)}</span>}</>}
       {o.draft && h >= 50 && <span>{t('tapDetails')}</span>}
-      {selected && !ghost && !faded && !fixed && <><i className="hd top" data-h="top" data-key={o.key} /><i className="hd bot" data-h="bottom" data-key={o.key} /></>}
+      {selected && !ghost && !fixed && <><i className="hd top" data-h="top" data-key={o.key} /><i className="hd bot" data-h="bottom" data-key={o.key} /></>}
+      {ghost && o.it.type === 'evento' && <><i className="hd top vis" /><i className="hd bot vis" /></>}
     </div>
   );
 }
-function RemRow({ o, start, hourH, cats, onToggle, ghost, selected, faded }) {
+function RemRow({ o, start, hourH, cats, onToggle, ghost, selected, faded, lane = 0, nl = 1, span = 1, box }) {
   const tn = catTone(cats, o.it.cat);
   const done = isDone(o.it, o.date);
   const only = !!o.it.onlyAlert;
   return (
-    <div className={'rem' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH - 12, borderColor: tn.c }}>
+    <div className={'rem' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), borderColor: tn.c, background: tn.tint }}>
       {only
         ? <span className="chk"><TypeShape type="promemoria" only color={tn.c} size={14} /></span>
         : <button className="chk" data-chk="1" aria-label={t('markDone') + ': ' + o.it.title} onClick={() => onToggle && onToggle(o.it, o.date)}>
@@ -1250,6 +1275,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
   const [drag, setDrag] = useState(null);
   const [draft, setDraft] = useState(null);
   const [colW, setColW] = useState(0);
+  const [headW, setHeadW] = useState(0);
   const from = dates[0], to = dates[dates.length - 1];
   const occ = useMemo(() => {
     const list = expand(st.items, from, to).filter((o) => pass(o.it));
@@ -1258,17 +1284,23 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     }
     return list;
   }, [st.items, from, to, pass, draft, newCat]);
+  // un promemoria occupa nella corsia lo spazio della sua riga
+  const remMin = Math.max(15, Math.ceil(((25 / hourH) * 60) / 15) * 15);
   const cols = useMemo(() => dates.map((d) => {
     const here = occ.filter((o) => o.date <= d && o.end >= d);
     const timed = here.filter((o) => o.it.start != null && o.it.type === 'evento' && (o.date === d || isTimedMulti(o.it)));
+    const rems = here.filter((o) => o.it.start != null && o.date === d && o.it.type === 'promemoria');
     return {
       d,
       allday: here.filter((o) => o.it.start == null),
-      // eventi su più giorni con orario: un tratto per ogni giorno
-      ev: layoutDay(timed.map((o) => ({ o, s: o.date === d ? o.it.start : 0, e: !isTimedMulti(o.it) ? o.it.end ?? o.it.start + 60 : o.end === d ? o.it.end ?? 0 : 1440 }))),
-      rem: here.filter((o) => o.it.start != null && o.date === d && o.it.type !== 'evento').sort((a, b) => a.it.start - b.it.start)
+      // eventi e promemoria che si sovrappongono si dividono la colonna in corsie; eventi su più giorni: un tratto per giorno
+      ev: layoutDay([
+        ...timed.map((o) => ({ o, s: o.date === d ? o.it.start : 0, e: !isTimedMulti(o.it) ? o.it.end ?? o.it.start + 60 : o.end === d ? o.it.end ?? 0 : 1440 })),
+        ...rems.map((o) => ({ o, s: o.it.start, e: Math.min(1440, o.it.start + remMin) }))
+      ]),
+      rem: here.filter((o) => o.it.start != null && o.date === d && o.it.type === 'sveglia')
     };
-  }), [occ, dates]);
+  }), [occ, dates, remMin]);
 
   const R = useRef({});
   R.current = { dates, anchor, sx, colW, occ, hourH, sel, draft, onOpen, onSave, onShift, onPinchDays, onSwipe, onVisible, onNewAt, setHourH, commitHourH, setSel, setDraft };
@@ -1279,7 +1311,15 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     const target = dates.includes(today) ? Math.max(0, nowMin() - 90) : 7 * 60;
     el.scrollTop = (target / 60) * hourH;
   }, [nonce]);
-  // 5 giorni: larghezza di colonna misurata e scorrimento orizzontale sul primo giorno visibile
+  // larghezza di una colonna per l'intestazione su una riga
+  useLayoutEffect(() => {
+    const el = scRef.current;
+    const m = () => { const g = el.querySelector('.g-hours'); setHeadW((el.clientWidth - (g ? g.offsetWidth : 46) - (sx ? 0 : 8)) / (sx ? visN : dates.length)); };
+    m();
+    window.addEventListener('resize', m);
+    return () => window.removeEventListener('resize', m);
+  }, [sx, visN, dates.length]);
+  // scorrimento continuo: larghezza di colonna misurata e scorrimento orizzontale sul primo giorno visibile
   useLayoutEffect(() => {
     if (!sx) return;
     const el = scRef.current;
@@ -1408,7 +1448,8 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       const h = e.target.closest('[data-h]');
       if (h) { e.preventDefault(); begin(h.dataset.h, h.dataset.key, tc.clientX, tc.clientY); return; }
       const evEl = e.target.closest('[data-key]');
-      lp = { x: tc.clientX, y: tc.clientY, t: Date.now(), key: evEl ? evEl.dataset.key : null, inCols: !!e.target.closest('.g-cols') };
+      // elemento già selezionato: si sposta subito, senza pressione lunga
+      lp = { x: tc.clientX, y: tc.clientY, t: Date.now(), key: evEl ? evEl.dataset.key : null, inCols: !!e.target.closest('.g-cols'), sel: !!evEl && evEl.dataset.key === R.current.sel };
       if (evEl) lp.timer = setTimeout(() => { if (lp) { const k = lp.key, sx0 = lp.x, sy0 = lp.y; lp = null; begin('move', k, sx0, sy0); update(last.x, last.y); } }, 380);
     };
     const onTM = (e) => {
@@ -1431,6 +1472,12 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       if (!tc) return;
       last = { x: tc.clientX, y: tc.clientY };
       if (dg) { e.preventDefault(); update(tc.clientX, tc.clientY); return; }
+      if (lp && lp.sel && lp.key && (Math.abs(tc.clientX - lp.x) > 6 || Math.abs(tc.clientY - lp.y) > 6)) {
+        e.preventDefault();
+        const l = lp; cancelLP();
+        begin('move', l.key, l.x, l.y); update(tc.clientX, tc.clientY);
+        return;
+      }
       if (lp && (Math.abs(tc.clientX - lp.x) > 8 || Math.abs(tc.clientY - lp.y) > 8)) cancelLP();
     };
     const onTE = (e) => {
@@ -1499,6 +1546,27 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
 
   const n = dates.length;
   const nm = nowMin();
+  /* più elementi alla stessa ora: affiancati se c'è spazio, altrimenti a cascata (ognuno lascia vedere l'inizio del precedente) */
+  const colPx = headW > 0 ? headW : 0;
+  const boxOf = (x) => {
+    if (x.n === 1 || colPx / x.n >= 84) return laneBox(x.lane, x.n, x.span);
+    const step = Math.max(10, Math.min(28, (colPx - 64) / (x.n - 1)));
+    const left = x.lane * step;
+    return { left: `${left + 1}px`, width: `calc(100% - ${left + 3}px)`, zIndex: 1 + x.lane, cc: true };
+  };
+  /* tutto il giorno: barre continue sui giorni che coprono, su righe libere */
+  const adRows = useMemo(() => {
+    const seen = new Set(), bars = [], rows = [];
+    for (const c of cols) for (const o of c.allday) {
+      if (seen.has(o.key)) continue;
+      seen.add(o.key);
+      const i = Math.max(0, diffDays(dates[0], o.date)), j = Math.min(dates.length - 1, diffDays(dates[0], o.end));
+      bars.push({ o, i, j });
+    }
+    bars.sort((a, b) => a.i - b.i || b.j - b.i - (a.j - a.i));
+    for (const b of bars) { let r = rows.findIndex((end) => end < b.i); if (r < 0) { r = rows.length; rows.push(-1); } rows[r] = b.j; b.r = r; }
+    return { bars, n: rows.length };
+  }, [cols, dates]);
   const showAllday = cols.some((c) => c.allday.length);
   const cw = sx ? { width: colW, flex: 'none' } : undefined;
   const sunY = sun ? [sun.rise, sun.set].map((m) => (m / 60) * hourH) : [];
@@ -1506,34 +1574,32 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     <div className={'grid' + (sx ? ' sx' : '')}>
       <div className={'g-scroll' + (drag ? ' dragging' : '')} ref={scRef}>
         <div className="g-wide" style={sx ? { width: `calc(var(--gut) + ${n * colW}px)` } : undefined}>
-          {(n > 1 || showAllday) && (
+          {(
             <div className="g-top" ref={topRef}>
-              {n > 1 && (
+              {(
                 <div className="g-head">
                   <span className="g-gut" />
                   {dates.map((d) => (
-                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')}><span>{WD_LETTER[LANG][wd(d)]}</span><b>{dnum(d)}</b></div>
+                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')}><span>{fmtHead(d, headW)}</span></div>
                   ))}
                 </div>
               )}
               {showAllday && (
                 <div className="g-allday">
                   <span className="g-gut small">{t('allDayShort')}</span>
-                  {cols.map((c) => (
-                    <div key={c.d} className="ad-col" style={cw}>
-                      {c.allday.slice(0, 3).map((o) => {
-                        const tn = catTone(st.cats, o.it.cat);
-                        const done = isDone(o.it, o.date);
-                        return (
-                          <button key={o.key} className="ad-chip" style={{ background: tn.tint, color: tn.ink }} onClick={() => onOpen(o)}>
-                            {o.it.type === 'promemoria' && <TypeShape type="promemoria" only={o.it.onlyAlert} color={tn.c} done={done} size={10} />}
-                            <span className={done && !o.it.onlyAlert ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>
-                          </button>
-                        );
-                      })}
-                      {c.allday.length > 3 && <span className="ad-more">+{c.allday.length - 3}</span>}
-                    </div>
-                  ))}
+                  <div className="ad-area" style={{ height: adRows.n * 25 + 2, ...(sx ? { width: n * colW, flex: 'none' } : null) }}>
+                    {adRows.bars.map(({ o, i, j, r }) => {
+                      const tn = catTone(st.cats, o.it.cat);
+                      const done = isDone(o.it, o.date);
+                      return (
+                        <button key={o.key} className={'ad-chip' + (o.date < dates[0] ? ' cut-l' : '') + (o.end > dates[n - 1] ? ' cut-r' : '')} onClick={() => onOpen(o)}
+                          style={{ top: r * 25, left: `calc(${(i / n) * 100}% + 1px)`, width: `calc(${((j - i + 1) / n) * 100}% - 3px)`, background: tn.tint, color: tn.ink, borderColor: tn.c }}>
+                          {o.it.type === 'promemoria' && <TypeShape type="promemoria" only={o.it.onlyAlert} color={tn.c} done={done} size={10} />}
+                          <span className={done && !o.it.onlyAlert ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -1551,7 +1617,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
               {cols.map((c, ci) => {
                 // un solo elenco con chiavi stabili: l'elemento toccato resta nel DOM anche se il giorno cambia durante il trascinamento
                 const blocks = [
-                  ...c.ev.map((x) => <Block key={x.o.key} o={x.o} lane={x.lane} nl={x.n} start={x.s} end={x.e} hourH={hourH} cats={st.cats} selected={sel === x.o.key} faded={!!drag && drag.key === x.o.key} fixed={isTimedMulti(x.o.it)} />),
+                  ...c.ev.map((x) => <Block key={x.o.key} o={x.o} box={boxOf(x)} start={x.s} end={x.e} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === x.o.key} faded={!!drag && drag.key === x.o.key} fixed={isTimedMulti(x.o.it)} />),
                   ...c.rem.map((o) => <Block key={o.key} o={o} start={o.it.start} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === o.key} faded={!!drag && drag.key === o.key} />)
                 ];
                 if (drag && drag.origCol === ci && !blocks.some((b) => b.key === drag.key)) {
@@ -1687,7 +1753,7 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
               <span className={'m-n' + (d === today ? ' today' : '')}>{dnum(d)}</span>
               {titles ? (
                 <span className="m-tl">
-                  {its.slice(0, 3).map((o) => { const tn = catTone(st.cats, o.it.cat); return <span key={o.key} style={{ background: tn.tint, color: tn.ink }}>{o.it.title}</span>; })}
+                  {its.slice(0, 3).map((o) => { const tn = catTone(st.cats, o.it.cat); return <span key={o.key} style={{ background: tn.tint, color: tn.ink, borderLeftColor: tn.c }}>{o.it.title}</span>; })}
                   {its.length > 3 && <em>+{its.length - 3}</em>}
                 </span>
               ) : (
@@ -1737,30 +1803,62 @@ function Diamond({ x, c, size = 14 }) {
 function Dot({ x, c, done, size = 13 }) {
   return <svg className="gm" width={size} height={size} viewBox="0 0 14 14" style={{ left: x - size / 2 }} aria-hidden="true"><circle cx="7" cy="7" r="5" fill={done ? c : '#FBFBF8'} stroke={c} strokeWidth="2.2" /></svg>;
 }
-function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, nonce }) {
+/* scorrimento infinito: una finestra larga attorno alla data guardata, che si ricentra quando ci si avvicina ai bordi */
+const G_WEEKS = 52, G_MONTHS = 48, DW = 20, MW = 64;
+function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter, onRange, nonce }) {
   const today = todayStr();
   const [open, setOpen] = useState(() => new Set());
-  const scRef = useRef(null);
+  const scRef = useRef(null), keep = useRef(null);
   const geo = useMemo(() => {
     if (scale === 'week') {
-      const from = addDays(startOfWeek(anchor), -14), dw = 20, n = 16 * 7;
-      return { from, to: addDays(from, n - 1), W: n * dw, x: (d) => diffDays(from, d) * dw };
+      const from = addDays(startOfWeek(anchor), -7 * (G_WEEKS / 2)), n = G_WEEKS * 7;
+      return { from, to: addDays(from, n - 1), W: n * DW, x: (d) => diffDays(from, d) * DW, at: (x) => addDays(from, Math.floor(x / DW)) };
     }
-    const from = addMonths(monthStart(anchor), -2), mw = 64;
+    const from = addMonths(monthStart(anchor), -G_MONTHS / 2);
     const fy = +from.slice(0, 4), fm = +from.slice(5, 7);
     return {
-      from, to: addDays(addMonths(from, 12), -1), W: 12 * mw,
-      x: (d) => ((+d.slice(0, 4) - fy) * 12 + (+d.slice(5, 7) - fm)) * mw + ((dnum(d) - 1) / daysInMonth(d)) * mw
+      from, to: addDays(addMonths(from, G_MONTHS), -1), W: G_MONTHS * MW,
+      x: (d) => ((+d.slice(0, 4) - fy) * 12 + (+d.slice(5, 7) - fm)) * MW + ((dnum(d) - 1) / daysInMonth(d)) * MW,
+      at: (x) => { const m = addMonths(from, Math.floor(x / MW)); return m.slice(0, 8) + pad(Math.min(daysInMonth(m), 1 + Math.floor(((x % MW) / MW) * daysInMonth(m)))); }
     };
   }, [scale, anchor]);
   const { from, to, W } = geo;
   const X = (d) => Math.max(0, Math.min(W, geo.x(d)));
   const XE = (d) => Math.max(0, Math.min(W, geo.x(addDays(d, 1))));
-
+  const R = useRef({});
+  R.current = { geo, onRecenter, onRange };
+  const report = () => {
+    const el = scRef.current;
+    if (!el) return;
+    const g = R.current.geo, w = Math.max(60, el.clientWidth - LW);
+    R.current.onRange(g.at(el.scrollLeft), g.at(Math.min(g.W - 1, el.scrollLeft + w)));
+  };
+  // Oggi, Vai a data, cambio di scala: la data guardata a sinistra; ricentro: la vista resta ferma
   useLayoutEffect(() => {
     const el = scRef.current;
-    if (el) el.scrollLeft = Math.max(0, geo.x(today) - 60);
-  }, [nonce, scale]);
+    if (!el) return;
+    if (keep.current) { el.scrollLeft = geo.x(keep.current.d) - keep.current.off; keep.current = null; }
+    else el.scrollLeft = Math.max(0, geo.x(anchor) - 40);
+    report();
+  }, [nonce, scale, from]);
+  useEffect(() => {
+    const el = scRef.current;
+    let tm = null;
+    const on = () => {
+      clearTimeout(tm);
+      tm = setTimeout(() => {
+        report();
+        const g = R.current.geo, w = el.clientWidth - LW;
+        if (el.scrollLeft < g.W * 0.2 || el.scrollLeft + w > g.W * 0.8) {
+          const d = g.at(el.scrollLeft + w / 2);
+          keep.current = { d, off: g.x(d) - el.scrollLeft };
+          R.current.onRecenter(d);
+        }
+      }, 140);
+    };
+    el.addEventListener('scroll', on, { passive: true });
+    return () => { clearTimeout(tm); el.removeEventListener('scroll', on); };
+  }, []);
 
   const occ = useMemo(() => expand(st.items.filter((it) => it.type !== 'sveglia'), from, to), [st.items, from, to]);
   const rows = useMemo(() => {
@@ -1804,22 +1902,22 @@ function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, nonce }) {
     for (let d = from; d <= to; d = addDays(d, 1)) {
       const x = geo.x(d);
       if (dnum(d) === 1 || d === from) head.push(<span key={'m' + d} className="gh-m" style={{ left: x + 2 }}>{MONTHS[LANG][mnum(d)].slice(0, 3)} {d.slice(2, 4)}</span>);
-      head.push(<span key={d} className={'gh-d' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')} style={{ left: x, width: 20 }}><i>{WD_LETTER[LANG][wd(d)]}</i>{dnum(d)}</span>);
+      head.push(<span key={d} className={'gh-d' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')} style={{ left: x, width: DW }}><i>{WD_LETTER[LANG][wd(d)]}</i>{dnum(d)}</span>);
     }
   } else {
     for (let m = from; m <= to; m = addMonths(m, 1)) {
       const x = geo.x(m);
-      head.push(<span key={m} className={'gh-mm' + (m.slice(0, 7) === today.slice(0, 7) ? ' today' : '')} style={{ left: x, width: 64 }}><i>{m.slice(5, 7) === '01' || m === from ? m.slice(0, 4) : ' '}</i>{MONTHS[LANG][mnum(m)].slice(0, 3)}</span>);
+      head.push(<span key={m} className={'gh-mm' + (m.slice(0, 7) === today.slice(0, 7) ? ' today' : '')} style={{ left: x, width: MW }}><i>{m.slice(5, 7) === '01' || m === from ? m.slice(0, 4) : ' '}</i>{MONTHS[LANG][mnum(m)].slice(0, 3)}</span>);
     }
   }
   const bg = [];
   if (scale === 'week') {
-    for (let d = from; d <= to; d = addDays(d, 1)) if (wd(d) === 5) bg.push(<i key={d} className="gb-we" style={{ left: geo.x(d), width: 40 }} />);
+    for (let d = from; d <= to; d = addDays(d, 1)) if (wd(d) === 5) bg.push(<i key={d} className="gb-we" style={{ left: geo.x(d), width: 2 * DW }} />);
   } else {
     let k = 0;
-    for (let m = from; m <= to; m = addMonths(m, 1), k++) if (k % 2) bg.push(<i key={m} className="gb-we" style={{ left: geo.x(m), width: 64 }} />);
+    for (let m = from; m <= to; m = addMonths(m, 1), k++) if (k % 2) bg.push(<i key={m} className="gb-we" style={{ left: geo.x(m), width: MW }} />);
   }
-  const todayX = today >= from && today <= to ? (scale === 'week' ? geo.x(today) + 10 : geo.x(today)) : null;
+  const todayX = today >= from && today <= to ? (scale === 'week' ? geo.x(today) + DW / 2 : geo.x(today)) : null;
 
   const marker = (o, tn, done) => {
     const it = o.it;
@@ -2949,15 +3047,21 @@ export function App() {
     if (dir > 0) { if (i < seq.length - 1) toDays(seq[i + 1]); else setView('month'); }
     else if (i > 0) toDays(seq[i - 1]);
   };
+  const [gRange, setGRange] = useState(null);
   let title;
-  if (view === 'grid') title = days === 1 ? fmtDayLong(anchor) : fmtRange(vis[0], vis[vis.length - 1]);
+  if (view === 'grid') title = fmtSpan(vis[0], vis[vis.length - 1]);
   else if (view === 'month') title = fmtMonthYear(anchor);
-  else {
-    const a = gScale === 'week' ? addDays(startOfWeek(anchor), -14) : addMonths(monthStart(anchor), -2);
-    const b = gScale === 'week' ? addDays(a, 111) : addDays(addMonths(a, 12), -1);
-    const lab = (s) => `${MONTHS[LANG][mnum(s)].slice(0, 3)} ${s.slice(0, 4)}`;
-    title = `${lab(a)} - ${lab(b)}`;
-  }
+  else title = gRange ? fmtSpan(gRange[0], gRange[1]) : fmtMonthYear(anchor);
+  /* viste: solo icone quando i nomi non ci stanno */
+  const navRef = useRef(null);
+  const [compact, setCompact] = useState(false);
+  useLayoutEffect(() => {
+    const m = () => { const n = navRef.current; if (n) setCompact(n.clientWidth < 330); };
+    m();
+    window.addEventListener('resize', m);
+    return () => window.removeEventListener('resize', m);
+  }, []);
+  const goDate = (v) => { if (!v) return; setAnchor(v); setNonce((n) => n + 1); };
 
   const openOcc = (o) => setSheet({ item: o.it, occDate: o.date, isNew: false });
   const newDate = () => (view === 'gantt' ? today : view === 'month' ? anchor : vis.includes(today) ? today : vis[0]);
@@ -2999,8 +3103,9 @@ export function App() {
   return (
     <div className="app">
       <header className="hdr">
-        <div className="hdr1">
-          <nav className="seg tabs" aria-label={t('views')}>
+        <div className={'hdr1' + (compact ? ' compact' : '')}>
+          <span className="logo" aria-label="hora"><Mark size={30} /><b className="wm">hora</b></span>
+          <nav className="seg tabs" ref={navRef} aria-label={t('views')}>
             <button className={view === 'grid' && days < 7 ? 'on' : ''} aria-label={view === 'grid' ? dayTab : t('day')} onClick={() => { setView('grid'); setDays(1); }}><UIcon n={view === 'grid' ? dayIcon : 'day1'} size={18} sw={1.7} /><span>{view === 'grid' ? dayTab : t('day')}</span></button>
             <button className={view === 'grid' && days === 7 ? 'on' : ''} aria-label={t('week')} onClick={() => { setView('grid'); toDays(7); }}><UIcon n="week" size={18} sw={1.7} /><span>{t('week')}</span></button>
             <button className={view === 'month' ? 'on' : ''} aria-label={t('month')} onClick={() => setView('month')}><UIcon n="month" size={18} sw={1.7} /><span>{t('month')}</span></button>
@@ -3011,17 +3116,27 @@ export function App() {
         </div>
         <div className="hdr2">
           <h1>{title}</h1>
-          <div className="row-c">
+          <div className="row-c gap6">
             {view !== 'gantt' && (
-              <button className={'ib filt' + (fOn ? ' on' : '')} aria-label={t('filter')} aria-pressed={fOn} onClick={() => setFilterOpen(true)}><UIcon n="filter" size={20} />{fOn && <i />}</button>
+              <button className={'ctl filt' + (fOn ? ' on' : '')} aria-label={t('filter')} aria-pressed={fOn} onClick={() => setFilterOpen(true)}><UIcon n="filter" size={18} />{fOn && <i />}</button>
             )}
-            <button className="pill" onClick={goToday}>{t('today')}</button>
-            <button className="ib muted" aria-label={t('prev')} onClick={() => step(-1)}><UIcon n="left" size={18} sw={2} /></button>
-            <button className="ib muted" aria-label={t('next')} onClick={() => step(1)}><UIcon n="right" size={18} sw={2} /></button>
+            {view === 'gantt' && (
+              <label className="ctl date" aria-label={t('goDate')} title={t('goDate')}>
+                <UIcon n="cal" size={17} /><span>{t('goDate')}</span>
+                <input type="date" value="" onChange={(e) => goDate(e.target.value)} />
+              </label>
+            )}
+            <button className="ctl txt" onClick={goToday}>{t('today')}</button>
+            {view !== 'gantt' && (
+              <span className="ctl-pair">
+                <button className="ctl" aria-label={t('prev')} onClick={() => step(-1)}><UIcon n="left" size={17} sw={2.1} /></button>
+                <button className="ctl" aria-label={t('next')} onClick={() => step(1)}><UIcon n="right" size={17} sw={2.1} /></button>
+              </span>
+            )}
           </div>
         </div>
       </header>
-      <main className="main" ref={mainRef}>
+      <main className="main" ref={mainRef} data-range={view === 'grid' ? vis[0] + '/' + vis[vis.length - 1] : undefined}>
         {view === 'grid' && (
           <GridView st={st} dates={dates} anchor={anchor} sx={sx} visN={days} pass={pass} newCat={newCat} sun={sun} hourH={hourH} setHourH={setHourH} commitHourH={commitHourH} onOpen={openOcc}
             onSave={(it) => saveItem(it)} onToggle={toggleDone} onShift={(dir) => setAnchor((a) => addDays(a, dir * (days === 7 ? 7 : 1)))} onPinchDays={pinchDays}
@@ -3034,7 +3149,8 @@ export function App() {
             onPinchOut={() => { setView('grid'); toDays(7); }} onSwipe={step} />
         )}
         {view === 'gantt' && (
-          <GanttView st={st} anchor={anchor} scale={gScale} setScale={(v) => setSettings({ ganttScale: v })} onOpenItem={openOcc} onCats={() => setGanttCats(true)} nonce={nonce} />
+          <GanttView st={st} anchor={anchor} scale={gScale} setScale={(v) => setSettings({ ganttScale: v })} onOpenItem={openOcc} onCats={() => setGanttCats(true)} nonce={nonce}
+            onRecenter={setAnchor} onRange={(a, b) => setGRange((r) => (r && r[0] === a && r[1] === b ? r : [a, b]))} />
         )}
       </main>
       <button ref={fabRef} className="fab" aria-label={t('add')} onClick={() => newSheet(true)}><UIcon n="plus" size={26} sw={2.2} /></button>

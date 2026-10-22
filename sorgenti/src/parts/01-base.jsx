@@ -1,9 +1,9 @@
-/* hora 1.2 - calendario locale di nautargo
+/* hora 1.3 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.2';
+export const VERSION = '1.3';
 
 /* ============ Testi IT / EN ============ */
 const STR = {
@@ -50,7 +50,7 @@ const STR = {
     views: 'Viste', sCal: 'Calendario', sFree: 'Scorrimento continuo', sFreeTxt: 'Spento: si passa al periodo prima o dopo. Acceso: scorre liberamente. Attività scorre sempre.',
     sCatsTxt: 'Nomi, icone, colori e ordine', manage: 'Gestisci', voiceHelp: 'Come dettare', voiceTxt: 'Parla in modo semplice, poi controlla i campi qui sotto. Di\' "salva" alla fine per aggiungere subito.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|ricordami di pagare le bollette lunedì avvisami un\'ora prima|sveglia alle 6 e 45 dal lunedì al venerdì|cena da Anna in via Roma 10 sabato alle 20 con nota portare il vino',
-    expData: 'Esporta', impData: 'Importa', gantt2: 'Attività', ganttTxt: 'Cronoprogramma per categorie'
+    goDate: 'Vai a data', expData: 'Esporta', impData: 'Importa', gantt2: 'Attività', ganttTxt: 'Cronoprogramma per categorie'
   },
   en: {
     today: 'Today', day: 'Day', days3: '3 days', days5: '5 days', week: 'Week', month: 'Month', gantt: 'Timeline',
@@ -95,7 +95,7 @@ const STR = {
     views: 'Views', sCal: 'Calendar', sFree: 'Continuous scrolling', sFreeTxt: 'Off: swipe to the previous or next period. On: scrolls freely. Timeline always scrolls.',
     sCatsTxt: 'Names, icons, colors and order', manage: 'Manage', voiceHelp: 'How to dictate', voiceTxt: 'The microphone always listens in Italian. Check the fields below; say "salva" at the end to add right away.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|sveglia alle 6 e 45 dal lunedì al venerdì',
-    expData: 'Export', impData: 'Import', gantt2: 'Timeline', ganttTxt: 'Schedule by category'
+    goDate: 'Go to date', expData: 'Export', impData: 'Import', gantt2: 'Timeline', ganttTxt: 'Schedule by category'
   }
 };
 let LANG = 'it';
@@ -106,6 +106,7 @@ export const t = (k, v) => {
   return s;
 };
 const WD_SHORT = { it: ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'], en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] };
+const WD_LONG = { it: ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'], en: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] };
 const WD_LETTER = { it: ['L', 'M', 'M', 'G', 'V', 'S', 'D'], en: ['M', 'T', 'W', 'T', 'F', 'S', 'S'] };
 const MONTHS = {
   it: ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'],
@@ -143,6 +144,21 @@ const mab = (s) => MONTHS[LANG][mnum(s)].slice(0, 3);
 export const fmtRange = (a, b) => {
   if (a.slice(0, 7) === b.slice(0, 7)) return `${dnum(a)} - ${dnum(b)} ${MONTHS[LANG][mnum(a)]}`;
   return `${dnum(a)} ${mab(a)} - ${dnum(b)} ${mab(b)}`;
+};
+/* intestazione di una colonna su una riga, secondo lo spazio: lunedì 8 settembre 2026, lun 8 settembre, lun 8/09, lun 8, L 8 */
+export const fmtHead = (s, w) => {
+  const n = dnum(s), ws = WD_SHORT[LANG][wd(s)].toLowerCase();
+  if (w >= 230) return `${WD_LONG[LANG][wd(s)]} ${n} ${MONTHS[LANG][mnum(s)]} ${s.slice(0, 4)}`;
+  if (w >= 150) return `${ws} ${n} ${MONTHS[LANG][mnum(s)]}`;
+  if (w >= 92) return `${ws} ${n}/${pad(mnum(s) + 1)}`;
+  if (w >= 56) return `${ws} ${n}`;
+  return `${WD_LETTER[LANG][wd(s)]} ${n}`;
+};
+/* titolo di un intervallo: Ottobre 2026, Ott - Nov 2026, Dic 2026 - Gen 2027 */
+export const fmtSpan = (a, b) => {
+  if (a.slice(0, 7) === b.slice(0, 7)) return fmtMonthYear(a);
+  const m = (s) => cap(mab(s));
+  return a.slice(0, 4) === b.slice(0, 4) ? `${m(a)} - ${m(b)} ${a.slice(0, 4)}` : `${m(a)} ${a.slice(0, 4)} - ${m(b)} ${b.slice(0, 4)}`;
 };
 export const fmtFull = (s) => `${fmtDayLong(s)} ${s.slice(0, 4)}`;
 

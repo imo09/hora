@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 
 const root = path.dirname(new URL(import.meta.url).pathname);
 const P = (...a) => path.join(root, ...a);
-const VERSION = '1.2';
+const VERSION = '1.3';
 
 // 1. file sorgente unico
 if (fs.existsSync(P('src/parts'))) {

@@ -2,13 +2,19 @@
 /* ============ Griglia oraria: 1, 3 o 7 giorni ============ */
 const SNAP = 15;
 function layoutDay(list) {
-  const ev = list.map(({ o, s, e }) => ({ o, s, e: Math.max(e, s + 15) })).sort((a, b) => a.s - b.s || b.e - a.e);
+  const ev = list.map((x) => ({ ...x, e: Math.max(x.e, x.s + 15) })).sort((a, b) => a.s - b.s || b.e - a.e);
   const out = [];
   let group = [], gEnd = -1;
   const flush = () => {
     const lanes = [];
     for (const x of group) { let i = lanes.findIndex((le) => le <= x.s); if (i < 0) { i = lanes.length; lanes.push(0); } lanes[i] = x.e; x.lane = i; }
-    for (const x of group) x.n = lanes.length;
+    // ogni elemento si allarga nelle corsie libere alla sua destra
+    const n = lanes.length;
+    for (const x of group) {
+      let span = 1;
+      while (x.lane + span < n && !group.some((y) => y.lane === x.lane + span && y.s < x.e && y.e > x.s)) span++;
+      x.n = n; x.span = span;
+    }
     out.push(...group); group = [];
   };
   for (const x of ev) { if (group.length && x.s >= gEnd) { flush(); gEnd = -1; } group.push(x); gEnd = Math.max(gEnd, x.e); }
@@ -19,25 +25,28 @@ const gridBg = (h) => h >= 96
   ? { backgroundImage: 'linear-gradient(to bottom, #DDE2DF 1px, transparent 1px), linear-gradient(to bottom, #EEF0EE 1px, transparent 1px)', backgroundSize: `100% ${h}px, 100% ${h / 4}px` }
   : { backgroundImage: 'linear-gradient(to bottom, #DDE2DF 1px, transparent 1px)', backgroundSize: `100% ${h}px` };
 
-function EvBlock({ o, lane = 0, nl = 1, start, end, hourH, cats, selected, ghost, faded, fixed }) {
+const laneBox = (lane, nl, span) => ({ left: `calc(${(lane / nl) * 100}% + 1px)`, width: `calc(${(span / nl) * 100}% - 3px)` });
+function EvBlock({ o, lane = 0, nl = 1, span = 1, box, start, end, hourH, cats, selected, ghost, faded, fixed }) {
   const tn = catTone(cats, o.it.cat);
   const top = (start / 60) * hourH, h = Math.max(((end - start) / 60) * hourH, 18);
   return (
     <div className={'ev' + (selected ? ' sel' : '') + (ghost ? ' ghost' : '') + (faded ? ' faded' : '') + (o.draft ? ' draft' : '')} data-key={ghost ? undefined : o.key}
-      style={{ top, height: h, left: `calc(${(lane / nl) * 100}% + 1px)`, width: `calc(${100 / nl}% - 3px)`, background: tn.tint, color: tn.ink, borderColor: tn.c }}>
-      <b>{o.it.title || t('noTitle')}</b>
-      {h >= 34 && <span>{fmtTime(start)} - {fmtTime(end)}</span>}
+      style={{ top, height: h, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), background: tn.tint, color: tn.ink, borderColor: tn.c }}>
+      {box && box.cc
+        ? <b>{o.it.title || t('noTitle')} <small>{fmtTime(start)}</small></b>
+        : <><b>{o.it.title || t('noTitle')}</b>{h >= 34 && <span>{fmtTime(start)} - {fmtTime(end)}</span>}</>}
       {o.draft && h >= 50 && <span>{t('tapDetails')}</span>}
-      {selected && !ghost && !faded && !fixed && <><i className="hd top" data-h="top" data-key={o.key} /><i className="hd bot" data-h="bottom" data-key={o.key} /></>}
+      {selected && !ghost && !fixed && <><i className="hd top" data-h="top" data-key={o.key} /><i className="hd bot" data-h="bottom" data-key={o.key} /></>}
+      {ghost && o.it.type === 'evento' && <><i className="hd top vis" /><i className="hd bot vis" /></>}
     </div>
   );
 }
-function RemRow({ o, start, hourH, cats, onToggle, ghost, selected, faded }) {
+function RemRow({ o, start, hourH, cats, onToggle, ghost, selected, faded, lane = 0, nl = 1, span = 1, box }) {
   const tn = catTone(cats, o.it.cat);
   const done = isDone(o.it, o.date);
   const only = !!o.it.onlyAlert;
   return (
-    <div className={'rem' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH - 12, borderColor: tn.c }}>
+    <div className={'rem' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), borderColor: tn.c, background: tn.tint }}>
       {only
         ? <span className="chk"><TypeShape type="promemoria" only color={tn.c} size={14} /></span>
         : <button className="chk" data-chk="1" aria-label={t('markDone') + ': ' + o.it.title} onClick={() => onToggle && onToggle(o.it, o.date)}>
@@ -65,6 +74,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
   const [drag, setDrag] = useState(null);
   const [draft, setDraft] = useState(null);
   const [colW, setColW] = useState(0);
+  const [headW, setHeadW] = useState(0);
   const from = dates[0], to = dates[dates.length - 1];
   const occ = useMemo(() => {
     const list = expand(st.items, from, to).filter((o) => pass(o.it));
@@ -73,17 +83,23 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     }
     return list;
   }, [st.items, from, to, pass, draft, newCat]);
+  // un promemoria occupa nella corsia lo spazio della sua riga
+  const remMin = Math.max(15, Math.ceil(((25 / hourH) * 60) / 15) * 15);
   const cols = useMemo(() => dates.map((d) => {
     const here = occ.filter((o) => o.date <= d && o.end >= d);
     const timed = here.filter((o) => o.it.start != null && o.it.type === 'evento' && (o.date === d || isTimedMulti(o.it)));
+    const rems = here.filter((o) => o.it.start != null && o.date === d && o.it.type === 'promemoria');
     return {
       d,
       allday: here.filter((o) => o.it.start == null),
-      // eventi su più giorni con orario: un tratto per ogni giorno
-      ev: layoutDay(timed.map((o) => ({ o, s: o.date === d ? o.it.start : 0, e: !isTimedMulti(o.it) ? o.it.end ?? o.it.start + 60 : o.end === d ? o.it.end ?? 0 : 1440 }))),
-      rem: here.filter((o) => o.it.start != null && o.date === d && o.it.type !== 'evento').sort((a, b) => a.it.start - b.it.start)
+      // eventi e promemoria che si sovrappongono si dividono la colonna in corsie; eventi su più giorni: un tratto per giorno
+      ev: layoutDay([
+        ...timed.map((o) => ({ o, s: o.date === d ? o.it.start : 0, e: !isTimedMulti(o.it) ? o.it.end ?? o.it.start + 60 : o.end === d ? o.it.end ?? 0 : 1440 })),
+        ...rems.map((o) => ({ o, s: o.it.start, e: Math.min(1440, o.it.start + remMin) }))
+      ]),
+      rem: here.filter((o) => o.it.start != null && o.date === d && o.it.type === 'sveglia')
     };
-  }), [occ, dates]);
+  }), [occ, dates, remMin]);
 
   const R = useRef({});
   R.current = { dates, anchor, sx, colW, occ, hourH, sel, draft, onOpen, onSave, onShift, onPinchDays, onSwipe, onVisible, onNewAt, setHourH, commitHourH, setSel, setDraft };
@@ -94,7 +110,15 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     const target = dates.includes(today) ? Math.max(0, nowMin() - 90) : 7 * 60;
     el.scrollTop = (target / 60) * hourH;
   }, [nonce]);
-  // 5 giorni: larghezza di colonna misurata e scorrimento orizzontale sul primo giorno visibile
+  // larghezza di una colonna per l'intestazione su una riga
+  useLayoutEffect(() => {
+    const el = scRef.current;
+    const m = () => { const g = el.querySelector('.g-hours'); setHeadW((el.clientWidth - (g ? g.offsetWidth : 46) - (sx ? 0 : 8)) / (sx ? visN : dates.length)); };
+    m();
+    window.addEventListener('resize', m);
+    return () => window.removeEventListener('resize', m);
+  }, [sx, visN, dates.length]);
+  // scorrimento continuo: larghezza di colonna misurata e scorrimento orizzontale sul primo giorno visibile
   useLayoutEffect(() => {
     if (!sx) return;
     const el = scRef.current;
@@ -223,7 +247,8 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       const h = e.target.closest('[data-h]');
       if (h) { e.preventDefault(); begin(h.dataset.h, h.dataset.key, tc.clientX, tc.clientY); return; }
       const evEl = e.target.closest('[data-key]');
-      lp = { x: tc.clientX, y: tc.clientY, t: Date.now(), key: evEl ? evEl.dataset.key : null, inCols: !!e.target.closest('.g-cols') };
+      // elemento già selezionato: si sposta subito, senza pressione lunga
+      lp = { x: tc.clientX, y: tc.clientY, t: Date.now(), key: evEl ? evEl.dataset.key : null, inCols: !!e.target.closest('.g-cols'), sel: !!evEl && evEl.dataset.key === R.current.sel };
       if (evEl) lp.timer = setTimeout(() => { if (lp) { const k = lp.key, sx0 = lp.x, sy0 = lp.y; lp = null; begin('move', k, sx0, sy0); update(last.x, last.y); } }, 380);
     };
     const onTM = (e) => {
@@ -246,6 +271,12 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       if (!tc) return;
       last = { x: tc.clientX, y: tc.clientY };
       if (dg) { e.preventDefault(); update(tc.clientX, tc.clientY); return; }
+      if (lp && lp.sel && lp.key && (Math.abs(tc.clientX - lp.x) > 6 || Math.abs(tc.clientY - lp.y) > 6)) {
+        e.preventDefault();
+        const l = lp; cancelLP();
+        begin('move', l.key, l.x, l.y); update(tc.clientX, tc.clientY);
+        return;
+      }
       if (lp && (Math.abs(tc.clientX - lp.x) > 8 || Math.abs(tc.clientY - lp.y) > 8)) cancelLP();
     };
     const onTE = (e) => {
@@ -314,6 +345,27 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
 
   const n = dates.length;
   const nm = nowMin();
+  /* più elementi alla stessa ora: affiancati se c'è spazio, altrimenti a cascata (ognuno lascia vedere l'inizio del precedente) */
+  const colPx = headW > 0 ? headW : 0;
+  const boxOf = (x) => {
+    if (x.n === 1 || colPx / x.n >= 84) return laneBox(x.lane, x.n, x.span);
+    const step = Math.max(10, Math.min(28, (colPx - 64) / (x.n - 1)));
+    const left = x.lane * step;
+    return { left: `${left + 1}px`, width: `calc(100% - ${left + 3}px)`, zIndex: 1 + x.lane, cc: true };
+  };
+  /* tutto il giorno: barre continue sui giorni che coprono, su righe libere */
+  const adRows = useMemo(() => {
+    const seen = new Set(), bars = [], rows = [];
+    for (const c of cols) for (const o of c.allday) {
+      if (seen.has(o.key)) continue;
+      seen.add(o.key);
+      const i = Math.max(0, diffDays(dates[0], o.date)), j = Math.min(dates.length - 1, diffDays(dates[0], o.end));
+      bars.push({ o, i, j });
+    }
+    bars.sort((a, b) => a.i - b.i || b.j - b.i - (a.j - a.i));
+    for (const b of bars) { let r = rows.findIndex((end) => end < b.i); if (r < 0) { r = rows.length; rows.push(-1); } rows[r] = b.j; b.r = r; }
+    return { bars, n: rows.length };
+  }, [cols, dates]);
   const showAllday = cols.some((c) => c.allday.length);
   const cw = sx ? { width: colW, flex: 'none' } : undefined;
   const sunY = sun ? [sun.rise, sun.set].map((m) => (m / 60) * hourH) : [];
@@ -321,34 +373,32 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     <div className={'grid' + (sx ? ' sx' : '')}>
       <div className={'g-scroll' + (drag ? ' dragging' : '')} ref={scRef}>
         <div className="g-wide" style={sx ? { width: `calc(var(--gut) + ${n * colW}px)` } : undefined}>
-          {(n > 1 || showAllday) && (
+          {(
             <div className="g-top" ref={topRef}>
-              {n > 1 && (
+              {(
                 <div className="g-head">
                   <span className="g-gut" />
                   {dates.map((d) => (
-                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')}><span>{WD_LETTER[LANG][wd(d)]}</span><b>{dnum(d)}</b></div>
+                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')}><span>{fmtHead(d, headW)}</span></div>
                   ))}
                 </div>
               )}
               {showAllday && (
                 <div className="g-allday">
                   <span className="g-gut small">{t('allDayShort')}</span>
-                  {cols.map((c) => (
-                    <div key={c.d} className="ad-col" style={cw}>
-                      {c.allday.slice(0, 3).map((o) => {
-                        const tn = catTone(st.cats, o.it.cat);
-                        const done = isDone(o.it, o.date);
-                        return (
-                          <button key={o.key} className="ad-chip" style={{ background: tn.tint, color: tn.ink }} onClick={() => onOpen(o)}>
-                            {o.it.type === 'promemoria' && <TypeShape type="promemoria" only={o.it.onlyAlert} color={tn.c} done={done} size={10} />}
-                            <span className={done && !o.it.onlyAlert ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>
-                          </button>
-                        );
-                      })}
-                      {c.allday.length > 3 && <span className="ad-more">+{c.allday.length - 3}</span>}
-                    </div>
-                  ))}
+                  <div className="ad-area" style={{ height: adRows.n * 25 + 2, ...(sx ? { width: n * colW, flex: 'none' } : null) }}>
+                    {adRows.bars.map(({ o, i, j, r }) => {
+                      const tn = catTone(st.cats, o.it.cat);
+                      const done = isDone(o.it, o.date);
+                      return (
+                        <button key={o.key} className={'ad-chip' + (o.date < dates[0] ? ' cut-l' : '') + (o.end > dates[n - 1] ? ' cut-r' : '')} onClick={() => onOpen(o)}
+                          style={{ top: r * 25, left: `calc(${(i / n) * 100}% + 1px)`, width: `calc(${((j - i + 1) / n) * 100}% - 3px)`, background: tn.tint, color: tn.ink, borderColor: tn.c }}>
+                          {o.it.type === 'promemoria' && <TypeShape type="promemoria" only={o.it.onlyAlert} color={tn.c} done={done} size={10} />}
+                          <span className={done && !o.it.onlyAlert ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -366,7 +416,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
               {cols.map((c, ci) => {
                 // un solo elenco con chiavi stabili: l'elemento toccato resta nel DOM anche se il giorno cambia durante il trascinamento
                 const blocks = [
-                  ...c.ev.map((x) => <Block key={x.o.key} o={x.o} lane={x.lane} nl={x.n} start={x.s} end={x.e} hourH={hourH} cats={st.cats} selected={sel === x.o.key} faded={!!drag && drag.key === x.o.key} fixed={isTimedMulti(x.o.it)} />),
+                  ...c.ev.map((x) => <Block key={x.o.key} o={x.o} box={boxOf(x)} start={x.s} end={x.e} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === x.o.key} faded={!!drag && drag.key === x.o.key} fixed={isTimedMulti(x.o.it)} />),
                   ...c.rem.map((o) => <Block key={o.key} o={o} start={o.it.start} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === o.key} faded={!!drag && drag.key === o.key} />)
                 ];
                 if (drag && drag.origCol === ci && !blocks.some((b) => b.key === drag.key)) {
@@ -502,7 +552,7 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
               <span className={'m-n' + (d === today ? ' today' : '')}>{dnum(d)}</span>
               {titles ? (
                 <span className="m-tl">
-                  {its.slice(0, 3).map((o) => { const tn = catTone(st.cats, o.it.cat); return <span key={o.key} style={{ background: tn.tint, color: tn.ink }}>{o.it.title}</span>; })}
+                  {its.slice(0, 3).map((o) => { const tn = catTone(st.cats, o.it.cat); return <span key={o.key} style={{ background: tn.tint, color: tn.ink, borderLeftColor: tn.c }}>{o.it.title}</span>; })}
                   {its.length > 3 && <em>+{its.length - 3}</em>}
                 </span>
               ) : (

@@ -30,26 +30,27 @@ const touch = (el, kind, pts, target = el) => {
 const pinchIn = async () => { const sc = $('.g-scroll'); touch(sc, 'touchstart', [[100, 300], [300, 300]]); touch(sc, 'touchmove', [[170, 300], [230, 300]]); touch(sc, 'touchend', [[170, 300], [230, 300]]); await wait(100); };
 const byText = (sel, txt) => $$(sel).find((e) => e.textContent.trim().includes(txt));
 const title = () => $('.hdr2 h1').textContent;
+const range = () => $('.main').dataset.range;
 let n = 0; const ok = (m) => { n++; console.log('  ok', m); };
 
 await wait(120); click($('.splash')); await wait(450);
-assert.equal(title(), 'Mer 14 ottobre');
+assert.equal(range(), '2026-10-14/2026-10-14'); assert.equal(title(), 'Ottobre 2026');
 // scorrimento laterale nella vista Giorno
 const sc = $('.g-scroll');
 touch(sc, 'touchstart', [[300, 400]]); touch(sc, 'touchmove', [[150, 410]]); touch(sc, 'touchmove', [[120, 410]]); touch(sc, 'touchend', [[120, 410]]); await wait(80);
-assert.equal(title(), 'Gio 15 ottobre'); ok('scorrimento laterale: giorno dopo');
+assert.equal(range(), '2026-10-15/2026-10-15'); ok('scorrimento laterale: giorno dopo');
 touch(sc, 'touchstart', [[100, 400]]); touch(sc, 'touchmove', [[300, 410]]); touch(sc, 'touchend', [[300, 410]]); await wait(80);
-assert.equal(title(), 'Mer 14 ottobre'); ok('scorrimento laterale: giorno prima');
+assert.equal(range(), '2026-10-14/2026-10-14'); ok('scorrimento laterale: giorno prima');
 await pinchIn();
 assert.equal($$('.g-day').length, 3); assert.equal($('.tabs button.on').textContent, '3 giorni');
 await pinchIn();
 assert.ok(!$('.grid.sx'), '5 giorni a pagine'); assert.equal($('.tabs button.on').textContent, '5 giorni');
-assert.equal(title(), '12 - 16 ottobre'); ok('pizzico: 5 giorni feriali nella tab Giorno');
+assert.equal(range(), '2026-10-12/2026-10-16'); ok('pizzico: 5 giorni feriali nella tab Giorno');
 click($('button[aria-label="Successivo"]')); await wait();
-assert.equal(title(), '17 - 21 ottobre'); ok('freccia: 5 giorni avanti');
+assert.equal(range(), '2026-10-17/2026-10-21'); ok('freccia: 5 giorni avanti');
 const sc2 = $('.g-scroll');
 touch(sc2, 'touchstart', [[100, 400]]); touch(sc2, 'touchmove', [[300, 410]]); touch(sc2, 'touchend', [[300, 410]]); await wait(80);
-assert.equal(title(), '12 - 16 ottobre'); ok('scorrimento bloccato: 5 giorni prima');
+assert.equal(range(), '2026-10-12/2026-10-16'); ok('scorrimento bloccato: 5 giorni prima');
 // impostazioni: scorrimento continuo
 click($('button[aria-label="Impostazioni"]')); await wait();
 click($('.screen .sw[aria-label="Scorrimento continuo"]')); await wait();
@@ -59,13 +60,13 @@ assert.ok($('.grid.sx'), '5 giorni a scorrimento');
 // scorrimento orizzontale continuo: la vista si ricentra sul primo giorno visibile
 let g = $('.g-scroll');
 g.scrollLeft = 44 * 16; g.dispatchEvent(new w.Event('scroll')); await wait(260);
-assert.equal(title(), '14 - 18 ottobre'); ok('scorrimento continuo: 5 giorni');
+assert.equal(range(), '2026-10-14/2026-10-18'); ok('scorrimento continuo: 5 giorni');
 await pinchIn();
 assert.equal($('.tabs button.on').textContent, 'Settimana'); assert.ok($('.grid.sx'));
-assert.equal(title(), '12 - 18 ottobre'); ok('pizzico: settimana continua da lunedì');
+assert.equal(range(), '2026-10-12/2026-10-18'); ok('pizzico: settimana continua da lunedì');
 g = $('.g-scroll');
 g.scrollLeft = 44 * 17; g.dispatchEvent(new w.Event('scroll')); await wait(260);
-assert.equal(title(), '15 - 21 ottobre'); ok('scorrimento continuo: settimana');
+assert.equal(range(), '2026-10-15/2026-10-21'); ok('scorrimento continuo: settimana');
 // mese continuo: scorre per settimane e cambia mese guardato
 click(byText('.tabs button', 'Mese')); await wait();
 const ms = $('.m-scroll');
