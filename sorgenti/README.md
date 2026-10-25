@@ -1,6 +1,20 @@
-# hora 1.4
+# hora 1.5
 
 Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src/hora.jsx` (React, generato da `src/parts/`), stile in `src/style.css`.
+
+## Novità della 1.5
+
+1. Dropbox: un solo dispositivo modifica alla volta. Gli altri collegati sono in sola lettura (etichetta "Sola lettura" in alto); al primo tentativo di modifica (+, maniglie, matita, sveglie, categorie, importazioni) chiedono se proseguire da lì, e l'altro passa in sola lettura. Impostazioni > Sincronizzazione > Sincronizza allinea ai dati su Dropbox; avviene da solo all'apertura e ogni 5 minuti.
+2. Tocco su un evento o promemoria: riepilogo chiaro con tutte le informazioni; la matita in alto a destra apre la modifica. Le sveglie si aprono direttamente in modifica.
+3. Nuovo evento con pressione lunga su uno spazio vuoto: parte da quell'ora, trascinando in basso si sceglie la durata.
+4. Maniglia inferiore: l'orario di fine compare sotto la maniglia mentre si trascina.
+5. Vista Giorno: gli elementi lasciano libera una fascia stretta a destra, per toccare e creare anche accanto.
+6. Celle orarie tutte uguali: restano solo le righe tratteggiate di alba e tramonto.
+7. Elementi piccoli: icona centrata in verticale e in orizzontale.
+8. Cerca: testo, Vai a data e intervallo di date, con elenco di eventi, promemoria e sveglie filtrabile per tipo e categoria.
+9. Sveglie suggerite: dopo "Nascondi" si riaprono con "Mostra le sveglie suggerite".
+10. Rotazione: l'app installata si sblocca in orizzontale anche se era stata installata in verticale.
+11. Calendario: tolta la riga vuota sotto l'intestazione dei giorni con lo scorrimento continuo; intestazione più bassa.
 
 ## Novità della 1.4
 
@@ -26,7 +40,7 @@ Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src
 2. In Permissions abilita `files.content.write` e `files.content.read`, poi Submit.
 3. In Settings > OAuth 2 > Redirect URIs aggiungi `https://hora.nautargo.com/`.
 4. Copia la "App key" (non serve il segreto: hora usa PKCE) e inseriscila in `src/parts/07b-screens.jsx`, costante `DBX_KEY`, poi `npm test` e pubblica.
-5. In hora: Impostazioni > Sincronizzazione > Collega Dropbox. I dati vanno nel file `/Apps/<nome app>/hora.json`; vince il più recente, se sono cambiati entrambi hora chiede quale tenere.
+5. In hora: Impostazioni > Sincronizzazione > Collega Dropbox. I dati vanno nel file `/Apps/<nome app>/hora.json`, con il dispositivo che sta modificando; gli altri sono in sola lettura finché non prendono il controllo.
 
 ## Novità della 1.3
 
@@ -60,7 +74,7 @@ Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src
 ## Pubblicazione su hora.nautargo.com
 
 1. Crea su GitHub il repository `hora`.
-2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.4.zip` (index.html, manifest, sw.js, icone, CNAME).
+2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.5.zip` (index.html, manifest, sw.js, icone, CNAME).
 3. In Settings > Pages scegli il ramo `main` e la cartella `/ (root)`.
 4. Su Aruba aggiungi un record CNAME: nome `hora`, valore `imo09.github.io`.
 5. Torna in Settings > Pages, attendi il controllo del dominio e attiva "Enforce HTTPS".

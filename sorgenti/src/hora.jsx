@@ -1,9 +1,9 @@
-/* hora 1.4 - calendario locale di nautargo
+/* hora 1.5 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.4';
+export const VERSION = '1.5';
 
 /* ============ Testi IT / EN ============ */
 const STR = {
@@ -50,6 +50,10 @@ const STR = {
     views: 'Viste', sCal: 'Calendario', sFree: 'Scorrimento continuo', sFreeTxt: 'Spento: si passa al periodo prima o dopo. Acceso: scorre liberamente. Attività scorre sempre.',
     sCatsTxt: 'Nomi, icone, colori e ordine', manage: 'Gestisci', voiceHelp: 'Come dettare', voiceTxt: 'Parla in modo semplice, poi controlla i campi qui sotto. Di\' "salva" alla fine per aggiungere subito.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|ricordami di pagare le bollette lunedì avvisami un\'ora prima|sveglia alle 6 e 45 dal lunedì al venerdì|cena da Anna in via Roma 10 sabato alle 20 con nota portare il vino',
+    lockQ: 'Modifiche da un altro dispositivo', lockTxt: 'Su Dropbox si sta lavorando da un altro dispositivo: qui puoi solo guardare. Vuoi proseguire da questo? L\'altro passerà in sola lettura.', lockOk: 'Prosegui da qui',
+    notDone: 'Da fare di nuovo', roHere: 'Sola lettura su questo dispositivo', roShort: 'Sola lettura', roTxt: 'Sta modificando: {d}. Per modificare da qui basta iniziare e confermare.', otherDev: 'un altro dispositivo',
+    editHere: 'Modifiche da questo dispositivo', editTxt: 'Gli altri dispositivi collegati vedono soltanto, finché non prendono il controllo.', showTips: 'Mostra le sveglie suggerite',
+    dateRange: 'Intervallo di date', rangeFrom: 'Dal giorno', rangeTo: 'Al giorno', searchHint: 'Cerca un testo, vai a una data o scegli un intervallo per vedere tutti gli elementi.', dbxSyncTxt: 'Allinea ai dati su Dropbox. Avviene da solo all\'apertura e ogni 5 minuti.',
     goDate: 'Vai a data', splashSub: 'ogni cosa a suo tempo', tapToEnter: 'Tocca lo schermo per entrare', copied: 'Copiato',
     aiImport: 'Importa da un\'altra app', aiShort: 'Con l\'aiuto di un\'IA, ad esempio Claude', aiTxt: 'Per app e agende che non esportano in .ics: un\'IA converte i dati nel formato di hora.',
     aiStep1: 'Esporta o copia i dati dall\'altra app: file, testo, anche una foto.', aiStep2: 'Dai all\'IA i dati insieme a queste istruzioni.', aiStep3: 'Incolla qui il blocco che ti restituisce, poi controlla e conferma.',
@@ -58,7 +62,7 @@ const STR = {
     newAlarm: 'Nuova sveglia', past: 'Anche passati', showMore: 'Mostra altri', noAlarms: 'Nessuna sveglia', suggested: 'Suggerite', hideTips: 'Nascondi',
     tplTxt: 'Gruppi pronti da aggiungere. Le sveglie suonano a un\'ora precisa e si ripetono: utili quando non si può rimandare, come un medicinale.',
     sLook: 'Aspetto', theme: 'Tema', thAuto: 'Auto', thLight: 'Chiaro', thDark: 'Scuro', sSplash: 'Schermata iniziale', sSplashTxt: 'Il marchio all\'apertura, finché non tocchi lo schermo',
-    sSync: 'Sincronizzazione', dbxNoKey: 'Pronta: manca la chiave dell\'app Dropbox', soon: 'presto', dbxLink: 'Collega Dropbox', dbxSync: 'Sincronizza ora', syncing: 'Sincronizzazione...',
+    sSync: 'Sincronizzazione', dbxNoKey: 'Pronta: manca la chiave dell\'app Dropbox', soon: 'presto', dbxLink: 'Collega Dropbox', dbxSync: 'Sincronizza', syncing: 'Sincronizzazione...',
     lastSync: 'Ultima: {d}', never: 'Mai', dbxUnlink: 'Scollega Dropbox', syncConflictQ: 'Dati diversi su Dropbox', syncConflictTxt: 'Sono cambiati sia qui sia su un altro dispositivo. Quali tieni?',
     useDbx: 'Usa Dropbox', useHere: 'Usa questi', syncOk: 'Sincronizzato', syncFail: 'Sincronizzazione non riuscita', newVer: 'Nuova versione {v}', reload: 'Ricarica', group: 'Gruppo', active: 'Attiva',
     expData: 'Esporta', impData: 'Importa', gantt2: 'Attività', ganttTxt: 'Cronoprogramma per categorie'
@@ -106,6 +110,10 @@ const STR = {
     views: 'Views', sCal: 'Calendar', sFree: 'Continuous scrolling', sFreeTxt: 'Off: swipe to the previous or next period. On: scrolls freely. Timeline always scrolls.',
     sCatsTxt: 'Names, icons, colors and order', manage: 'Manage', voiceHelp: 'How to dictate', voiceTxt: 'The microphone always listens in Italian. Check the fields below; say "salva" at the end to add right away.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|sveglia alle 6 e 45 dal lunedì al venerdì',
+    lockQ: 'Edits from another device', lockTxt: 'Another device is editing on Dropbox: here you can only view. Continue from this one? The other will become read-only.', lockOk: 'Continue here',
+    notDone: 'Mark as not done', roHere: 'Read-only on this device', roShort: 'Read-only', roTxt: 'Editing: {d}. To edit from here just start and confirm.', otherDev: 'another device',
+    editHere: 'Editing from this device', editTxt: 'Other connected devices can only view, until they take over.', showTips: 'Show suggested alarms',
+    dateRange: 'Date range', rangeFrom: 'From', rangeTo: 'To', searchHint: 'Search text, go to a date or pick a range to see all items.', dbxSyncTxt: 'Aligns with the data on Dropbox. Happens on opening and every 5 minutes.',
     goDate: 'Go to date', splashSub: 'everything in its time', tapToEnter: 'Tap the screen to enter', copied: 'Copied',
     aiImport: 'Import from another app', aiShort: 'With the help of an AI, e.g. Claude', aiTxt: 'For apps and planners without .ics export: an AI converts the data into hora\'s format.',
     aiStep1: 'Export or copy the data from the other app: file, text, even a photo.', aiStep2: 'Give the AI the data together with these instructions.', aiStep3: 'Paste here the block it returns, then check and confirm.',
@@ -114,7 +122,7 @@ const STR = {
     newAlarm: 'New alarm', past: 'Include past', showMore: 'Show more', noAlarms: 'No alarms', suggested: 'Suggested', hideTips: 'Hide',
     tplTxt: 'Ready-made groups. Alarms ring at an exact time and repeat: useful when something cannot wait, like a medicine.',
     sLook: 'Appearance', theme: 'Theme', thAuto: 'Auto', thLight: 'Light', thDark: 'Dark', sSplash: 'Start screen', sSplashTxt: 'The logo on opening, until you tap the screen',
-    sSync: 'Sync', dbxNoKey: 'Ready: the Dropbox app key is missing', soon: 'soon', dbxLink: 'Connect Dropbox', dbxSync: 'Sync now', syncing: 'Syncing...',
+    sSync: 'Sync', dbxNoKey: 'Ready: the Dropbox app key is missing', soon: 'soon', dbxLink: 'Connect Dropbox', dbxSync: 'Sync', syncing: 'Syncing...',
     lastSync: 'Last: {d}', never: 'Never', dbxUnlink: 'Disconnect Dropbox', syncConflictQ: 'Different data on Dropbox', syncConflictTxt: 'Data changed both here and on another device. Which do you keep?',
     useDbx: 'Use Dropbox', useHere: 'Use these', syncOk: 'Synced', syncFail: 'Sync failed', newVer: 'New version {v}', reload: 'Reload', group: 'Group', active: 'On',
     expData: 'Export', impData: 'Import', gantt2: 'Timeline', ganttTxt: 'Schedule by category'
@@ -300,7 +308,7 @@ const UI = {
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14', upload: 'M12 16V5M7 10l5-5 5 5M5 20h14',
   swipe: 'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4', tag: 'M3 12V4h8l10 10-8 8zM7.5 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z',
   info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5v.5', help: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.5',
-  done: 'M4 5h16v14H4zM8 12l3 3 5-6', tap: 'M9 11V5.5a1.5 1.5 0 0 1 3 0V10l4.6 1.2a2 2 0 0 1 1.4 2.3L17 19a2 2 0 0 1-2 1.6h-4.2a2 2 0 0 1-1.6-.8L6 15.5a1.5 1.5 0 0 1 2.2-2L9 14.3', list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01', moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', cloud: 'M7 18a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18zM12 11v6M9.5 14.5L12 17l2.5-2.5', ai: 'M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8zM18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z', copy: 'M8 8h11v12H8zM5 16V4h11', palette: 'M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1.2-1-1.5-1-2.5s.8-1.5 2-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8.5-9-8.5zM7.5 11.5h.01M10 7.5h.01M15 7.5h.01', type: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5'
+  done: 'M4 5h16v14H4zM8 12l3 3 5-6', edit: 'M4 20l1-4L16 5l3 3L8 19zM14 7l3 3', eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', tap: 'M9 11V5.5a1.5 1.5 0 0 1 3 0V10l4.6 1.2a2 2 0 0 1 1.4 2.3L17 19a2 2 0 0 1-2 1.6h-4.2a2 2 0 0 1-1.6-.8L6 15.5a1.5 1.5 0 0 1 2.2-2L9 14.3', list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01', moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', cloud: 'M7 18a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18zM12 11v6M9.5 14.5L12 17l2.5-2.5', ai: 'M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8zM18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z', copy: 'M8 8h11v12H8zM5 16V4h11', palette: 'M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1.2-1-1.5-1-2.5s.8-1.5 2-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8.5-9-8.5zM7.5 11.5h.01M10 7.5h.01M15 7.5h.01', type: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5'
 };
 export function UIcon({ n, size = 20, sw = 1.9, color = 'currentColor' }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', style: color === 'currentColor' ? undefined : { color } };
@@ -1223,7 +1231,7 @@ function useLongPress(onLong, onClick, ms = 480) {
 }
 
 /* ============ Vai a data: anno, mese e giorno in tre tocchi ============ */
-function DatePicker({ value, onPick, onClose }) {
+function DatePicker({ value, onPick, onClose, title }) {
   const today = todayStr();
   const [y, setY] = useState(+value.slice(0, 4));
   const [m, setM] = useState(mnum(value));
@@ -1233,8 +1241,8 @@ function DatePicker({ value, onPick, onClose }) {
   const lead = wd(ms), dim = daysInMonth(ms);
   const pick = (d) => { onPick(`${y}-${pad(m + 1)}-${pad(d)}`); onClose(); };
   return (
-    <Sheet onClose={onClose} label={t('goDate')}>
-      <SheetHead title={t('goDate')} onClose={onClose} />
+    <Sheet onClose={onClose} label={title || t('goDate')}>
+      <SheetHead title={title || t('goDate')} onClose={onClose} />
       <div className="dp-crumbs" role="tablist">
         <button className={step === 'year' ? 'on' : ''} onClick={() => setStep('year')}>{y}</button>
         <UIcon n="right" size={14} sw={2.2} color="var(--faint)" />
@@ -1329,7 +1337,10 @@ const gridBg = (h) => h >= 96
   ? { backgroundImage: 'linear-gradient(to bottom, #DDE2DF 1px, transparent 1px), linear-gradient(to bottom, #EEF0EE 1px, transparent 1px)', backgroundSize: `100% ${h}px, 100% ${h / 4}px` }
   : { backgroundImage: 'linear-gradient(to bottom, #DDE2DF 1px, transparent 1px)', backgroundSize: `100% ${h}px` };
 
-const laneBox = (lane, nl, span) => ({ left: `calc(${(lane / nl) * 100}% + 1px)`, width: `calc(${(span / nl) * 100}% - 3px)` });
+/* r: fascia libera a destra (px) per poter toccare e creare anche accanto agli elementi */
+const laneBox = (lane, nl, span, r = 0) => (r
+  ? { left: `calc((100% - ${r}px) * ${lane / nl} + 1px)`, width: `calc((100% - ${r}px) * ${span / nl} - 3px)` }
+  : { left: `calc(${(lane / nl) * 100}% + 1px)`, width: `calc(${(span / nl) * 100}% - 3px)` });
 function EvBlock({ o, lane = 0, nl = 1, span = 1, box, start, end, hourH, cats, selected, ghost, faded, fixed }) {
   const tn = catTone(cats, o.it.cat);
   const top = (start / 60) * hourH, h = Math.max(((end - start) / 60) * hourH, 18);
@@ -1533,6 +1544,18 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       R.current.setSel('__draft@' + d);
     };
     const cancelLP = () => { if (lp && lp.timer) clearTimeout(lp.timer); lp = null; };
+    const drawNew = (x, y) => {
+      const m = minAt(y);
+      if (m < 0 || m >= 1440) return;
+      const s = Math.min(1425, Math.floor(m / SNAP) * SNAP), col = colAt(x), d = R.current.dates[col], key = '__draft@' + d;
+      if (R.current.sel) R.current.setSel(null);
+      const it = { id: '__draft', type: 'evento', title: t('newItem'), date: d, start: s, end: s + 30, cat: null, repeat: NO_REPEAT };
+      dg = { key, mode: 'bottom', col, origCol: col, start: s, end: s + 30, dur: 30, off: 0, orig: { it, date: d, end: d, key, draft: true } };
+      R.current.setDraft(null);
+      setDrag({ ...dg });
+      try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { /* niente */ }
+      auto = setInterval(tick, 30);
+    };
     /* elementi di tutto il giorno: pressione lunga (o trascinamento col mouse) e spostamento su un altro giorno */
     const adStart = (key, x) => { adg = { key, col0: colAt(x), delta: 0 }; R.current.setAdDrag({ key, delta: 0 }); try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { /* niente */ } };
     const adMove = (x) => { const dlt = colAt(x) - adg.col0; if (dlt !== adg.delta) { adg.delta = dlt; R.current.setAdDrag({ key: adg.key, delta: dlt }); } };
@@ -1569,6 +1592,8 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       // elemento già selezionato: si sposta subito, senza pressione lunga
       lp = { x: tc.clientX, y: tc.clientY, t: Date.now(), key: evEl ? evEl.dataset.key : null, inCols: !!e.target.closest('.g-cols'), sel: !!evEl && evEl.dataset.key === R.current.sel };
       if (evEl) lp.timer = setTimeout(() => { if (lp) { const k = lp.key, sx0 = lp.x, sy0 = lp.y; lp = null; begin('move', k, sx0, sy0); update(last.x, last.y); } }, 380);
+      // spazio vuoto: pressione lunga crea un blocco da quell'ora, trascinando in basso si sceglie la durata
+      else if (lp.inCols) lp.timer = setTimeout(() => { if (lp) { const l = lp; lp = null; drawNew(l.x, l.y); update(last.x, last.y); } }, 420);
     };
     const onTM = (e) => {
       if (pinch && e.touches.length === 2) {
@@ -1636,9 +1661,10 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       last = { x: e.clientX, y: e.clientY };
       if (dg) { update(e.clientX, e.clientY); return; }
       if (adg) { adMove(e.clientX); return; }
-      if (md && (md.key || md.ad) && (Math.abs(e.clientX - md.x) > 4 || Math.abs(e.clientY - md.y) > 4)) {
+      if (md && (md.key || md.ad || md.inCols) && (Math.abs(e.clientX - md.x) > 4 || Math.abs(e.clientY - md.y) > 4)) {
         const m0 = md; md = null;
         if (m0.ad) { adStart(m0.ad, m0.x); adMove(e.clientX); return; }
+        if (!m0.key) { if (!R.current.draft) { drawNew(m0.x, m0.y); update(e.clientX, e.clientY); } return; }
         begin(m0.h || 'move', m0.key, m0.x, m0.y); update(e.clientX, e.clientY);
       }
     };
@@ -1688,10 +1714,11 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       if (x.lane >= 3) return null;
       return { ...laneBox(x.lane, k, x.n <= 3 ? x.span : 1), mini: true, more: x.n > 3 && x.lane === 2 };
     }
-    if (x.n === 1 || colPx / x.n >= 84) return laneBox(x.lane, x.n, x.span);
-    const step = Math.max(10, Math.min(28, (colPx - 64) / (x.n - 1)));
+    const r = colPx >= 200 ? 26 : 0;
+    if (x.n === 1 || (colPx - r) / x.n >= 84) return laneBox(x.lane, x.n, x.span, r);
+    const step = Math.max(10, Math.min(28, (colPx - r - 64) / (x.n - 1)));
     const left = x.lane * step;
-    return { left: `${left + 1}px`, width: `calc(100% - ${left + 3}px)`, zIndex: 1 + x.lane, cc: true };
+    return { left: `${left + 1}px`, width: `calc(100% - ${left + 3 + r}px)`, zIndex: 1 + x.lane, cc: true };
   };
   /* tutto il giorno: barre continue sui giorni che coprono, su righe libere */
   const adRows = useMemo(() => {
@@ -1706,7 +1733,8 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     for (const b of bars) { let r = rows.findIndex((end) => end < b.i); if (r < 0) { r = rows.length; rows.push(-1); } rows[r] = b.j; b.r = r; }
     return { bars, n: rows.length };
   }, [cols, dates]);
-  const showAllday = cols.some((c) => c.allday.length);
+  const visTo = sx ? addDays(anchor, visN - 1) : to, visFrom = sx ? anchor : from;
+  const showAllday = cols.some((c) => c.d >= visFrom && c.d <= visTo && c.allday.length);
   const cw = sx ? { width: colW, flex: 'none' } : undefined;
   const sunY = sun ? [sun.rise, sun.set].map((m) => (m / 60) * hourH) : [];
   /* celle orarie: un rettangolo arrotondato per ogni ora */
@@ -1754,8 +1782,6 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
               {sun && <span className="sunl" style={{ top: sunY[1] }} title={t('sunset')}>↓{fmtTime(sun.set)}</span>}
             </div>
             <div className="g-cols" ref={colsRef}>
-              {sun && <div className="night" style={{ top: 0, height: sunY[0] }} aria-hidden="true" />}
-              {sun && <div className="night" style={{ top: sunY[1], bottom: 0 }} aria-hidden="true" />}
               {sun && sunY.map((y, i) => <div key={i} className="sun" style={{ top: y }} aria-hidden="true" />)}
               {cols.map((c, ci) => {
                 // un solo elenco con chiavi stabili: l'elemento toccato resta nel DOM anche se il giorno cambia durante il trascinamento
@@ -1772,7 +1798,8 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                     {slots}
                     {blocks}
                     {drag && drag.col === ci && <Block o={drag.orig} start={drag.start} end={drag.end} hourH={hourH} cats={st.cats} ghost selected />}
-                    {drag && drag.col === ci && <div className="drag-time" style={{ top: (drag.start / 60) * hourH }}>{fmtTime(drag.start)}</div>}
+                    {drag && drag.col === ci && drag.mode !== 'bottom' && <div className="drag-time" style={{ top: (drag.start / 60) * hourH }}>{fmtTime(drag.start)}</div>}
+                    {drag && drag.col === ci && drag.mode !== 'top' && drag.orig.it.type === 'evento' && <div className="drag-time end" style={{ top: (drag.end / 60) * hourH }}>{fmtTime(drag.end)}</div>}
                     {c.d === today && <div className="now" style={{ top: (nm / 60) * hourH }} />}
                   </div>
                 );
@@ -2505,6 +2532,48 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
   );
 }
 
+/* ============ Riepilogo di un elemento: tutto a colpo d'occhio, la matita porta alla modifica ============ */
+function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone }) {
+  const d = occDate || it.date;
+  const tn = catTone(st.cats, it.cat);
+  const live = st.items.find((x) => x.id === it.id) || it;
+  const done = isDone(live, d);
+  const rep = it.repeat || NO_REPEAT;
+  const alertK = (ALERTS.find(([v]) => v === it.alert) || [])[1];
+  const typeK = it.type === 'promemoria' ? (it.onlyAlert ? 'reminder' : 'reminder') : 'event';
+  const row = (icon, main, sub, extra) => (
+    <div className="iv-row"><span className="iv-i"><UIcon n={icon} size={18} /></span><span className="li-t col"><span>{main}</span>{sub ? <small>{sub}</small> : null}</span>{extra}</div>
+  );
+  return (
+    <Sheet onClose={onClose} label={it.title || t('noTitle')}>
+      <div className="sh-head iv-head">
+        <span className="iv-type" style={{ color: tn.ink, background: tn.tint }}><TypeShape type={it.type} only={it.onlyAlert} done={done} color={tn.c} size={11} />{t(typeK)}</span>
+        <span className="row-c">
+          <button className="ib" aria-label={t('editItem')} onClick={onEdit}><UIcon n="edit" size={20} /></button>
+          <button className="ib" aria-label={t('close')} onClick={onClose}><UIcon n="x" /></button>
+        </span>
+      </div>
+      <div className="sh-body">
+        <h2 className={'iv-title' + (done && it.type === 'promemoria' && !it.onlyAlert ? ' strike' : '')}>{it.title || t('noTitle')}</h2>
+        <div className="iv-list">
+          {row('clock', whenText(it, d), it.start == null ? t('allDay') : null)}
+          {rep.f && rep.f !== 'none' && row('repeat', repText(rep), rep.until ? t('untilD', { d: fmtDayShort(rep.until) }) : null)}
+          {row('tag', catLabel(st.cats, it.cat), null, <CatTile cats={st.cats} id={it.cat} size={26} />)}
+          {it.alert != null && row('bell', alertK ? t(alertK) : it.alert + ' min', it.onlyAlert ? t('toCompleteTxt') : null)}
+          {it.address && row('pin', it.address, null, <a className="ib act" aria-label={t('openMaps')} href={mapsUrl(it.address)} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
+          {it.link && row('link', it.link.replace(/^https?:\/\//, ''), null, <a className="ib act" aria-label={t('openLink')} href={fixLink(it.link.trim())} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
+          {it.notes && <div className="iv-notes"><span className="iv-i"><UIcon n="note" size={18} /></span><p>{it.notes}</p></div>}
+        </div>
+      </div>
+      {it.type === 'promemoria' && !it.onlyAlert && (
+        <div className="sh-foot">
+          <button className={'btn grow' + (done ? '' : ' pri')} onClick={() => onToggleDone(live, d)}><UIcon n="check" size={18} />{done ? t('notDone') : t('markDone') + ' ' + fmtDayShort(d)}</button>
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
 /* ============ Scelta categoria ============ */
 function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
   const [q, setQ] = useState('');
@@ -2619,33 +2688,6 @@ function ImportScreen({ st, drafts, origin, onClose, onConfirm, onPickCat }) {
   );
 }
 
-/* ============ Ricerca ============ */
-function SearchScreen({ st, onClose, onOpen }) {
-  const [q, setQ] = useState('');
-  const ref = useRef(null);
-  useEffect(() => { setTimeout(() => ref.current && ref.current.focus(), 100); }, []);
-  const nq = q.trim().toLowerCase();
-  const res = nq ? st.items.filter((it) => [it.title, it.notes, it.address].some((s) => (s || '').toLowerCase().includes(nq))).sort((a, b) => (a.date < b.date ? -1 : 1)).slice(0, 80) : [];
-  return (
-    <Screen title={t('search')} onBack={onClose}>
-      <div className="pad-x">
-        <div className="search"><UIcon n="search" size={18} color="var(--muted)" /><input ref={ref} value={q} aria-label={t('searchPh')} placeholder={t('searchPh')} onChange={(e) => setQ(e.target.value)} /></div>
-      </div>
-      {nq && !res.length && <p className="muted pad">{t('noResults')}</p>}
-      <div className="card list">
-        {res.map((it) => {
-          const tn = catTone(st.cats, it.cat);
-          return (
-            <button key={it.id} className="li tall" onClick={() => onOpen(it)}>
-              <TypeShape type={it.type} only={it.onlyAlert} color={tn.c} size={12} />
-              <span className="li-t col"><b>{it.title}</b><small>{fmtFull(it.date)} - {catLabel(st.cats, it.cat)}</small></span>
-            </button>
-          );
-        })}
-      </div>
-    </Screen>
-  );
-}
 
 
 /* ============ Categorie: elenco con trascinamento ============ */
@@ -2930,6 +2972,87 @@ function AiImportScreen({ onBack, onRead, toast }) {
   );
 }
 
+/* ============ Elenco di occorrenze raggruppate per giorno (Elenco e Cerca) ============ */
+const groupByDay = (list) => {
+  const g = [];
+  for (const o of list) { if (!g.length || g[g.length - 1].d !== o.date) g.push({ d: o.date, list: [] }); g[g.length - 1].list.push(o); }
+  return g;
+};
+const byWhen = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.it.start ?? -1) - (b.it.start ?? -1));
+function OccList({ st, days, onOpen }) {
+  const today = todayStr();
+  return days.map((g) => (
+    <section key={g.d} className="ag-day">
+      <h3 className={g.d === today ? 'today' : ''}>{fmtHead(g.d, 999)}</h3>
+      <div className="card list">
+        {g.list.map((o) => {
+          const it = o.it, al = it.type === 'sveglia', tn = al ? { c: 'var(--alarm)' } : catTone(st.cats, it.cat), done = isDone(it, o.date);
+          return (
+            <button key={o.key} className={'li ag-row' + (al && it.off ? ' off' : '')} onClick={() => onOpen(o)}>
+              <span className="ag-time">{it.start == null ? t('allDayShort') : o.date === it.date || !isMulti(it) ? fmtTime(it.start) : ''}</span>
+              <span className="ag-bar" style={{ background: tn.c }} />
+              <span className="li-t col"><span className={done && it.type === 'promemoria' && !it.onlyAlert ? 'strike' : ''}>{it.title || (al ? t('alarm') : t('noTitle'))}</span><small>{al ? alarmText(it) : catLabel(st.cats, it.cat)}{isMulti(it) ? ' - ' + fmtRange(o.date, o.end) : ''}</small></span>
+              <TypeShape type={it.type} only={it.onlyAlert} done={done} color={tn.c} size={12} />
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  ));
+}
+
+/* ============ Cerca: testo, Vai a data, intervallo di date con tipi e categorie ============ */
+function SearchScreen({ st, onClose, onOpen, onGoDate }) {
+  const today = todayStr();
+  const [q, setQ] = useState('');
+  const [range, setRange] = useState(null);
+  const [pick, setPick] = useState(null);
+  const [types, setTypes] = useState(ALL_TYPES);
+  const [cat, setCat] = useState('');
+  const ref = useRef(null);
+  useEffect(() => { setTimeout(() => ref.current && ref.current.focus(), 100); }, []);
+  const tops = st.cats.filter((c) => !c.parent).sort(byOrder);
+  const days = useMemo(() => {
+    const nq = q.trim().toLowerCase();
+    if (!nq && !range) return [];
+    const fam = cat && cat !== '__none' ? new Set(catFamily(st.cats, cat)) : null;
+    const its = st.items.filter((it) => types.includes(it.type)
+      && (!cat || it.type === 'sveglia' || (cat === '__none' ? !it.cat || !catOf(st.cats, it.cat) : fam.has(it.cat)))
+      && (!nq || [it.title, it.notes, it.address].some((x) => (x || '').toLowerCase().includes(nq))));
+    const list = range ? expand(its, range[0], range[1]) : its.map((it) => ({ it, date: it.date, end: addDays(it.date, spanDays(it)), key: it.id + '@' + it.date }));
+    return groupByDay(list.sort(byWhen).slice(0, 400));
+  }, [q, range, types, cat, st.items, st.cats]);
+  const tog = (v) => { const n = types.includes(v) ? types.filter((x) => x !== v) : [...types, v]; if (n.length) setTypes(n); };
+  return (
+    <Screen title={t('search')} onBack={onClose}>
+      <div className="pad-x ag-tools">
+        <div className="search"><UIcon n="search" size={18} color="var(--muted)" /><input ref={ref} value={q} aria-label={t('searchPh')} placeholder={t('searchPh')} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="chips">
+          <button className="chip" onClick={() => setPick('go')}><UIcon n="cal" size={15} />{t('goDate')}</button>
+          <button className={'chip' + (range ? ' on' : '')} onClick={() => setPick('from')}><UIcon n="swipe" size={15} />{range ? fmtRange(range[0], range[1]) : t('dateRange')}</button>
+          {range && <button className="chip" aria-label={t('close')} onClick={() => setRange(null)}><UIcon n="x" size={14} /></button>}
+        </div>
+        <div className="chips">
+          {[['evento', 'events'], ['promemoria', 'reminders'], ['sveglia', 'alarms']].map(([v, k]) => (
+            <button key={v} className={'chip' + (types.includes(v) ? ' on' : '')} aria-pressed={types.includes(v)} onClick={() => tog(v)}><TypeShape type={v} color="currentColor" size={12} />{t(k)}</button>
+          ))}
+          <select className="chip sel" value={cat} aria-label={t('category')} onChange={(e) => setCat(e.target.value)}>
+            <option value="">{t('allCats')}</option>
+            {tops.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            <option value="__none">{t('unassigned')}</option>
+          </select>
+        </div>
+      </div>
+      {!days.length && (q.trim() || range) && <p className="muted pad">{t('noResults')}</p>}
+      {!q.trim() && !range && <p className="muted pad">{t('searchHint')}</p>}
+      <OccList st={st} days={days} onOpen={onOpen} />
+      {pick === 'go' && <DatePicker value={today} onPick={onGoDate} onClose={() => setPick(null)} />}
+      {pick === 'from' && <DatePicker key="f" title={t('rangeFrom')} value={range ? range[0] : today} onPick={(d) => { setRange([d, range && range[1] >= d ? range[1] : addDays(d, 6)]); setTimeout(() => setPick('to'), 0); }} onClose={() => setPick((p) => (p === 'from' ? null : p))} />}
+      {pick === 'to' && <DatePicker key="t" title={t('rangeTo')} value={range ? range[1] : today} onPick={(d) => setRange((r) => (r && d >= r[0] ? [r[0], d] : [d, d]))} onClose={() => setPick((p) => (p === 'to' ? null : p))} />}
+    </Screen>
+  );
+}
+
 /* ============ Elenco: eventi e promemoria in fila, sveglie a gruppi ============ */
 const AL = (title, start, days) => ({ title, start, days });
 const ALARM_TEMPLATES = [
@@ -2962,10 +3085,7 @@ function AgendaScreen({ st, tab: tab0, onBack, onOpen, onNewAlarm, onSaveItem, o
     const its = st.items.filter((it) => it.type !== 'sveglia' && types.includes(it.type)
       && (!cat || (cat === '__none' ? !it.cat || !catOf(st.cats, it.cat) : fam.has(it.cat)))
       && (!nq || [it.title, it.notes, it.address].some((x) => (x || '').toLowerCase().includes(nq))));
-    const list = expand(its, past ? addDays(today, -365) : today, addDays(today, span)).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.it.start ?? -1) - (b.it.start ?? -1)));
-    const g = [];
-    for (const o of list) { if (!g.length || g[g.length - 1].d !== o.date) g.push({ d: o.date, list: [] }); g[g.length - 1].list.push(o); }
-    return g;
+    return groupByDay(expand(its, past ? addDays(today, -365) : today, addDays(today, span)).sort(byWhen));
   }, [tab, st.items, st.cats, types, cat, q, past, span]);
   const groups = [...(st.alarmGroups || [])].sort(byOrder);
   const alarms = st.items.filter((it) => it.type === 'sveglia').sort((a, b) => (a.start ?? 0) - (b.start ?? 0));
@@ -3037,24 +3157,7 @@ function AgendaScreen({ st, tab: tab0, onBack, onOpen, onNewAlarm, onSaveItem, o
             </div>
           </div>
           {!days.length && <p className="muted pad">{t('empty')}</p>}
-          {days.map((g) => (
-            <section key={g.d} className="ag-day">
-              <h3 className={g.d === today ? 'today' : ''}>{fmtHead(g.d, 999)}</h3>
-              <div className="card list">
-                {g.list.map((o) => {
-                  const it = o.it, tn = catTone(st.cats, it.cat), done = isDone(it, o.date);
-                  return (
-                    <button key={o.key} className="li ag-row" onClick={() => onOpen(o)}>
-                      <span className="ag-time">{it.start == null ? t('allDayShort') : o.date === it.date || !isMulti(it) ? fmtTime(it.start) : ''}</span>
-                      <span className="ag-bar" style={{ background: tn.c }} />
-                      <span className="li-t col"><span className={done && it.type === 'promemoria' && !it.onlyAlert ? 'strike' : ''}>{it.title || t('noTitle')}</span><small>{catLabel(st.cats, it.cat)}{isMulti(it) ? ' - ' + fmtRange(o.date, o.end) : ''}</small></span>
-                      <TypeShape type={it.type} only={it.onlyAlert} done={done} color={tn.c} size={12} />
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+          <OccList st={st} days={days} onOpen={onOpen} />
           <div className="pad-x"><button className="btn wide" onClick={() => setSpan(span + 120)}>{t('showMore')}</button></div>
         </>
       )}
@@ -3076,6 +3179,7 @@ function AgendaScreen({ st, tab: tab0, onBack, onOpen, onNewAlarm, onSaveItem, o
               ))}
             </section>
           )}
+          {st.settings.alarmTips === false && tpls.length > 0 && <div className="pad-x"><button className="lnk sm" onClick={() => onSetting({ alarmTips: true })}><UIcon n="plus" size={16} />{t('showTips')}</button></div>}
           <p className="muted sm-p pad">{t('alarmNote')}</p>
         </div>
       )}
@@ -3091,6 +3195,9 @@ const dbxGet = () => { try { return JSON.parse(localStorage.getItem(DBX)) || {};
 const dbxSet = (p) => { const v = { ...dbxGet(), ...p }; try { localStorage.setItem(DBX, JSON.stringify(v)); } catch (e) { /* niente */ } return v; };
 const localUpd = () => { try { return +localStorage.getItem(UPD) || 0; } catch (e) { return 0; } };
 const setLocalUpd = (v) => { try { localStorage.setItem(UPD, String(v)); } catch (e) { /* niente */ } };
+/* dispositivo: identificativo locale e nome breve, per sapere chi sta modificando */
+const devId = () => { try { let v = localStorage.getItem('hora.dev'); if (!v) { v = uid() + uid(); localStorage.setItem('hora.dev', v); } return v; } catch (e) { return 'web'; } };
+const devName = () => { const u = (typeof navigator !== 'undefined' && navigator.userAgent) || ''; return /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : 'web'; };
 const dbxLinked = () => !!(DBX_KEY && dbxGet().refresh);
 const redirectUri = () => location.origin + location.pathname;
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -3200,10 +3307,12 @@ function SettingsScreen({ st, sync, onBack, onCats, onAgenda, onAi, onSetting, o
       </SGroup>
       <SGroup icon="cloud" title={t('sSync')}>
         {!DBX_KEY && <div className="li"><SIcon n="cloud" /><span className="li-t col"><span>Dropbox</span><small>{t('dbxNoKey')}</small></span><span className="tag">{t('soon')}</span></div>}
+        {!DBX_KEY && <button className="li off" disabled><SIcon n="cloud" /><span className="li-t col"><span className="b">{t('dbxSync')}</span><small>{t('dbxSyncTxt')}</small></span></button>}
         {DBX_KEY && !sync.linked && <button className="li teal-t" onClick={onLink}><SIcon n="cloud" />{t('dbxLink')}</button>}
         {DBX_KEY && sync.linked && (
           <>
-            <button className="li" onClick={onSyncNow}><SIcon n="cloud" /><span className="li-t col"><span>{t('dbxSync')}</span><small>{sync.busy ? t('syncing') : sync.last ? t('lastSync', { d: new Date(sync.last).toLocaleString(LANG === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }) : t('never')}</small></span></button>
+            <div className="li"><SIcon n={sync.ro ? 'eye' : 'edit'} /><span className="li-t col"><span>{sync.ro ? t('roHere') : t('editHere')}</span><small>{sync.ro ? t('roTxt', { d: sync.editorName || t('otherDev') }) : t('editTxt')}</small></span></div>
+            <button className="li" onClick={onSyncNow}><SIcon n="cloud" /><span className="li-t col"><span className="b">{t('dbxSync')}</span><small>{sync.busy ? t('syncing') : (sync.last ? t('lastSync', { d: new Date(sync.last).toLocaleString(LANG === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }) : t('never')) + '. ' + t('dbxSyncTxt')}</small></span></button>
             <button className="li" onClick={onUnlink}><SIcon n="x" /><span className="li-t">{t('dbxUnlink')}</span></button>
           </>
         )}
@@ -3335,8 +3444,15 @@ export function App() {
   const today = todayStr();
 
   const toast = (m) => { setToastMsg(m); clearTimeout(toastT.current); toastT.current = setTimeout(() => setToastMsg(null), 2600); };
+  /* modifiche bloccate se un altro dispositivo collegato a Dropbox sta modificando: si chiede se proseguire da qui */
+  const lockRef = useRef(false), claimRef = useRef(null);
+  const guard = (fn) => {
+    if (!lockRef.current) return fn();
+    setConfirm({ q: t('lockQ'), txt: t('lockTxt'), ok: t('lockOk'), onOk: async () => { setConfirm(null); if (claimRef.current) await claimRef.current(); fn(); } });
+    return undefined;
+  };
   const setSettings = (p) => setSt((s) => ({ ...s, settings: { ...s.settings, ...p } }));
-  const setCats = (cats) => setSt((s) => ({ ...s, cats }));
+  const setCats = (cats) => guard(() => setSt((s) => ({ ...s, cats })));
   const push = (sc) => setStack((s) => [...s, sc]);
   const pop = () => setStack((s) => s.slice(0, -1));
   const commitHourH = () => setSettings({ hourH: Math.round(hourHRef.current) });
@@ -3350,12 +3466,12 @@ export function App() {
   const fOn = filterOn(fx);
 
   /* elementi */
-  const saveItem = (it) => setSt((s) => {
+  const saveItem = (it) => guard(() => setSt((s) => {
     const prev = s.items.find((x) => x.id === it.id);
     const next = { ...it, doneDates: prev ? prev.doneDates : it.doneDates || {} };
     return { ...s, items: prev ? s.items.map((x) => (x.id === it.id ? next : x)) : [...s.items, next] };
-  });
-  const toggleDone = (it, d) => setSt((s) => ({
+  }));
+  const toggleDone = (it, d) => guard(() => setSt((s) => ({
     ...s,
     items: s.items.map((x) => {
       if (x.id !== it.id) return x;
@@ -3363,26 +3479,26 @@ export function App() {
       if (dd[d]) delete dd[d]; else dd[d] = true;
       return { ...x, doneDates: dd };
     })
-  }));
-  const askDelete = (it) => setConfirm({
+  })));
+  const askDelete = (it) => guard(() => setConfirm({
     q: t('delItemQ'), txt: it.repeat && it.repeat.f !== 'none' ? t('delItemRep') : null, ok: t('del'), danger: true,
     onOk: () => { setSt((s) => ({ ...s, items: s.items.filter((x) => x.id !== it.id) })); setSheet(null); setConfirm(null); toast(t('deleted')); }
-  });
+  }));
 
   /* categorie */
   const remember = (id) => { if (id) setSettings({ recent: [id, ...(stRef.current.settings.recent || []).filter((x) => x !== id)].slice(0, 6) }); };
-  const upsertCat = (c) => setSt((s) => {
+  const upsertCat = (c) => guard(() => setSt((s) => {
     const exists = s.cats.some((x) => x.id === c.id);
     if (exists) return { ...s, cats: s.cats.map((x) => (x.id === c.id ? c : x)) };
     const sib = s.cats.filter((x) => (x.parent || null) === (c.parent || null));
     return { ...s, cats: [...s.cats, { ...c, order: sib.length ? Math.max(...sib.map((x) => x.order ?? 0)) + 1 : 0 }] };
-  });
+  }));
   const createCat = (name) => {
     const c = { id: uid(), name, icon: 'tag', color: nextColor(stRef.current.cats), details: '', parent: null, order: null, gantt: true };
     upsertCat(c);
     return c.id;
   };
-  const askDeleteCat = (c) => {
+  const askDeleteCat = (c) => guard(() => {
     const hasSubs = st.cats.some((x) => x.parent === c.id);
     setConfirm({
       q: t('delCatQ'), txt: hasSubs ? t('delCatSubsTxt') : t('delCatTxt'), ok: t('del'), danger: true,
@@ -3396,7 +3512,8 @@ export function App() {
         toast(t('deleted'));
       }
     });
-  };
+  });
+
   const openPicker = (current, cb) => setPicker({ current, cb });
 
   /* blocchi e importazioni */
@@ -3405,7 +3522,7 @@ export function App() {
     setSheet(null);
     push({ kind: 'import', drafts, origin });
   };
-  const confirmImport = (rows) => {
+  const confirmImport = (rows) => guard(() => {
     setSt((s) => {
       let cats = [...s.cats];
       const find = (name, parent) => cats.find((c) => (c.parent || null) === parent && norm(c.name) === norm(name));
@@ -3432,7 +3549,8 @@ export function App() {
     setStack((s) => s.filter((x) => x.kind !== 'import'));
     if (rows.length) setAnchor(rows.map((r) => r.date).sort()[0]);
     toast(rows.length === 1 ? t('addedOne') : t('added', { n: rows.length }));
-  };
+  });
+
   const importCal = async (file) => {
     try {
       const drafts = /\.zip$/i.test(file.name) ? await parseZip(await file.arrayBuffer()) : parseICS(await file.text());
@@ -3478,39 +3596,56 @@ export function App() {
     const go = () => location.reload();
     try { if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then((r) => (r ? r.update() : null)).then(go, go); else go(); } catch (e) { go(); }
   };
-  /* sincronizzazione con Dropbox: chi è più recente vince, se sono cambiati entrambi si chiede */
-  const [sync, setSync] = useState(() => ({ linked: dbxLinked(), busy: false, last: dbxGet().last || 0 }));
+  /* sincronizzazione con Dropbox: un solo dispositivo modifica alla volta, gli altri vedono e, per modificare, prendono il controllo */
+  const [sync, setSync] = useState(() => ({ linked: dbxLinked(), busy: false, last: dbxGet().last || 0, ro: false }));
   const fromSync = useRef(false), firstData = useRef(true), syncT = useRef(null);
   const applyRemote = (r) => { fromSync.current = true; setSt((s) => ({ ...s, items: r.items || [], cats: r.cats || [], alarmGroups: r.alarmGroups || [] })); setLocalUpd(r.updated || Date.now()); };
+  const upload = async () => {
+    const s0 = stRef.current, u = localUpd() || Date.now();
+    await dbxUp({ app: 'hora', version: VERSION, updated: u, editor: devId(), editorName: devName(), items: s0.items, cats: s0.cats, alarmGroups: s0.alarmGroups || [] });
+    dbxSet({ last: u });
+  };
   const doSync = async (manual) => {
     if (!dbxLinked()) return;
     setSync((x) => ({ ...x, busy: true }));
     try {
       const remote = await dbxDown();
-      const last = dbxGet().last || 0, l = localUpd(), r = remote ? remote.updated || 0 : 0;
-      const s0 = stRef.current, data = { app: 'hora', version: VERSION, updated: l || Date.now(), items: s0.items, cats: s0.cats, alarmGroups: s0.alarmGroups || [] };
-      if (!remote || (l > r && r <= last)) { await dbxUp(data); dbxSet({ last: data.updated }); }
-      else if (r > l && l <= last) { applyRemote(remote); dbxSet({ last: r }); }
-      else if (r !== l && r > last && l > last) {
-        setConfirm({ q: t('syncConflictQ'), txt: t('syncConflictTxt'), ok: t('useDbx'), cancel: t('useHere'),
-          onOk: () => { applyRemote(remote); dbxSet({ last: r }); setConfirm(null); },
-          onCancelAlt: async () => { setConfirm(null); try { await dbxUp(data); dbxSet({ last: data.updated }); } catch (e) { toast(t('syncFail')); } } });
-      }
-      setSync({ linked: true, busy: false, last: Date.now() });
+      let ro = false;
+      if (!remote) await upload();
+      else if (remote.editor && remote.editor !== devId()) {
+        // un altro dispositivo sta modificando: qui si guarda soltanto, con i suoi dati
+        ro = true;
+        if ((remote.updated || 0) !== localUpd()) applyRemote(remote);
+      } else if (localUpd() > (remote.updated || 0)) await upload();
+      else if ((remote.updated || 0) > localUpd()) applyRemote(remote);
+      lockRef.current = ro;
+      setSync({ linked: true, busy: false, last: Date.now(), ro, editorName: ro ? remote.editorName || '' : '' });
       if (manual) toast(t('syncOk'));
     } catch (e) { setSync((x) => ({ ...x, busy: false })); if (manual) toast(t('syncFail')); }
+  };
+  /* prendere il controllo: si scaricano gli ultimi dati, poi questo dispositivo diventa quello che modifica */
+  claimRef.current = async () => {
+    try {
+      const remote = await dbxDown();
+      if (remote && (remote.updated || 0) !== localUpd()) applyRemote(remote);
+      await new Promise((r) => setTimeout(r, 0));
+      await upload();
+      lockRef.current = false;
+      setSync((x) => ({ ...x, ro: false, last: Date.now() }));
+    } catch (e) { lockRef.current = false; setSync((x) => ({ ...x, ro: false })); toast(t('syncFail')); }
   };
   useEffect(() => {
     dbxFinish().then((ok) => { if (ok) setSync((x) => ({ ...x, linked: true })); if (dbxLinked()) doSync(false); }).catch(() => toast(t('syncFail')));
     const vis = () => { if (document.visibilityState === 'visible') doSync(false); };
     document.addEventListener('visibilitychange', vis);
-    return () => document.removeEventListener('visibilitychange', vis);
+    const iv = setInterval(() => doSync(false), 5 * 60000);
+    return () => { document.removeEventListener('visibilitychange', vis); clearInterval(iv); };
   }, []);
   useEffect(() => {
     if (firstData.current) { firstData.current = false; return; }
     if (fromSync.current) { fromSync.current = false; return; }
     setLocalUpd(Date.now());
-    if (!dbxLinked()) return;
+    if (!dbxLinked() || lockRef.current) return;
     clearTimeout(syncT.current);
     syncT.current = setTimeout(() => doSync(false), 4000);
   }, [st.items, st.cats, st.alarmGroups]);
@@ -3614,10 +3749,11 @@ export function App() {
   const lpPrev = useLongPress(openPick, () => step(-1));
   const lpNext = useLongPress(openPick, () => step(1));
 
-  const openOcc = (o) => setSheet({ item: o.it, occDate: o.date, isNew: false });
+  /* tocco su un elemento: prima il riepilogo (eventi e promemoria), le sveglie si aprono in modifica */
+  const openOcc = (o) => setSheet({ item: o.it, occDate: o.date, isNew: false, view: o.it.type !== 'sveglia' });
   const newDate = () => (view === 'gantt' ? today : view === 'month' ? anchor : vis.includes(today) ? today : vis[0]);
-  const newSheet = (autoMic) => setSheet({ item: newItem({ date: newDate(), cat: newCat }), isNew: true, autoMic });
-  const onNewAt = (d) => setSheet({ item: newItem({ date: d.date, start: d.start, end: d.end, cat: newCat }), isNew: true, preset: true });
+  const newSheet = (autoMic) => guard(() => setSheet({ item: newItem({ date: newDate(), cat: newCat }), isNew: true, autoMic }));
+  const onNewAt = (d) => guard(() => setSheet({ item: newItem({ date: d.date, start: d.start, end: d.end, cat: newCat }), isNew: true, preset: true }));
   const onSaveSheet = (it) => {
     const isNew = sheet && sheet.isNew;
     saveItem(it);
@@ -3634,20 +3770,20 @@ export function App() {
           let data = null;
           try { data = JSON.parse(txt); } catch (e) { /* niente */ }
           if (!data || !Array.isArray(data.items) || !Array.isArray(data.cats)) { toast(t('badFile')); return; }
-          setConfirm({ q: t('restoreQ'), txt: t('restoreTxt'), ok: t('confirm'), onOk: () => { setSt({ v: 1, items: data.items, cats: data.cats, alarmGroups: data.alarmGroups || [], settings: { ...st.settings, ...(data.settings || {}) } }); setConfirm(null); toast(t('restored')); } });
+          setConfirm({ q: t('restoreQ'), txt: t('restoreTxt'), ok: t('confirm'), onOk: () => guard(() => { setSt({ v: 1, items: data.items, cats: data.cats, alarmGroups: data.alarmGroups || [], settings: { ...st.settings, ...(data.settings || {}) } }); setConfirm(null); toast(t('restored')); }) });
         }}
         onExportIcs={() => download(`hora-${todayStr()}.ics`, toICS(st.items, st.cats), 'text/calendar')}
         onImportCal={importCal} sync={sync} onAgenda={(tab) => push({ kind: 'agenda', tab })} onAi={() => push({ kind: 'ai' })}
         onSyncNow={() => doSync(true)} onLink={() => dbxLink().catch(() => toast(t('syncFail')))} onUnlink={() => { dbxUnlink().then(() => setSync({ linked: false, busy: false, last: 0 })); }} />
     );
     if (sc.kind === 'agenda') return (
-      <AgendaScreen key={i} st={st} tab={sc.tab} onBack={pop} onOpen={openOcc} onNewAlarm={(g) => setSheet({ item: newItem({ type: 'sveglia', start: 420, group: g, date: todayStr() }), isNew: true })}
-        onSaveItem={saveItem} onSetGroups={(g) => setSt((s) => ({ ...s, alarmGroups: g }))} onSetting={setSettings}
-        onAddTemplate={(x) => setSt((s) => {
+      <AgendaScreen key={i} st={st} tab={sc.tab} onBack={pop} onOpen={openOcc} onNewAlarm={(g) => guard(() => setSheet({ item: newItem({ type: 'sveglia', start: 420, group: g, date: todayStr() }), isNew: true }))}
+        onSaveItem={saveItem} onSetGroups={(g) => guard(() => setSt((s) => ({ ...s, alarmGroups: g })))} onSetting={setSettings}
+        onAddTemplate={(x) => guard(() => setSt((s) => {
           const g = { id: uid(), name: LANG === 'en' ? x.en : x.name, order: (s.alarmGroups || []).length, tpl: x.key };
           const its = x.items.map((a) => newItem({ type: 'sveglia', title: a.title, start: a.start, alert: 0, repeat: tplDays(a.days), group: g.id, date: todayStr() }));
           return { ...s, alarmGroups: [...(s.alarmGroups || []), g], items: [...s.items, ...its] };
-        })} />
+        }))} />
     );
     if (sc.kind === 'ai') return <AiImportScreen key={i} onBack={pop} toast={toast} onRead={(txt) => openBlock(txt, 'paste')} />;
     if (sc.kind === 'cats') return <CatsScreen key={i} st={st} onBack={pop} onSetCats={setCats} onEdit={(id) => push({ kind: 'cat', id })} onNew={() => push({ kind: 'cat', id: null, parentId: null })} />;
@@ -3656,7 +3792,7 @@ export function App() {
         onOpenSub={(id) => push({ kind: 'cat', id })} onAddSub={(pid) => push({ kind: 'cat', id: null, parentId: pid })} />
     );
     if (sc.kind === 'import') return <ImportScreen key={i} st={st} drafts={sc.drafts} origin={sc.origin} onClose={pop} onConfirm={confirmImport} onPickCat={openPicker} />;
-    if (sc.kind === 'search') return <SearchScreen key={i} st={st} onClose={pop} onOpen={(it) => { pop(); setAnchor(days === 5 ? startOfWeek(it.date) : it.date); setSheet({ item: it, occDate: it.date, isNew: false }); }} />;
+    if (sc.kind === 'search') return <SearchScreen key={i} st={st} onClose={pop} onOpen={openOcc} onGoDate={(d) => { pop(); goDate(view === 'grid' && days === 5 && wd(d) < 5 ? startOfWeek(d) : d); }} />;
     return null;
   };
 
@@ -3679,6 +3815,7 @@ export function App() {
         <div className="hdr2">
           <h1 {...lpTitle} title={t('goDate')}>{title}</h1>
           <div className="row-c gap6">
+            {sync.ro && <button className="ctl ro" title={t('roHere')} onClick={() => guard(() => {})}><UIcon n="eye" size={17} /><span>{t('roShort')}</span></button>}
             {view !== 'gantt' && (
               <button className={'ctl filt' + (fOn ? ' on' : '')} aria-label={t('filter')} aria-pressed={fOn} onClick={() => setFilterOpen(true)}><UIcon n="filter" size={18} />{fOn && <i />}</button>
             )}
@@ -3714,7 +3851,11 @@ export function App() {
       </main>
       <button ref={fabRef} className={'fab' + (draft ? ' ready' : '')} aria-label={t('add')} onClick={() => { if (draft && view === 'grid') { const d = draft; setDraft(null); onNewAt(d); } else newSheet(true); }}><UIcon n="plus" size={26} sw={2.2} /></button>
 
-      {sheet && (
+      {sheet && sheet.view && (
+        <ItemView key={'v' + sheet.item.id} st={st} it={sheet.item} occDate={sheet.occDate} onClose={() => setSheet(null)} onToggleDone={toggleDone}
+          onEdit={() => guard(() => setSheet((x) => ({ ...x, view: false })))} />
+      )}
+      {sheet && !sheet.view && (
         <ItemSheet key={sheet.item.id} st={st} init={sheet.item} occDate={sheet.occDate} isNew={sheet.isNew} autoMic={sheet.autoMic} preset={sheet.preset}
           onClose={() => setSheet(null)} onSave={onSaveSheet} onDelete={askDelete} onPickCat={openPicker} onBlock={openBlock}
           onToggleDone={toggleDone} toast={toast} />
@@ -3743,6 +3884,8 @@ export function App() {
 
 if (typeof document !== 'undefined' && document.getElementById('root')) {
   try { document.addEventListener('gesturestart', (e) => e.preventDefault()); } catch (e) { /* niente */ }
+  // app installata: rotazione libera anche se una versione precedente l'aveva fissata in verticale
+  try { const so = screen.orientation; if (so && so.lock && window.matchMedia('(display-mode: standalone)').matches) so.lock('any').catch(() => {}); } catch (e) { /* niente */ }
   createRoot(document.getElementById('root')).render(<App />);
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

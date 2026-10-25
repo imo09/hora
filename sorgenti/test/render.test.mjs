@@ -97,7 +97,9 @@ assert.deepEqual([tel.start, tel.end], [1380, 1440]); ok('creazione toccando il 
 // apertura e campi indirizzo / link / note
 const ev2 = $$('.ev').find((e) => e.textContent.includes('Riunione'));
 mouse(scroller, 'mousedown', 200, 500, ev2); mouse(w, 'mouseup', 200, 500); await wait(200);
-assert.ok($('.sheet'), 'scheda aperta');
+assert.ok($('.sheet .iv-title') && $('.iv-title').textContent.includes('Riunione'), 'riepilogo aperto');
+assert.ok(byText('.iv-row', 'Lavoro') && byText('.iv-row', 'ora prima'), 'categoria e avviso nel riepilogo'); ok('riepilogo elemento');
+click($('.sheet button[aria-label="Modifica"]')); await wait(200);
 type($('#f-addr'), 'Via Roma 10, Parma'); type($('#f-link'), 'example.com'); type($('#f-notes'), 'portare il computo'); await wait();
 assert.ok($('a[aria-label="Apri in Google Maps"]').href.includes('google.com/maps/search/?api=1&query=Via%20Roma%2010%2C%20Parma'));
 assert.equal($('a[aria-label="Apri il link"]').href, 'https://example.com/');

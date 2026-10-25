@@ -105,8 +105,15 @@ export function App() {
   const today = todayStr();
 
   const toast = (m) => { setToastMsg(m); clearTimeout(toastT.current); toastT.current = setTimeout(() => setToastMsg(null), 2600); };
+  /* modifiche bloccate se un altro dispositivo collegato a Dropbox sta modificando: si chiede se proseguire da qui */
+  const lockRef = useRef(false), claimRef = useRef(null);
+  const guard = (fn) => {
+    if (!lockRef.current) return fn();
+    setConfirm({ q: t('lockQ'), txt: t('lockTxt'), ok: t('lockOk'), onOk: async () => { setConfirm(null); if (claimRef.current) await claimRef.current(); fn(); } });
+    return undefined;
+  };
   const setSettings = (p) => setSt((s) => ({ ...s, settings: { ...s.settings, ...p } }));
-  const setCats = (cats) => setSt((s) => ({ ...s, cats }));
+  const setCats = (cats) => guard(() => setSt((s) => ({ ...s, cats })));
   const push = (sc) => setStack((s) => [...s, sc]);
   const pop = () => setStack((s) => s.slice(0, -1));
   const commitHourH = () => setSettings({ hourH: Math.round(hourHRef.current) });
@@ -120,12 +127,12 @@ export function App() {
   const fOn = filterOn(fx);
 
   /* elementi */
-  const saveItem = (it) => setSt((s) => {
+  const saveItem = (it) => guard(() => setSt((s) => {
     const prev = s.items.find((x) => x.id === it.id);
     const next = { ...it, doneDates: prev ? prev.doneDates : it.doneDates || {} };
     return { ...s, items: prev ? s.items.map((x) => (x.id === it.id ? next : x)) : [...s.items, next] };
-  });
-  const toggleDone = (it, d) => setSt((s) => ({
+  }));
+  const toggleDone = (it, d) => guard(() => setSt((s) => ({
     ...s,
     items: s.items.map((x) => {
       if (x.id !== it.id) return x;
@@ -133,26 +140,26 @@ export function App() {
       if (dd[d]) delete dd[d]; else dd[d] = true;
       return { ...x, doneDates: dd };
     })
-  }));
-  const askDelete = (it) => setConfirm({
+  })));
+  const askDelete = (it) => guard(() => setConfirm({
     q: t('delItemQ'), txt: it.repeat && it.repeat.f !== 'none' ? t('delItemRep') : null, ok: t('del'), danger: true,
     onOk: () => { setSt((s) => ({ ...s, items: s.items.filter((x) => x.id !== it.id) })); setSheet(null); setConfirm(null); toast(t('deleted')); }
-  });
+  }));
 
   /* categorie */
   const remember = (id) => { if (id) setSettings({ recent: [id, ...(stRef.current.settings.recent || []).filter((x) => x !== id)].slice(0, 6) }); };
-  const upsertCat = (c) => setSt((s) => {
+  const upsertCat = (c) => guard(() => setSt((s) => {
     const exists = s.cats.some((x) => x.id === c.id);
     if (exists) return { ...s, cats: s.cats.map((x) => (x.id === c.id ? c : x)) };
     const sib = s.cats.filter((x) => (x.parent || null) === (c.parent || null));
     return { ...s, cats: [...s.cats, { ...c, order: sib.length ? Math.max(...sib.map((x) => x.order ?? 0)) + 1 : 0 }] };
-  });
+  }));
   const createCat = (name) => {
     const c = { id: uid(), name, icon: 'tag', color: nextColor(stRef.current.cats), details: '', parent: null, order: null, gantt: true };
     upsertCat(c);
     return c.id;
   };
-  const askDeleteCat = (c) => {
+  const askDeleteCat = (c) => guard(() => {
     const hasSubs = st.cats.some((x) => x.parent === c.id);
     setConfirm({
       q: t('delCatQ'), txt: hasSubs ? t('delCatSubsTxt') : t('delCatTxt'), ok: t('del'), danger: true,
@@ -166,7 +173,8 @@ export function App() {
         toast(t('deleted'));
       }
     });
-  };
+  });
+
   const openPicker = (current, cb) => setPicker({ current, cb });
 
   /* blocchi e importazioni */
@@ -175,7 +183,7 @@ export function App() {
     setSheet(null);
     push({ kind: 'import', drafts, origin });
   };
-  const confirmImport = (rows) => {
+  const confirmImport = (rows) => guard(() => {
     setSt((s) => {
       let cats = [...s.cats];
       const find = (name, parent) => cats.find((c) => (c.parent || null) === parent && norm(c.name) === norm(name));
@@ -202,7 +210,8 @@ export function App() {
     setStack((s) => s.filter((x) => x.kind !== 'import'));
     if (rows.length) setAnchor(rows.map((r) => r.date).sort()[0]);
     toast(rows.length === 1 ? t('addedOne') : t('added', { n: rows.length }));
-  };
+  });
+
   const importCal = async (file) => {
     try {
       const drafts = /\.zip$/i.test(file.name) ? await parseZip(await file.arrayBuffer()) : parseICS(await file.text());
@@ -248,39 +257,56 @@ export function App() {
     const go = () => location.reload();
     try { if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then((r) => (r ? r.update() : null)).then(go, go); else go(); } catch (e) { go(); }
   };
-  /* sincronizzazione con Dropbox: chi è più recente vince, se sono cambiati entrambi si chiede */
-  const [sync, setSync] = useState(() => ({ linked: dbxLinked(), busy: false, last: dbxGet().last || 0 }));
+  /* sincronizzazione con Dropbox: un solo dispositivo modifica alla volta, gli altri vedono e, per modificare, prendono il controllo */
+  const [sync, setSync] = useState(() => ({ linked: dbxLinked(), busy: false, last: dbxGet().last || 0, ro: false }));
   const fromSync = useRef(false), firstData = useRef(true), syncT = useRef(null);
   const applyRemote = (r) => { fromSync.current = true; setSt((s) => ({ ...s, items: r.items || [], cats: r.cats || [], alarmGroups: r.alarmGroups || [] })); setLocalUpd(r.updated || Date.now()); };
+  const upload = async () => {
+    const s0 = stRef.current, u = localUpd() || Date.now();
+    await dbxUp({ app: 'hora', version: VERSION, updated: u, editor: devId(), editorName: devName(), items: s0.items, cats: s0.cats, alarmGroups: s0.alarmGroups || [] });
+    dbxSet({ last: u });
+  };
   const doSync = async (manual) => {
     if (!dbxLinked()) return;
     setSync((x) => ({ ...x, busy: true }));
     try {
       const remote = await dbxDown();
-      const last = dbxGet().last || 0, l = localUpd(), r = remote ? remote.updated || 0 : 0;
-      const s0 = stRef.current, data = { app: 'hora', version: VERSION, updated: l || Date.now(), items: s0.items, cats: s0.cats, alarmGroups: s0.alarmGroups || [] };
-      if (!remote || (l > r && r <= last)) { await dbxUp(data); dbxSet({ last: data.updated }); }
-      else if (r > l && l <= last) { applyRemote(remote); dbxSet({ last: r }); }
-      else if (r !== l && r > last && l > last) {
-        setConfirm({ q: t('syncConflictQ'), txt: t('syncConflictTxt'), ok: t('useDbx'), cancel: t('useHere'),
-          onOk: () => { applyRemote(remote); dbxSet({ last: r }); setConfirm(null); },
-          onCancelAlt: async () => { setConfirm(null); try { await dbxUp(data); dbxSet({ last: data.updated }); } catch (e) { toast(t('syncFail')); } } });
-      }
-      setSync({ linked: true, busy: false, last: Date.now() });
+      let ro = false;
+      if (!remote) await upload();
+      else if (remote.editor && remote.editor !== devId()) {
+        // un altro dispositivo sta modificando: qui si guarda soltanto, con i suoi dati
+        ro = true;
+        if ((remote.updated || 0) !== localUpd()) applyRemote(remote);
+      } else if (localUpd() > (remote.updated || 0)) await upload();
+      else if ((remote.updated || 0) > localUpd()) applyRemote(remote);
+      lockRef.current = ro;
+      setSync({ linked: true, busy: false, last: Date.now(), ro, editorName: ro ? remote.editorName || '' : '' });
       if (manual) toast(t('syncOk'));
     } catch (e) { setSync((x) => ({ ...x, busy: false })); if (manual) toast(t('syncFail')); }
+  };
+  /* prendere il controllo: si scaricano gli ultimi dati, poi questo dispositivo diventa quello che modifica */
+  claimRef.current = async () => {
+    try {
+      const remote = await dbxDown();
+      if (remote && (remote.updated || 0) !== localUpd()) applyRemote(remote);
+      await new Promise((r) => setTimeout(r, 0));
+      await upload();
+      lockRef.current = false;
+      setSync((x) => ({ ...x, ro: false, last: Date.now() }));
+    } catch (e) { lockRef.current = false; setSync((x) => ({ ...x, ro: false })); toast(t('syncFail')); }
   };
   useEffect(() => {
     dbxFinish().then((ok) => { if (ok) setSync((x) => ({ ...x, linked: true })); if (dbxLinked()) doSync(false); }).catch(() => toast(t('syncFail')));
     const vis = () => { if (document.visibilityState === 'visible') doSync(false); };
     document.addEventListener('visibilitychange', vis);
-    return () => document.removeEventListener('visibilitychange', vis);
+    const iv = setInterval(() => doSync(false), 5 * 60000);
+    return () => { document.removeEventListener('visibilitychange', vis); clearInterval(iv); };
   }, []);
   useEffect(() => {
     if (firstData.current) { firstData.current = false; return; }
     if (fromSync.current) { fromSync.current = false; return; }
     setLocalUpd(Date.now());
-    if (!dbxLinked()) return;
+    if (!dbxLinked() || lockRef.current) return;
     clearTimeout(syncT.current);
     syncT.current = setTimeout(() => doSync(false), 4000);
   }, [st.items, st.cats, st.alarmGroups]);
@@ -384,10 +410,11 @@ export function App() {
   const lpPrev = useLongPress(openPick, () => step(-1));
   const lpNext = useLongPress(openPick, () => step(1));
 
-  const openOcc = (o) => setSheet({ item: o.it, occDate: o.date, isNew: false });
+  /* tocco su un elemento: prima il riepilogo (eventi e promemoria), le sveglie si aprono in modifica */
+  const openOcc = (o) => setSheet({ item: o.it, occDate: o.date, isNew: false, view: o.it.type !== 'sveglia' });
   const newDate = () => (view === 'gantt' ? today : view === 'month' ? anchor : vis.includes(today) ? today : vis[0]);
-  const newSheet = (autoMic) => setSheet({ item: newItem({ date: newDate(), cat: newCat }), isNew: true, autoMic });
-  const onNewAt = (d) => setSheet({ item: newItem({ date: d.date, start: d.start, end: d.end, cat: newCat }), isNew: true, preset: true });
+  const newSheet = (autoMic) => guard(() => setSheet({ item: newItem({ date: newDate(), cat: newCat }), isNew: true, autoMic }));
+  const onNewAt = (d) => guard(() => setSheet({ item: newItem({ date: d.date, start: d.start, end: d.end, cat: newCat }), isNew: true, preset: true }));
   const onSaveSheet = (it) => {
     const isNew = sheet && sheet.isNew;
     saveItem(it);
@@ -404,20 +431,20 @@ export function App() {
           let data = null;
           try { data = JSON.parse(txt); } catch (e) { /* niente */ }
           if (!data || !Array.isArray(data.items) || !Array.isArray(data.cats)) { toast(t('badFile')); return; }
-          setConfirm({ q: t('restoreQ'), txt: t('restoreTxt'), ok: t('confirm'), onOk: () => { setSt({ v: 1, items: data.items, cats: data.cats, alarmGroups: data.alarmGroups || [], settings: { ...st.settings, ...(data.settings || {}) } }); setConfirm(null); toast(t('restored')); } });
+          setConfirm({ q: t('restoreQ'), txt: t('restoreTxt'), ok: t('confirm'), onOk: () => guard(() => { setSt({ v: 1, items: data.items, cats: data.cats, alarmGroups: data.alarmGroups || [], settings: { ...st.settings, ...(data.settings || {}) } }); setConfirm(null); toast(t('restored')); }) });
         }}
         onExportIcs={() => download(`hora-${todayStr()}.ics`, toICS(st.items, st.cats), 'text/calendar')}
         onImportCal={importCal} sync={sync} onAgenda={(tab) => push({ kind: 'agenda', tab })} onAi={() => push({ kind: 'ai' })}
         onSyncNow={() => doSync(true)} onLink={() => dbxLink().catch(() => toast(t('syncFail')))} onUnlink={() => { dbxUnlink().then(() => setSync({ linked: false, busy: false, last: 0 })); }} />
     );
     if (sc.kind === 'agenda') return (
-      <AgendaScreen key={i} st={st} tab={sc.tab} onBack={pop} onOpen={openOcc} onNewAlarm={(g) => setSheet({ item: newItem({ type: 'sveglia', start: 420, group: g, date: todayStr() }), isNew: true })}
-        onSaveItem={saveItem} onSetGroups={(g) => setSt((s) => ({ ...s, alarmGroups: g }))} onSetting={setSettings}
-        onAddTemplate={(x) => setSt((s) => {
+      <AgendaScreen key={i} st={st} tab={sc.tab} onBack={pop} onOpen={openOcc} onNewAlarm={(g) => guard(() => setSheet({ item: newItem({ type: 'sveglia', start: 420, group: g, date: todayStr() }), isNew: true }))}
+        onSaveItem={saveItem} onSetGroups={(g) => guard(() => setSt((s) => ({ ...s, alarmGroups: g })))} onSetting={setSettings}
+        onAddTemplate={(x) => guard(() => setSt((s) => {
           const g = { id: uid(), name: LANG === 'en' ? x.en : x.name, order: (s.alarmGroups || []).length, tpl: x.key };
           const its = x.items.map((a) => newItem({ type: 'sveglia', title: a.title, start: a.start, alert: 0, repeat: tplDays(a.days), group: g.id, date: todayStr() }));
           return { ...s, alarmGroups: [...(s.alarmGroups || []), g], items: [...s.items, ...its] };
-        })} />
+        }))} />
     );
     if (sc.kind === 'ai') return <AiImportScreen key={i} onBack={pop} toast={toast} onRead={(txt) => openBlock(txt, 'paste')} />;
     if (sc.kind === 'cats') return <CatsScreen key={i} st={st} onBack={pop} onSetCats={setCats} onEdit={(id) => push({ kind: 'cat', id })} onNew={() => push({ kind: 'cat', id: null, parentId: null })} />;
@@ -426,7 +453,7 @@ export function App() {
         onOpenSub={(id) => push({ kind: 'cat', id })} onAddSub={(pid) => push({ kind: 'cat', id: null, parentId: pid })} />
     );
     if (sc.kind === 'import') return <ImportScreen key={i} st={st} drafts={sc.drafts} origin={sc.origin} onClose={pop} onConfirm={confirmImport} onPickCat={openPicker} />;
-    if (sc.kind === 'search') return <SearchScreen key={i} st={st} onClose={pop} onOpen={(it) => { pop(); setAnchor(days === 5 ? startOfWeek(it.date) : it.date); setSheet({ item: it, occDate: it.date, isNew: false }); }} />;
+    if (sc.kind === 'search') return <SearchScreen key={i} st={st} onClose={pop} onOpen={openOcc} onGoDate={(d) => { pop(); goDate(view === 'grid' && days === 5 && wd(d) < 5 ? startOfWeek(d) : d); }} />;
     return null;
   };
 
@@ -449,6 +476,7 @@ export function App() {
         <div className="hdr2">
           <h1 {...lpTitle} title={t('goDate')}>{title}</h1>
           <div className="row-c gap6">
+            {sync.ro && <button className="ctl ro" title={t('roHere')} onClick={() => guard(() => {})}><UIcon n="eye" size={17} /><span>{t('roShort')}</span></button>}
             {view !== 'gantt' && (
               <button className={'ctl filt' + (fOn ? ' on' : '')} aria-label={t('filter')} aria-pressed={fOn} onClick={() => setFilterOpen(true)}><UIcon n="filter" size={18} />{fOn && <i />}</button>
             )}
@@ -484,7 +512,11 @@ export function App() {
       </main>
       <button ref={fabRef} className={'fab' + (draft ? ' ready' : '')} aria-label={t('add')} onClick={() => { if (draft && view === 'grid') { const d = draft; setDraft(null); onNewAt(d); } else newSheet(true); }}><UIcon n="plus" size={26} sw={2.2} /></button>
 
-      {sheet && (
+      {sheet && sheet.view && (
+        <ItemView key={'v' + sheet.item.id} st={st} it={sheet.item} occDate={sheet.occDate} onClose={() => setSheet(null)} onToggleDone={toggleDone}
+          onEdit={() => guard(() => setSheet((x) => ({ ...x, view: false })))} />
+      )}
+      {sheet && !sheet.view && (
         <ItemSheet key={sheet.item.id} st={st} init={sheet.item} occDate={sheet.occDate} isNew={sheet.isNew} autoMic={sheet.autoMic} preset={sheet.preset}
           onClose={() => setSheet(null)} onSave={onSaveSheet} onDelete={askDelete} onPickCat={openPicker} onBlock={openBlock}
           onToggleDone={toggleDone} toast={toast} />
@@ -513,6 +545,8 @@ export function App() {
 
 if (typeof document !== 'undefined' && document.getElementById('root')) {
   try { document.addEventListener('gesturestart', (e) => e.preventDefault()); } catch (e) { /* niente */ }
+  // app installata: rotazione libera anche se una versione precedente l'aveva fissata in verticale
+  try { const so = screen.orientation; if (so && so.lock && window.matchMedia('(display-mode: standalone)').matches) so.lock('any').catch(() => {}); } catch (e) { /* niente */ }
   createRoot(document.getElementById('root')).render(<App />);
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

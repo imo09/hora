@@ -111,7 +111,7 @@ function useLongPress(onLong, onClick, ms = 480) {
 }
 
 /* ============ Vai a data: anno, mese e giorno in tre tocchi ============ */
-function DatePicker({ value, onPick, onClose }) {
+function DatePicker({ value, onPick, onClose, title }) {
   const today = todayStr();
   const [y, setY] = useState(+value.slice(0, 4));
   const [m, setM] = useState(mnum(value));
@@ -121,8 +121,8 @@ function DatePicker({ value, onPick, onClose }) {
   const lead = wd(ms), dim = daysInMonth(ms);
   const pick = (d) => { onPick(`${y}-${pad(m + 1)}-${pad(d)}`); onClose(); };
   return (
-    <Sheet onClose={onClose} label={t('goDate')}>
-      <SheetHead title={t('goDate')} onClose={onClose} />
+    <Sheet onClose={onClose} label={title || t('goDate')}>
+      <SheetHead title={title || t('goDate')} onClose={onClose} />
       <div className="dp-crumbs" role="tablist">
         <button className={step === 'year' ? 'on' : ''} onClick={() => setStep('year')}>{y}</button>
         <UIcon n="right" size={14} sw={2.2} color="var(--faint)" />

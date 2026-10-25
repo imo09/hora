@@ -63,6 +63,87 @@ function AiImportScreen({ onBack, onRead, toast }) {
   );
 }
 
+/* ============ Elenco di occorrenze raggruppate per giorno (Elenco e Cerca) ============ */
+const groupByDay = (list) => {
+  const g = [];
+  for (const o of list) { if (!g.length || g[g.length - 1].d !== o.date) g.push({ d: o.date, list: [] }); g[g.length - 1].list.push(o); }
+  return g;
+};
+const byWhen = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.it.start ?? -1) - (b.it.start ?? -1));
+function OccList({ st, days, onOpen }) {
+  const today = todayStr();
+  return days.map((g) => (
+    <section key={g.d} className="ag-day">
+      <h3 className={g.d === today ? 'today' : ''}>{fmtHead(g.d, 999)}</h3>
+      <div className="card list">
+        {g.list.map((o) => {
+          const it = o.it, al = it.type === 'sveglia', tn = al ? { c: 'var(--alarm)' } : catTone(st.cats, it.cat), done = isDone(it, o.date);
+          return (
+            <button key={o.key} className={'li ag-row' + (al && it.off ? ' off' : '')} onClick={() => onOpen(o)}>
+              <span className="ag-time">{it.start == null ? t('allDayShort') : o.date === it.date || !isMulti(it) ? fmtTime(it.start) : ''}</span>
+              <span className="ag-bar" style={{ background: tn.c }} />
+              <span className="li-t col"><span className={done && it.type === 'promemoria' && !it.onlyAlert ? 'strike' : ''}>{it.title || (al ? t('alarm') : t('noTitle'))}</span><small>{al ? alarmText(it) : catLabel(st.cats, it.cat)}{isMulti(it) ? ' - ' + fmtRange(o.date, o.end) : ''}</small></span>
+              <TypeShape type={it.type} only={it.onlyAlert} done={done} color={tn.c} size={12} />
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  ));
+}
+
+/* ============ Cerca: testo, Vai a data, intervallo di date con tipi e categorie ============ */
+function SearchScreen({ st, onClose, onOpen, onGoDate }) {
+  const today = todayStr();
+  const [q, setQ] = useState('');
+  const [range, setRange] = useState(null);
+  const [pick, setPick] = useState(null);
+  const [types, setTypes] = useState(ALL_TYPES);
+  const [cat, setCat] = useState('');
+  const ref = useRef(null);
+  useEffect(() => { setTimeout(() => ref.current && ref.current.focus(), 100); }, []);
+  const tops = st.cats.filter((c) => !c.parent).sort(byOrder);
+  const days = useMemo(() => {
+    const nq = q.trim().toLowerCase();
+    if (!nq && !range) return [];
+    const fam = cat && cat !== '__none' ? new Set(catFamily(st.cats, cat)) : null;
+    const its = st.items.filter((it) => types.includes(it.type)
+      && (!cat || it.type === 'sveglia' || (cat === '__none' ? !it.cat || !catOf(st.cats, it.cat) : fam.has(it.cat)))
+      && (!nq || [it.title, it.notes, it.address].some((x) => (x || '').toLowerCase().includes(nq))));
+    const list = range ? expand(its, range[0], range[1]) : its.map((it) => ({ it, date: it.date, end: addDays(it.date, spanDays(it)), key: it.id + '@' + it.date }));
+    return groupByDay(list.sort(byWhen).slice(0, 400));
+  }, [q, range, types, cat, st.items, st.cats]);
+  const tog = (v) => { const n = types.includes(v) ? types.filter((x) => x !== v) : [...types, v]; if (n.length) setTypes(n); };
+  return (
+    <Screen title={t('search')} onBack={onClose}>
+      <div className="pad-x ag-tools">
+        <div className="search"><UIcon n="search" size={18} color="var(--muted)" /><input ref={ref} value={q} aria-label={t('searchPh')} placeholder={t('searchPh')} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="chips">
+          <button className="chip" onClick={() => setPick('go')}><UIcon n="cal" size={15} />{t('goDate')}</button>
+          <button className={'chip' + (range ? ' on' : '')} onClick={() => setPick('from')}><UIcon n="swipe" size={15} />{range ? fmtRange(range[0], range[1]) : t('dateRange')}</button>
+          {range && <button className="chip" aria-label={t('close')} onClick={() => setRange(null)}><UIcon n="x" size={14} /></button>}
+        </div>
+        <div className="chips">
+          {[['evento', 'events'], ['promemoria', 'reminders'], ['sveglia', 'alarms']].map(([v, k]) => (
+            <button key={v} className={'chip' + (types.includes(v) ? ' on' : '')} aria-pressed={types.includes(v)} onClick={() => tog(v)}><TypeShape type={v} color="currentColor" size={12} />{t(k)}</button>
+          ))}
+          <select className="chip sel" value={cat} aria-label={t('category')} onChange={(e) => setCat(e.target.value)}>
+            <option value="">{t('allCats')}</option>
+            {tops.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            <option value="__none">{t('unassigned')}</option>
+          </select>
+        </div>
+      </div>
+      {!days.length && (q.trim() || range) && <p className="muted pad">{t('noResults')}</p>}
+      {!q.trim() && !range && <p className="muted pad">{t('searchHint')}</p>}
+      <OccList st={st} days={days} onOpen={onOpen} />
+      {pick === 'go' && <DatePicker value={today} onPick={onGoDate} onClose={() => setPick(null)} />}
+      {pick === 'from' && <DatePicker key="f" title={t('rangeFrom')} value={range ? range[0] : today} onPick={(d) => { setRange([d, range && range[1] >= d ? range[1] : addDays(d, 6)]); setTimeout(() => setPick('to'), 0); }} onClose={() => setPick((p) => (p === 'from' ? null : p))} />}
+      {pick === 'to' && <DatePicker key="t" title={t('rangeTo')} value={range ? range[1] : today} onPick={(d) => setRange((r) => (r && d >= r[0] ? [r[0], d] : [d, d]))} onClose={() => setPick((p) => (p === 'to' ? null : p))} />}
+    </Screen>
+  );
+}
+
 /* ============ Elenco: eventi e promemoria in fila, sveglie a gruppi ============ */
 const AL = (title, start, days) => ({ title, start, days });
 const ALARM_TEMPLATES = [
@@ -95,10 +176,7 @@ function AgendaScreen({ st, tab: tab0, onBack, onOpen, onNewAlarm, onSaveItem, o
     const its = st.items.filter((it) => it.type !== 'sveglia' && types.includes(it.type)
       && (!cat || (cat === '__none' ? !it.cat || !catOf(st.cats, it.cat) : fam.has(it.cat)))
       && (!nq || [it.title, it.notes, it.address].some((x) => (x || '').toLowerCase().includes(nq))));
-    const list = expand(its, past ? addDays(today, -365) : today, addDays(today, span)).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.it.start ?? -1) - (b.it.start ?? -1)));
-    const g = [];
-    for (const o of list) { if (!g.length || g[g.length - 1].d !== o.date) g.push({ d: o.date, list: [] }); g[g.length - 1].list.push(o); }
-    return g;
+    return groupByDay(expand(its, past ? addDays(today, -365) : today, addDays(today, span)).sort(byWhen));
   }, [tab, st.items, st.cats, types, cat, q, past, span]);
   const groups = [...(st.alarmGroups || [])].sort(byOrder);
   const alarms = st.items.filter((it) => it.type === 'sveglia').sort((a, b) => (a.start ?? 0) - (b.start ?? 0));
@@ -170,24 +248,7 @@ function AgendaScreen({ st, tab: tab0, onBack, onOpen, onNewAlarm, onSaveItem, o
             </div>
           </div>
           {!days.length && <p className="muted pad">{t('empty')}</p>}
-          {days.map((g) => (
-            <section key={g.d} className="ag-day">
-              <h3 className={g.d === today ? 'today' : ''}>{fmtHead(g.d, 999)}</h3>
-              <div className="card list">
-                {g.list.map((o) => {
-                  const it = o.it, tn = catTone(st.cats, it.cat), done = isDone(it, o.date);
-                  return (
-                    <button key={o.key} className="li ag-row" onClick={() => onOpen(o)}>
-                      <span className="ag-time">{it.start == null ? t('allDayShort') : o.date === it.date || !isMulti(it) ? fmtTime(it.start) : ''}</span>
-                      <span className="ag-bar" style={{ background: tn.c }} />
-                      <span className="li-t col"><span className={done && it.type === 'promemoria' && !it.onlyAlert ? 'strike' : ''}>{it.title || t('noTitle')}</span><small>{catLabel(st.cats, it.cat)}{isMulti(it) ? ' - ' + fmtRange(o.date, o.end) : ''}</small></span>
-                      <TypeShape type={it.type} only={it.onlyAlert} done={done} color={tn.c} size={12} />
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+          <OccList st={st} days={days} onOpen={onOpen} />
           <div className="pad-x"><button className="btn wide" onClick={() => setSpan(span + 120)}>{t('showMore')}</button></div>
         </>
       )}
@@ -209,6 +270,7 @@ function AgendaScreen({ st, tab: tab0, onBack, onOpen, onNewAlarm, onSaveItem, o
               ))}
             </section>
           )}
+          {st.settings.alarmTips === false && tpls.length > 0 && <div className="pad-x"><button className="lnk sm" onClick={() => onSetting({ alarmTips: true })}><UIcon n="plus" size={16} />{t('showTips')}</button></div>}
           <p className="muted sm-p pad">{t('alarmNote')}</p>
         </div>
       )}
@@ -224,6 +286,9 @@ const dbxGet = () => { try { return JSON.parse(localStorage.getItem(DBX)) || {};
 const dbxSet = (p) => { const v = { ...dbxGet(), ...p }; try { localStorage.setItem(DBX, JSON.stringify(v)); } catch (e) { /* niente */ } return v; };
 const localUpd = () => { try { return +localStorage.getItem(UPD) || 0; } catch (e) { return 0; } };
 const setLocalUpd = (v) => { try { localStorage.setItem(UPD, String(v)); } catch (e) { /* niente */ } };
+/* dispositivo: identificativo locale e nome breve, per sapere chi sta modificando */
+const devId = () => { try { let v = localStorage.getItem('hora.dev'); if (!v) { v = uid() + uid(); localStorage.setItem('hora.dev', v); } return v; } catch (e) { return 'web'; } };
+const devName = () => { const u = (typeof navigator !== 'undefined' && navigator.userAgent) || ''; return /iPhone/.test(u) ? 'iPhone' : /iPad/.test(u) ? 'iPad' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : 'web'; };
 const dbxLinked = () => !!(DBX_KEY && dbxGet().refresh);
 const redirectUri = () => location.origin + location.pathname;
 const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -333,10 +398,12 @@ function SettingsScreen({ st, sync, onBack, onCats, onAgenda, onAi, onSetting, o
       </SGroup>
       <SGroup icon="cloud" title={t('sSync')}>
         {!DBX_KEY && <div className="li"><SIcon n="cloud" /><span className="li-t col"><span>Dropbox</span><small>{t('dbxNoKey')}</small></span><span className="tag">{t('soon')}</span></div>}
+        {!DBX_KEY && <button className="li off" disabled><SIcon n="cloud" /><span className="li-t col"><span className="b">{t('dbxSync')}</span><small>{t('dbxSyncTxt')}</small></span></button>}
         {DBX_KEY && !sync.linked && <button className="li teal-t" onClick={onLink}><SIcon n="cloud" />{t('dbxLink')}</button>}
         {DBX_KEY && sync.linked && (
           <>
-            <button className="li" onClick={onSyncNow}><SIcon n="cloud" /><span className="li-t col"><span>{t('dbxSync')}</span><small>{sync.busy ? t('syncing') : sync.last ? t('lastSync', { d: new Date(sync.last).toLocaleString(LANG === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }) : t('never')}</small></span></button>
+            <div className="li"><SIcon n={sync.ro ? 'eye' : 'edit'} /><span className="li-t col"><span>{sync.ro ? t('roHere') : t('editHere')}</span><small>{sync.ro ? t('roTxt', { d: sync.editorName || t('otherDev') }) : t('editTxt')}</small></span></div>
+            <button className="li" onClick={onSyncNow}><SIcon n="cloud" /><span className="li-t col"><span className="b">{t('dbxSync')}</span><small>{sync.busy ? t('syncing') : (sync.last ? t('lastSync', { d: new Date(sync.last).toLocaleString(LANG === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }) : t('never')) + '. ' + t('dbxSyncTxt')}</small></span></button>
             <button className="li" onClick={onUnlink}><SIcon n="x" /><span className="li-t">{t('dbxUnlink')}</span></button>
           </>
         )}
