@@ -32,7 +32,9 @@ function EvBlock({ o, lane = 0, nl = 1, span = 1, box, start, end, hourH, cats, 
   return (
     <div className={'ev' + (selected ? ' sel' : '') + (ghost ? ' ghost' : '') + (faded ? ' faded' : '') + (o.draft ? ' draft' : '')} data-key={ghost ? undefined : o.key}
       style={{ top, height: h, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), background: tn.tint, color: tn.ink, borderColor: tn.c }}>
-      {box && box.cc
+      {box && box.mini
+        ? <span className="mini">{box.more ? '...' : <Icon name={catIcon(cats, o.it.cat)} size={12} sw={2.2} />}</span>
+        : box && box.cc
         ? <b>{o.it.title || t('noTitle')} <small>{fmtTime(start)}</small></b>
         : <><b>{o.it.title || t('noTitle')}</b>{h >= 34 && <span>{fmtTime(start)} - {fmtTime(end)}</span>}</>}
       {o.draft && h >= 50 && <span>{t('tapDetails')}</span>}
@@ -46,13 +48,13 @@ function RemRow({ o, start, hourH, cats, onToggle, ghost, selected, faded, lane 
   const done = isDone(o.it, o.date);
   const only = !!o.it.onlyAlert;
   return (
-    <div className={'rem' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), borderColor: tn.c, background: tn.tint }}>
-      {only
+    <div className={'rem' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '') + (box && box.mini ? ' mini' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), borderColor: tn.c, background: tn.tint }}>
+      {box && box.more ? <span className="mini">...</span> : only
         ? <span className="chk"><TypeShape type="promemoria" only color={tn.c} size={14} /></span>
         : <button className="chk" data-chk="1" aria-label={t('markDone') + ': ' + o.it.title} onClick={() => onToggle && onToggle(o.it, o.date)}>
             <TypeShape type="promemoria" color={tn.c} done={done} size={14} />
           </button>}
-      <span className={done && !only ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>
+      {!(box && box.mini) && <span className={done && !only ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>}
     </div>
   );
 }
@@ -60,19 +62,19 @@ function RemRow({ o, start, hourH, cats, onToggle, ghost, selected, faded, lane 
 function AlarmLine({ o, start, hourH, ghost, selected, faded }) {
   return (
     <div className={'alm' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH - 14 }}>
-      <span><TypeShape type="sveglia" color="currentColor" size={10} />{fmtTime(start)} {o.it.title || t('alarm')}</span><i />
+      <span><TypeShape type="sveglia" color="currentColor" size={10} /><em>{fmtTime(start)} {o.it.title || t('alarm')}</em></span><i />
     </div>
   );
 }
-const ALARM_C = '#6E4F7E';
+const ALARM_C = 'var(--alarm)';
 const Block = (p) => (p.o.it.type === 'evento' ? <EvBlock {...p} /> : p.o.it.type === 'sveglia' ? <AlarmLine {...p} /> : <RemRow {...p} />);
 
-function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, setHourH, commitHourH, onOpen, onSave, onToggle, onShift, onPinchDays, onSwipe, onVisible, onNewAt, nonce }) {
+function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, setHourH, commitHourH, onOpen, onSave, onToggle, onShift, onPinchDays, onSwipe, onVisible, onNewAt, nonce, draft, setDraft }) {
   const today = todayStr();
   const scRef = useRef(null), colsRef = useRef(null), topRef = useRef(null);
   const [sel, setSel] = useState(null);
   const [drag, setDrag] = useState(null);
-  const [draft, setDraft] = useState(null);
+  const [adDrag, setAdDrag] = useState(null);
   const [colW, setColW] = useState(0);
   const [headW, setHeadW] = useState(0);
   const from = dates[0], to = dates[dates.length - 1];
@@ -102,7 +104,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
   }), [occ, dates, remMin]);
 
   const R = useRef({});
-  R.current = { dates, anchor, sx, colW, occ, hourH, sel, draft, onOpen, onSave, onShift, onPinchDays, onSwipe, onVisible, onNewAt, setHourH, commitHourH, setSel, setDraft };
+  R.current = { dates, anchor, sx, colW, occ, hourH, sel, draft, onOpen, onSave, onShift, onPinchDays, onSwipe, onVisible, onNewAt, setHourH, commitHourH, setSel, setDraft, setAdDrag };
 
   useLayoutEffect(() => {
     const el = scRef.current;
@@ -133,7 +135,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
 
   useEffect(() => {
     const el = scRef.current;
-    let lp = null, dg = null, pinch = null, edge = null, auto = null, md = null, wt = null, sw = null, scT = null;
+    let lp = null, dg = null, pinch = null, edge = null, auto = null, md = null, wt = null, sw = null, scT = null, hp = null, adp = null, adg = null;
     let last = { x: 0, y: 0 }, lastTouch = 0;
     const geo = () => { const r = colsRef.current.getBoundingClientRect(); const n = R.current.dates.length; return { r, w: r.width / n, n }; };
     const minAt = (y) => ((y - geo().r.top) / R.current.hourH) * 60;
@@ -227,6 +229,16 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       R.current.setSel('__draft@' + d);
     };
     const cancelLP = () => { if (lp && lp.timer) clearTimeout(lp.timer); lp = null; };
+    /* elementi di tutto il giorno: pressione lunga (o trascinamento col mouse) e spostamento su un altro giorno */
+    const adStart = (key, x) => { adg = { key, col0: colAt(x), delta: 0 }; R.current.setAdDrag({ key, delta: 0 }); try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { /* niente */ } };
+    const adMove = (x) => { const dlt = colAt(x) - adg.col0; if (dlt !== adg.delta) { adg.delta = dlt; R.current.setAdDrag({ key: adg.key, delta: dlt }); } };
+    const adEnd = () => {
+      const g = adg; adg = null; R.current.setAdDrag(null);
+      R.current.noClick = Date.now();
+      const o = findOcc(g.key);
+      if (o && g.delta) { R.current.onSave(shiftItem(o.it, g.delta), true); R.current.setSel(o.it.id + '@' + addDays(o.date, g.delta)); }
+    };
+    const cancelAD = () => { if (adp && adp.timer) clearTimeout(adp.timer); adp = null; };
 
     const onTS = (e) => {
       lastTouch = Date.now();
@@ -244,8 +256,11 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       last = { x: tc.clientX, y: tc.clientY };
       sw = { x: tc.clientX, y: tc.clientY, t: Date.now() };
       if (e.target.closest('[data-chk]')) return;
+      // maniglia: si trascina se il dito si muove, un tocco senza movimento apre l'elemento
       const h = e.target.closest('[data-h]');
-      if (h) { e.preventDefault(); begin(h.dataset.h, h.dataset.key, tc.clientX, tc.clientY); return; }
+      if (h) { e.preventDefault(); hp = { mode: h.dataset.h, key: h.dataset.key, x: tc.clientX, y: tc.clientY }; return; }
+      const ad = e.target.closest('[data-ad]');
+      if (ad) { const k = ad.dataset.ad, x0 = tc.clientX; adp = { x: tc.clientX, y: tc.clientY, timer: setTimeout(() => { adp = null; adStart(k, x0); }, 380) }; return; }
       const evEl = e.target.closest('[data-key]');
       // elemento già selezionato: si sposta subito, senza pressione lunga
       lp = { x: tc.clientX, y: tc.clientY, t: Date.now(), key: evEl ? evEl.dataset.key : null, inCols: !!e.target.closest('.g-cols'), sel: !!evEl && evEl.dataset.key === R.current.sel };
@@ -271,6 +286,9 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       if (!tc) return;
       last = { x: tc.clientX, y: tc.clientY };
       if (dg) { e.preventDefault(); update(tc.clientX, tc.clientY); return; }
+      if (adg) { e.preventDefault(); adMove(tc.clientX); return; }
+      if (adp && (Math.abs(tc.clientX - adp.x) > 8 || Math.abs(tc.clientY - adp.y) > 8)) cancelAD();
+      if (hp && (Math.abs(tc.clientX - hp.x) > 4 || Math.abs(tc.clientY - hp.y) > 4)) { e.preventDefault(); const h0 = hp; hp = null; begin(h0.mode, h0.key, h0.x, h0.y); update(tc.clientX, tc.clientY); return; }
       if (lp && lp.sel && lp.key && (Math.abs(tc.clientX - lp.x) > 6 || Math.abs(tc.clientY - lp.y) > 6)) {
         e.preventDefault();
         const l = lp; cancelLP();
@@ -282,6 +300,9 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     const onTE = (e) => {
       if (pinch) { if (e.touches.length < 2) { if (pinch.axis === 'v') R.current.commitHourH(); pinch = null; } return; }
       if (dg) { e.preventDefault(); finish(); sw = null; return; }
+      if (adg) { e.preventDefault(); adEnd(); sw = null; return; }
+      if (adp) { cancelAD(); sw = null; return; }
+      if (hp) { e.preventDefault(); const h0 = hp; hp = null; sw = null; tap(h0.key, h0.x, h0.y, true); return; }
       if (lp) {
         const l = lp, quick = Date.now() - lp.t < 380;
         cancelLP(); sw = null;
@@ -300,7 +321,9 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       if (e.target.closest('[data-chk]')) return;
       last = { x: e.clientX, y: e.clientY };
       const h = e.target.closest('[data-h]');
-      if (h) { e.preventDefault(); begin(h.dataset.h, h.dataset.key, e.clientX, e.clientY); return; }
+      if (h) { e.preventDefault(); md = { x: e.clientX, y: e.clientY, key: h.dataset.key, h: h.dataset.h, inCols: true }; return; }
+      const ad = e.target.closest('[data-ad]');
+      if (ad) { md = { x: e.clientX, y: e.clientY, ad: ad.dataset.ad }; return; }
       const evEl = e.target.closest('[data-key]');
       md = { x: e.clientX, y: e.clientY, key: evEl ? evEl.dataset.key : null, inCols: !!e.target.closest('.g-cols') };
       if (evEl) e.preventDefault();
@@ -308,11 +331,17 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     const onMM = (e) => {
       last = { x: e.clientX, y: e.clientY };
       if (dg) { update(e.clientX, e.clientY); return; }
-      if (md && md.key && (Math.abs(e.clientX - md.x) > 4 || Math.abs(e.clientY - md.y) > 4)) { const m0 = md; md = null; begin('move', m0.key, m0.x, m0.y); update(e.clientX, e.clientY); }
+      if (adg) { adMove(e.clientX); return; }
+      if (md && (md.key || md.ad) && (Math.abs(e.clientX - md.x) > 4 || Math.abs(e.clientY - md.y) > 4)) {
+        const m0 = md; md = null;
+        if (m0.ad) { adStart(m0.ad, m0.x); adMove(e.clientX); return; }
+        begin(m0.h || 'move', m0.key, m0.x, m0.y); update(e.clientX, e.clientY);
+      }
     };
     const onMU = () => {
       if (dg) { finish(); return; }
-      if (md) { const m0 = md; md = null; tap(m0.key, m0.x, m0.y, m0.inCols); }
+      if (adg) { adEnd(); return; }
+      if (md) { const m0 = md; md = null; if (!m0.ad) tap(m0.key, m0.x, m0.y, m0.inCols); }
     };
     const onWheel = (e) => {
       if (!e.ctrlKey) return;
@@ -334,7 +363,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     window.addEventListener('mouseup', onMU);
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => {
-      clearInterval(auto); clearEdge(); cancelLP(); clearTimeout(scT);
+      clearInterval(auto); clearEdge(); cancelLP(); cancelAD(); clearTimeout(scT);
       el.removeEventListener('touchstart', onTS); el.removeEventListener('touchmove', onTM);
       el.removeEventListener('touchend', onTE); el.removeEventListener('touchcancel', onTE);
       el.removeEventListener('mousedown', onMD); el.removeEventListener('scroll', onScroll);
@@ -347,7 +376,14 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
   const nm = nowMin();
   /* più elementi alla stessa ora: affiancati se c'è spazio, altrimenti a cascata (ognuno lascia vedere l'inizio del precedente) */
   const colPx = headW > 0 ? headW : 0;
+  /* colonne strette (5 e 7 giorni sul telefono): solo l'icona colorata, al massimo 3 per fascia, poi "..." */
+  const narrow = colPx > 0 && colPx < 60;
   const boxOf = (x) => {
+    if (narrow) {
+      const k = Math.min(x.n, 3);
+      if (x.lane >= 3) return null;
+      return { ...laneBox(x.lane, k, x.n <= 3 ? x.span : 1), mini: true, more: x.n > 3 && x.lane === 2 };
+    }
     if (x.n === 1 || colPx / x.n >= 84) return laneBox(x.lane, x.n, x.span);
     const step = Math.max(10, Math.min(28, (colPx - 64) / (x.n - 1)));
     const left = x.lane * step;
@@ -369,8 +405,10 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
   const showAllday = cols.some((c) => c.allday.length);
   const cw = sx ? { width: colW, flex: 'none' } : undefined;
   const sunY = sun ? [sun.rise, sun.set].map((m) => (m / 60) * hourH) : [];
+  /* celle orarie: un rettangolo arrotondato per ogni ora */
+  const slots = useMemo(() => Array.from({ length: 24 }, (_, h) => <i key={'s' + h} className="slot" style={{ top: h * hourH + 1.5, height: hourH - 3 }} />), [hourH]);
   return (
-    <div className={'grid' + (sx ? ' sx' : '')}>
+    <div className={'grid' + (sx ? ' sx' : '') + (narrow ? ' narrow' : '')}>
       <div className={'g-scroll' + (drag ? ' dragging' : '')} ref={scRef}>
         <div className="g-wide" style={sx ? { width: `calc(var(--gut) + ${n * colW}px)` } : undefined}>
           {(
@@ -379,7 +417,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                 <div className="g-head">
                   <span className="g-gut" />
                   {dates.map((d) => (
-                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')}><span>{fmtHead(d, headW)}</span></div>
+                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '') + (headW > 0 && headW < 92 ? ' xs' : '')}><span>{fmtHead(d, headW)}</span></div>
                   ))}
                 </div>
               )}
@@ -390,9 +428,11 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                     {adRows.bars.map(({ o, i, j, r }) => {
                       const tn = catTone(st.cats, o.it.cat);
                       const done = isDone(o.it, o.date);
+                      const dl = adDrag && adDrag.key === o.key ? adDrag.delta : 0;
                       return (
-                        <button key={o.key} className={'ad-chip' + (o.date < dates[0] ? ' cut-l' : '') + (o.end > dates[n - 1] ? ' cut-r' : '')} onClick={() => onOpen(o)}
-                          style={{ top: r * 25, left: `calc(${(i / n) * 100}% + 1px)`, width: `calc(${((j - i + 1) / n) * 100}% - 3px)`, background: tn.tint, color: tn.ink, borderColor: tn.c }}>
+                        <button key={o.key} data-ad={o.key} className={'ad-chip' + (o.date < dates[0] ? ' cut-l' : '') + (o.end > dates[n - 1] ? ' cut-r' : '') + (adDrag && adDrag.key === o.key ? ' lift' : '')}
+                          onClick={() => { if (Date.now() - (R.current.noClick || 0) > 500) onOpen(o); }}
+                          style={{ top: r * 25, left: `calc(${((i + dl) / n) * 100}% + 1px)`, width: `calc(${((j - i + 1) / n) * 100}% - 3px)`, background: tn.tint, color: tn.ink, borderColor: tn.c }}>
                           {o.it.type === 'promemoria' && <TypeShape type="promemoria" only={o.it.onlyAlert} color={tn.c} done={done} size={10} />}
                           <span className={done && !o.it.onlyAlert ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>
                         </button>
@@ -409,14 +449,14 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
               {sun && <span className="sunl" style={{ top: sunY[0] }} title={t('sunrise')}>↑{fmtTime(sun.rise)}</span>}
               {sun && <span className="sunl" style={{ top: sunY[1] }} title={t('sunset')}>↓{fmtTime(sun.set)}</span>}
             </div>
-            <div className="g-cols" ref={colsRef} style={gridBg(hourH)}>
+            <div className="g-cols" ref={colsRef}>
               {sun && <div className="night" style={{ top: 0, height: sunY[0] }} aria-hidden="true" />}
               {sun && <div className="night" style={{ top: sunY[1], bottom: 0 }} aria-hidden="true" />}
               {sun && sunY.map((y, i) => <div key={i} className="sun" style={{ top: y }} aria-hidden="true" />)}
               {cols.map((c, ci) => {
                 // un solo elenco con chiavi stabili: l'elemento toccato resta nel DOM anche se il giorno cambia durante il trascinamento
                 const blocks = [
-                  ...c.ev.map((x) => <Block key={x.o.key} o={x.o} box={boxOf(x)} start={x.s} end={x.e} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === x.o.key} faded={!!drag && drag.key === x.o.key} fixed={isTimedMulti(x.o.it)} />),
+                  ...c.ev.filter((x) => boxOf(x) || (drag && drag.key === x.o.key)).map((x) => <Block key={x.o.key} o={x.o} box={boxOf(x)} start={x.s} end={x.e} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === x.o.key} faded={!!drag && drag.key === x.o.key} fixed={isTimedMulti(x.o.it)} />),
                   ...c.rem.map((o) => <Block key={o.key} o={o} start={o.it.start} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === o.key} faded={!!drag && drag.key === o.key} />)
                 ];
                 if (drag && drag.origCol === ci && !blocks.some((b) => b.key === drag.key)) {
@@ -424,7 +464,8 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                   blocks.push(<Block key={drag.key} o={drag.orig} start={oi.start} end={oi.end ?? oi.start + 60} hourH={hourH} cats={st.cats} faded />);
                 }
                 return (
-                  <div key={ci} style={cw} className={'g-col' + (c.d === today && n > 1 ? ' today' : '')}>
+                  <div key={ci} style={cw} className={'g-col' + (c.d === today ? ' today' : '') + (wd(c.d) > 4 ? ' we' : '')}>
+                    {slots}
                     {blocks}
                     {drag && drag.col === ci && <Block o={drag.orig} start={drag.start} end={drag.end} hourH={hourH} cats={st.cats} ghost selected />}
                     {drag && drag.col === ci && <div className="drag-time" style={{ top: (drag.start / 60) * hourH }}>{fmtTime(drag.start)}</div>}
@@ -465,7 +506,7 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
   R.current = { setTitles, onPinchOut, onSwipe, titles, onVisible, gStart, ms };
   // scorrimento continuo: la settimana in alto resta ferma quando cambia il mese guardato
   const keep = useRef(null);
-  const rowH = () => { const c = scRef.current && scRef.current.querySelector('.m-cell'); return (c && c.offsetHeight) ? c.offsetHeight + 2 : titles ? 88 : 52; };
+  const rowH = () => { const c = scRef.current && scRef.current.querySelector('.m-cell'); return (c && c.offsetHeight) ? c.offsetHeight + 4 : titles ? 90 : 56; };
   const topWeek = () => addDays(gStart, 7 * Math.round(scRef.current.scrollTop / rowH()));
   useLayoutEffect(() => {
     const el = scRef.current;
@@ -538,6 +579,21 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
     onSelect(d);
   };
   const list = byDay[anchor] || [];
+  /* celle strette: niente titoli illeggibili, solo le icone colorate (al massimo 3, poi "...") */
+  const [cellW, setCellW] = useState(0);
+  useLayoutEffect(() => {
+    const m = () => { const el = ref.current; if (el) setCellW((el.clientWidth - 24) / 7); };
+    m();
+    window.addEventListener('resize', m);
+    return () => window.removeEventListener('resize', m);
+  }, []);
+  const showTitles = titles && cellW >= 72;
+  const mark = (o) => {
+    const tn = catTone(st.cats, o.it.cat);
+    return o.it.type === 'promemoria'
+      ? <TypeShape key={o.key} type="promemoria" only={o.it.onlyAlert} done={isDone(o.it, o.date)} color={tn.c} size={11} />
+      : <Icon key={o.key} name={catIcon(st.cats, o.it.cat)} size={12} sw={2.2} color={tn.c} />;
+  };
   return (
     <div className="month" ref={ref}>
       <div className="m-wd">{WD_LETTER[LANG].map((l, i) => <span key={i}>{l}</span>)}</div>
@@ -547,17 +603,18 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
           const its = (byDay[d] || []).filter((o) => o.it.type !== 'sveglia');
           const out = d.slice(0, 7) !== ms.slice(0, 7);
           return (
-            <button key={d} className={'m-cell' + (out ? ' out' : '') + (d === anchor ? ' sel' : '')} aria-label={fmtFull(d)} onClick={() => tapDay(d)}>
+            <button key={d} className={'m-cell' + (out ? ' out' : '') + (d === anchor ? ' sel' : '') + (wd(d) > 4 ? ' we' : '')} aria-label={fmtFull(d)} onClick={() => tapDay(d)}>
               {free && dnum(d) === 1 && <span className="m-mo">{mab(d)}</span>}
               <span className={'m-n' + (d === today ? ' today' : '')}>{dnum(d)}</span>
-              {titles ? (
+              {showTitles ? (
                 <span className="m-tl">
                   {its.slice(0, 3).map((o) => { const tn = catTone(st.cats, o.it.cat); return <span key={o.key} style={{ background: tn.tint, color: tn.ink, borderLeftColor: tn.c }}>{o.it.title}</span>; })}
                   {its.length > 3 && <em>+{its.length - 3}</em>}
                 </span>
               ) : (
-                <span className="m-dots">
-                  {its.slice(0, 4).map((o) => <i key={o.key} style={{ background: catTone(st.cats, o.it.cat).c }} />)}
+                <span className={'m-ics' + (titles ? ' col' : '')}>
+                  {its.slice(0, 3).map(mark)}
+                  {its.length > 3 && <em>...</em>}
                 </span>
               )}
             </button>

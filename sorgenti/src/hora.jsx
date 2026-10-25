@@ -1,9 +1,9 @@
-/* hora 1.3 - calendario locale di nautargo
+/* hora 1.4 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.3';
+export const VERSION = '1.4';
 
 /* ============ Testi IT / EN ============ */
 const STR = {
@@ -50,7 +50,18 @@ const STR = {
     views: 'Viste', sCal: 'Calendario', sFree: 'Scorrimento continuo', sFreeTxt: 'Spento: si passa al periodo prima o dopo. Acceso: scorre liberamente. Attività scorre sempre.',
     sCatsTxt: 'Nomi, icone, colori e ordine', manage: 'Gestisci', voiceHelp: 'Come dettare', voiceTxt: 'Parla in modo semplice, poi controlla i campi qui sotto. Di\' "salva" alla fine per aggiungere subito.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|ricordami di pagare le bollette lunedì avvisami un\'ora prima|sveglia alle 6 e 45 dal lunedì al venerdì|cena da Anna in via Roma 10 sabato alle 20 con nota portare il vino',
-    goDate: 'Vai a data', expData: 'Esporta', impData: 'Importa', gantt2: 'Attività', ganttTxt: 'Cronoprogramma per categorie'
+    goDate: 'Vai a data', splashSub: 'ogni cosa a suo tempo', tapToEnter: 'Tocca lo schermo per entrare', copied: 'Copiato',
+    aiImport: 'Importa da un\'altra app', aiShort: 'Con l\'aiuto di un\'IA, ad esempio Claude', aiTxt: 'Per app e agende che non esportano in .ics: un\'IA converte i dati nel formato di hora.',
+    aiStep1: 'Esporta o copia i dati dall\'altra app: file, testo, anche una foto.', aiStep2: 'Dai all\'IA i dati insieme a queste istruzioni.', aiStep3: 'Incolla qui il blocco che ti restituisce, poi controlla e conferma.',
+    copyMd: 'Copia istruzioni', downloadMd: 'Scarica .md', pasteHere: 'Incolla qui', readBlock: 'Leggi e controlla',
+    agenda: 'Elenco', evRem: 'Eventi e promemoria', onceOn: 'una volta, {d}', untilD: 'fino al {d}', newGroup: 'Nuovo gruppo', noGroup: 'Senza gruppo', up: 'Su', down: 'Giù',
+    newAlarm: 'Nuova sveglia', past: 'Anche passati', showMore: 'Mostra altri', noAlarms: 'Nessuna sveglia', suggested: 'Suggerite', hideTips: 'Nascondi',
+    tplTxt: 'Gruppi pronti da aggiungere. Le sveglie suonano a un\'ora precisa e si ripetono: utili quando non si può rimandare, come un medicinale.',
+    sLook: 'Aspetto', theme: 'Tema', thAuto: 'Auto', thLight: 'Chiaro', thDark: 'Scuro', sSplash: 'Schermata iniziale', sSplashTxt: 'Il marchio all\'apertura, finché non tocchi lo schermo',
+    sSync: 'Sincronizzazione', dbxNoKey: 'Pronta: manca la chiave dell\'app Dropbox', soon: 'presto', dbxLink: 'Collega Dropbox', dbxSync: 'Sincronizza ora', syncing: 'Sincronizzazione...',
+    lastSync: 'Ultima: {d}', never: 'Mai', dbxUnlink: 'Scollega Dropbox', syncConflictQ: 'Dati diversi su Dropbox', syncConflictTxt: 'Sono cambiati sia qui sia su un altro dispositivo. Quali tieni?',
+    useDbx: 'Usa Dropbox', useHere: 'Usa questi', syncOk: 'Sincronizzato', syncFail: 'Sincronizzazione non riuscita', newVer: 'Nuova versione {v}', reload: 'Ricarica', group: 'Gruppo', active: 'Attiva',
+    expData: 'Esporta', impData: 'Importa', gantt2: 'Attività', ganttTxt: 'Cronoprogramma per categorie'
   },
   en: {
     today: 'Today', day: 'Day', days3: '3 days', days5: '5 days', week: 'Week', month: 'Month', gantt: 'Timeline',
@@ -95,7 +106,18 @@ const STR = {
     views: 'Views', sCal: 'Calendar', sFree: 'Continuous scrolling', sFreeTxt: 'Off: swipe to the previous or next period. On: scrolls freely. Timeline always scrolls.',
     sCatsTxt: 'Names, icons, colors and order', manage: 'Manage', voiceHelp: 'How to dictate', voiceTxt: 'The microphone always listens in Italian. Check the fields below; say "salva" at the end to add right away.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|sveglia alle 6 e 45 dal lunedì al venerdì',
-    goDate: 'Go to date', expData: 'Export', impData: 'Import', gantt2: 'Timeline', ganttTxt: 'Schedule by category'
+    goDate: 'Go to date', splashSub: 'everything in its time', tapToEnter: 'Tap the screen to enter', copied: 'Copied',
+    aiImport: 'Import from another app', aiShort: 'With the help of an AI, e.g. Claude', aiTxt: 'For apps and planners without .ics export: an AI converts the data into hora\'s format.',
+    aiStep1: 'Export or copy the data from the other app: file, text, even a photo.', aiStep2: 'Give the AI the data together with these instructions.', aiStep3: 'Paste here the block it returns, then check and confirm.',
+    copyMd: 'Copy instructions', downloadMd: 'Download .md', pasteHere: 'Paste here', readBlock: 'Read and check',
+    agenda: 'List', evRem: 'Events and reminders', onceOn: 'once, {d}', untilD: 'until {d}', newGroup: 'New group', noGroup: 'No group', up: 'Up', down: 'Down',
+    newAlarm: 'New alarm', past: 'Include past', showMore: 'Show more', noAlarms: 'No alarms', suggested: 'Suggested', hideTips: 'Hide',
+    tplTxt: 'Ready-made groups. Alarms ring at an exact time and repeat: useful when something cannot wait, like a medicine.',
+    sLook: 'Appearance', theme: 'Theme', thAuto: 'Auto', thLight: 'Light', thDark: 'Dark', sSplash: 'Start screen', sSplashTxt: 'The logo on opening, until you tap the screen',
+    sSync: 'Sync', dbxNoKey: 'Ready: the Dropbox app key is missing', soon: 'soon', dbxLink: 'Connect Dropbox', dbxSync: 'Sync now', syncing: 'Syncing...',
+    lastSync: 'Last: {d}', never: 'Never', dbxUnlink: 'Disconnect Dropbox', syncConflictQ: 'Different data on Dropbox', syncConflictTxt: 'Data changed both here and on another device. Which do you keep?',
+    useDbx: 'Use Dropbox', useHere: 'Use these', syncOk: 'Synced', syncFail: 'Sync failed', newVer: 'New version {v}', reload: 'Reload', group: 'Group', active: 'On',
+    expData: 'Export', impData: 'Import', gantt2: 'Timeline', ganttTxt: 'Schedule by category'
   }
 };
 let LANG = 'it';
@@ -174,8 +196,14 @@ export const PALETTE = [
   ['acqua', '#4FA3A5'], ['glicine', '#8F86C2'], ['argilla', '#A8705A'], ['lavanda', '#7B7FB8']
 ];
 const PAL = Object.fromEntries(PALETTE);
-export const tones = (hex) => ({ c: hex, tint: mix(hex, '#FFFFFF', 0.82), ink: mix(hex, '#0E1D2A', 0.45) });
-export const NONE_TONE = { c: '#8A979F', tint: '#E8ECEE', ink: '#3C4952' };
+/* tema chiaro o scuro: i toni delle categorie si adattano allo sfondo */
+let THEME = 'light';
+export const setTheme = (th) => { THEME = th === 'dark' ? 'dark' : 'light'; };
+export const isDark = () => THEME === 'dark';
+export const tones = (hex) => (THEME === 'dark'
+  ? { c: mix(hex, '#FFFFFF', 0.12), tint: mix(hex, '#16232B', 0.7), ink: mix(hex, '#FFFFFF', 0.55) }
+  : { c: hex, tint: mix(hex, '#FFFFFF', 0.82), ink: mix(hex, '#0E1D2A', 0.45) });
+export const noneTone = () => (THEME === 'dark' ? { c: '#7F8D96', tint: '#23313A', ink: '#C3CDD2' } : { c: '#8A979F', tint: '#E8ECEE', ink: '#3C4952' });
 export const colorHex = (id) => PAL[id] || PAL.verderame;
 
 /* ============ Icone (tratto, griglia 24) ============ */
@@ -237,7 +265,7 @@ export const BASE_ICONS = ['tocco', 'libro', 'valigetta', 'casa', 'cuore', 'aere
 export function Icon({ name, size = 20, sw = 1.8, color = 'currentColor', style }) {
   const spec = ICONS[name] || ICONS.tag;
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={color === 'currentColor' ? style : { ...style, color }}>
       {spec.split('|').map((part, i) => {
         const [k, v] = [part[0], part.slice(2)];
         if (k === 'p') return <path key={i} d={v} />;
@@ -272,15 +300,15 @@ const UI = {
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14', upload: 'M12 16V5M7 10l5-5 5 5M5 20h14',
   swipe: 'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4', tag: 'M3 12V4h8l10 10-8 8zM7.5 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z',
   info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5v.5', help: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.5',
-  done: 'M4 5h16v14H4zM8 12l3 3 5-6', type: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5'
+  done: 'M4 5h16v14H4zM8 12l3 3 5-6', tap: 'M9 11V5.5a1.5 1.5 0 0 1 3 0V10l4.6 1.2a2 2 0 0 1 1.4 2.3L17 19a2 2 0 0 1-2 1.6h-4.2a2 2 0 0 1-1.6-.8L6 15.5a1.5 1.5 0 0 1 2.2-2L9 14.3', list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01', moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', cloud: 'M7 18a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18zM12 11v6M9.5 14.5L12 17l2.5-2.5', ai: 'M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8zM18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z', copy: 'M8 8h11v12H8zM5 16V4h11', palette: 'M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1.2-1-1.5-1-2.5s.8-1.5 2-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8.5-9-8.5zM7.5 11.5h.01M10 7.5h.01M15 7.5h.01', type: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5'
 };
 export function UIcon({ n, size = 20, sw = 1.9, color = 'currentColor' }) {
-  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' };
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', style: color === 'currentColor' ? undefined : { color } };
   if (n === 'search') return <svg {...common}><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></svg>;
   if (n === 'gear') return <svg {...common} strokeWidth={1.6}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
   if (n === 'mic') return <svg {...common} strokeWidth={1.8}><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>;
   if (n === 'pin') return <svg {...common}><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>;
-  if (n === 'grip') return <svg width={12} height={18} viewBox="0 0 12 18" aria-hidden="true">{[3, 9, 15].map((y) => [3, 9].map((x) => <circle key={x + '' + y} cx={x} cy={y} r="1.6" fill={color} />))}</svg>;
+  if (n === 'grip') return <svg width={12} height={18} viewBox="0 0 12 18" aria-hidden="true" style={{ color }}>{[3, 9, 15].map((y) => [3, 9].map((x) => <circle key={x + '' + y} cx={x} cy={y} r="1.6" fill="currentColor" />))}</svg>;
   return <svg {...common}><path d={UI[n]} /></svg>;
 }
 
@@ -319,12 +347,13 @@ export function defaultState(lang) {
   return {
     v: 1,
     items: [],
+    alarmGroups: [],
     cats: [
       { id: uid(), name: lang === 'en' ? 'Work' : 'Lavoro', icon: 'valigetta', color: 'verderame', details: '', parent: null, order: 0, gantt: true },
       { id: uid(), name: lang === 'en' ? 'Personal' : 'Personale', icon: 'persone', color: 'ottone', details: '', parent: null, order: 1, gantt: true },
       { id: uid(), name: lang === 'en' ? 'Home' : 'Casa', icon: 'casa', color: 'salvia', details: '', parent: null, order: 2, gantt: true }
     ],
-    settings: { lang, ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], notify: false, sun: { ...DEFAULT_SUN } }
+    settings: { lang, ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], notify: false, sun: { ...DEFAULT_SUN }, theme: 'auto', splash: true }
   };
 }
 
@@ -349,10 +378,10 @@ export function saveState(st) { try { localStorage.setItem(KEY, JSON.stringify(s
 export function catOf(cats, id) { return id ? cats.find((c) => c.id === id) || null : null; }
 export function catTone(cats, id) {
   const c = catOf(cats, id);
-  if (!c) return NONE_TONE;
+  if (!c) return noneTone();
   if (c.color) return tones(colorHex(c.color));
   const p = catOf(cats, c.parent);
-  return p ? tones(colorHex(p.color)) : NONE_TONE;
+  return p ? tones(colorHex(p.color)) : noneTone();
 }
 export function catIcon(cats, id) {
   const c = catOf(cats, id);
@@ -1071,7 +1100,7 @@ export const NO_FILTER = { types: ALL_TYPES, cats: [] };
 export const filterOn = (f) => f.types.length < ALL_TYPES.length || f.cats.length > 0;
 export function makePass(f, cats) {
   const ids = f.cats.length ? new Set(f.cats.flatMap((id) => (id === '__none' ? [id] : catFamily(cats, id)))) : null;
-  return (it) => f.types.includes(it.type) && (!ids || it.type === 'sveglia' || ids.has(it.cat && catOf(cats, it.cat) ? it.cat : '__none'));
+  return (it) => !(it.type === 'sveglia' && it.off) && f.types.includes(it.type) && (!ids || it.type === 'sveglia' || ids.has(it.cat && catOf(cats, it.cat) ? it.cat : '__none'));
 }
 /* categoria per i nuovi elementi: la prima scelta nel filtro, nell'ordine delle categorie */
 export function filterCat(f, cats) {
@@ -1125,14 +1154,14 @@ function Switch({ on, onChange, label }) {
     <button className={'sw' + (on ? ' on' : '')} role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)}><i /></button>
   );
 }
-function Confirm({ q, txt, ok, onOk, onCancel, danger }) {
+function Confirm({ q, txt, ok, onOk, onCancel, danger, cancel, onCancelAlt }) {
   return (
     <div className="ov center" onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
       <div className="dlg" role="alertdialog" aria-label={q}>
         <h3>{q}</h3>
         {txt && <p>{txt}</p>}
         <div className="dlg-b">
-          <button className="btn" onClick={onCancel}>{t('cancel')}</button>
+          <button className="btn" onClick={onCancelAlt || onCancel}>{cancel || t('cancel')}</button>
           <button className={'btn ' + (danger ? 'danger' : 'pri')} onClick={onOk}>{ok}</button>
         </div>
       </div>
@@ -1148,28 +1177,29 @@ function CatTile({ cats, id, size = 28 }) {
   );
 }
 function TypeShape({ type, color, done, size = 12, only }) {
+  const st = { flex: 'none', color };
   if (type === 'sveglia') {
     return (
-      <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true" style={{ flex: 'none' }}>
-        <circle cx="6" cy="6.6" r="4.3" fill="none" stroke={color} strokeWidth="1.6" /><path d="M6 4.4v2.3l1.5 1M1.6 2.6l1.6-1.3M10.4 2.6L8.8 1.3" fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true" style={st}>
+        <circle cx="6" cy="6.6" r="4.3" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="M6 4.4v2.3l1.5 1M1.6 2.6l1.6-1.3M10.4 2.6L8.8 1.3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
       </svg>
     );
   }
   if (type === 'promemoria' && only) {
     return (
-      <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true" style={{ flex: 'none' }}>
-        <path d="M3 8.2V5.6a3 3 0 0 1 6 0v2.6l1 1H2zM5 10.8h2" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true" style={st}>
+        <path d="M3 8.2V5.6a3 3 0 0 1 6 0v2.6l1 1H2zM5 10.8h2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     );
   }
   if (type === 'promemoria') {
     return (
-      <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true" style={{ flex: 'none' }}>
-        <circle cx="6" cy="6" r="4.6" fill={done ? color : 'none'} stroke={color} strokeWidth="1.8" />
+      <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true" style={st}>
+        <circle cx="6" cy="6" r="4.6" fill={done ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" />
       </svg>
     );
   }
-  return <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true" style={{ flex: 'none' }}><rect x="1" y="1" width="10" height="10" rx="3" fill={color} /></svg>;
+  return <svg width={size} height={size} viewBox="0 0 12 12" aria-hidden="true" style={st}><rect x="1" y="1" width="10" height="10" rx="3" fill="currentColor" /></svg>;
 }
 function whenText(it, d) {
   const date = d || it.date;
@@ -1180,21 +1210,94 @@ function whenText(it, d) {
   return s;
 }
 
+/* pressione lunga: un'azione diversa dal tocco (es. Vai a data su Oggi, titolo e frecce) */
+function useLongPress(onLong, onClick, ms = 480) {
+  const tm = useRef(null), fired = useRef(false);
+  const stop = () => clearTimeout(tm.current);
+  return {
+    onPointerDown: () => { fired.current = false; stop(); tm.current = setTimeout(() => { fired.current = true; try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) { /* niente */ } onLong(); }, ms); },
+    onPointerUp: stop, onPointerLeave: stop, onPointerCancel: stop,
+    onContextMenu: (e) => e.preventDefault(),
+    onClick: (e) => { if (fired.current) { fired.current = false; e.preventDefault(); return; } if (onClick) onClick(e); }
+  };
+}
+
+/* ============ Vai a data: anno, mese e giorno in tre tocchi ============ */
+function DatePicker({ value, onPick, onClose }) {
+  const today = todayStr();
+  const [y, setY] = useState(+value.slice(0, 4));
+  const [m, setM] = useState(mnum(value));
+  const [step, setStep] = useState('year');
+  const [y0, setY0] = useState(+value.slice(0, 4) - 4);
+  const ms = `${y}-${pad(m + 1)}-01`;
+  const lead = wd(ms), dim = daysInMonth(ms);
+  const pick = (d) => { onPick(`${y}-${pad(m + 1)}-${pad(d)}`); onClose(); };
+  return (
+    <Sheet onClose={onClose} label={t('goDate')}>
+      <SheetHead title={t('goDate')} onClose={onClose} />
+      <div className="dp-crumbs" role="tablist">
+        <button className={step === 'year' ? 'on' : ''} onClick={() => setStep('year')}>{y}</button>
+        <UIcon n="right" size={14} sw={2.2} color="var(--faint)" />
+        <button className={step === 'month' ? 'on' : ''} onClick={() => setStep('month')}>{MONTHS[LANG][m]}</button>
+        <UIcon n="right" size={14} sw={2.2} color="var(--faint)" />
+        <button className={step === 'day' ? 'on' : ''} onClick={() => setStep('day')}>{t('dateL')}</button>
+      </div>
+      {step === 'year' && (
+        <div className="dp-wrap">
+          <button className="ctl" aria-label={t('prev')} onClick={() => setY0(y0 - 12)}><UIcon n="left" size={17} /></button>
+          <div className="dp-grid c3">
+            {Array.from({ length: 12 }, (_, i) => y0 + i).map((v) => (
+              <button key={v} className={(v === y ? 'on' : '') + (v === +today.slice(0, 4) ? ' now' : '')} onClick={() => { setY(v); setStep('month'); }}>{v}</button>
+            ))}
+          </div>
+          <button className="ctl" aria-label={t('next')} onClick={() => setY0(y0 + 12)}><UIcon n="right" size={17} /></button>
+        </div>
+      )}
+      {step === 'month' && (
+        <div className="dp-grid c3">
+          {MONTHS[LANG].map((n, i) => (
+            <button key={n} className={(i === m ? 'on' : '') + (y === +today.slice(0, 4) && i === mnum(today) ? ' now' : '')} onClick={() => { setM(i); setStep('day'); }}>{cap(n.slice(0, 3))}</button>
+          ))}
+        </div>
+      )}
+      {step === 'day' && (
+        <div className="dp-grid c7">
+          {WD_LETTER[LANG].map((l, i) => <span key={'w' + i}>{l}</span>)}
+          {Array.from({ length: lead }, (_, i) => <i key={'b' + i} />)}
+          {Array.from({ length: dim }, (_, i) => i + 1).map((d) => {
+            const s = `${y}-${pad(m + 1)}-${pad(d)}`;
+            return <button key={d} className={(s === value ? 'on' : '') + (s === today ? ' now' : '')} onClick={() => pick(d)}>{d}</button>;
+          })}
+        </div>
+      )}
+      <div className="sh-foot">
+        <button className="btn grow" onClick={() => { onPick(today); onClose(); }}>{t('today')}</button>
+      </div>
+    </Sheet>
+  );
+}
+
 /* ============ Splash ============ */
+/* resta finché non si tocca lo schermo; si spegne dalle impostazioni */
 function Splash({ onDone }) {
   const [out, setOut] = useState(false);
+  const go = () => { if (out) return; setOut(true); setTimeout(onDone, 300); };
   useEffect(() => {
-    const a = setTimeout(() => setOut(true), 2300);
-    const b = setTimeout(onDone, 2750);
-    return () => { clearTimeout(a); clearTimeout(b); };
-  }, []);
+    const k = (e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') go(); };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  });
   return (
-    <div className={'splash' + (out ? ' out' : '')} onClick={() => { setOut(true); setTimeout(onDone, 300); }}>
+    <div className={'splash' + (out ? ' out' : '')} onClick={go}>
       <div className="sp-mid">
-        <Mark size={128} anim />
+        <Mark size={128} anim dark={isDark()} />
         <div className="sp-word">hora</div>
+        <div className="sp-sub">{t('splashSub')}</div>
       </div>
-      <div className="sp-foot"><b>nautargo</b></div>
+      <div className="sp-foot">
+        <span className="sp-tap"><UIcon n="tap" size={16} />{t('tapToEnter')}</span>
+        <b>nautargo</b>
+      </div>
     </div>
   );
 }
@@ -1233,7 +1336,9 @@ function EvBlock({ o, lane = 0, nl = 1, span = 1, box, start, end, hourH, cats, 
   return (
     <div className={'ev' + (selected ? ' sel' : '') + (ghost ? ' ghost' : '') + (faded ? ' faded' : '') + (o.draft ? ' draft' : '')} data-key={ghost ? undefined : o.key}
       style={{ top, height: h, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), background: tn.tint, color: tn.ink, borderColor: tn.c }}>
-      {box && box.cc
+      {box && box.mini
+        ? <span className="mini">{box.more ? '...' : <Icon name={catIcon(cats, o.it.cat)} size={12} sw={2.2} />}</span>
+        : box && box.cc
         ? <b>{o.it.title || t('noTitle')} <small>{fmtTime(start)}</small></b>
         : <><b>{o.it.title || t('noTitle')}</b>{h >= 34 && <span>{fmtTime(start)} - {fmtTime(end)}</span>}</>}
       {o.draft && h >= 50 && <span>{t('tapDetails')}</span>}
@@ -1247,13 +1352,13 @@ function RemRow({ o, start, hourH, cats, onToggle, ghost, selected, faded, lane 
   const done = isDone(o.it, o.date);
   const only = !!o.it.onlyAlert;
   return (
-    <div className={'rem' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), borderColor: tn.c, background: tn.tint }}>
-      {only
+    <div className={'rem' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '') + (box && box.mini ? ' mini' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH, ...(box ? { left: box.left, width: box.width, zIndex: box.zIndex } : laneBox(lane, nl, span)), ...(selected ? { zIndex: 6 } : null), borderColor: tn.c, background: tn.tint }}>
+      {box && box.more ? <span className="mini">...</span> : only
         ? <span className="chk"><TypeShape type="promemoria" only color={tn.c} size={14} /></span>
         : <button className="chk" data-chk="1" aria-label={t('markDone') + ': ' + o.it.title} onClick={() => onToggle && onToggle(o.it, o.date)}>
             <TypeShape type="promemoria" color={tn.c} done={done} size={14} />
           </button>}
-      <span className={done && !only ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>
+      {!(box && box.mini) && <span className={done && !only ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>}
     </div>
   );
 }
@@ -1261,19 +1366,19 @@ function RemRow({ o, start, hourH, cats, onToggle, ghost, selected, faded, lane 
 function AlarmLine({ o, start, hourH, ghost, selected, faded }) {
   return (
     <div className={'alm' + (ghost ? ' ghost' : '') + (selected ? ' sel' : '') + (faded ? ' faded' : '')} data-key={ghost ? undefined : o.key} style={{ top: (start / 60) * hourH - 14 }}>
-      <span><TypeShape type="sveglia" color="currentColor" size={10} />{fmtTime(start)} {o.it.title || t('alarm')}</span><i />
+      <span><TypeShape type="sveglia" color="currentColor" size={10} /><em>{fmtTime(start)} {o.it.title || t('alarm')}</em></span><i />
     </div>
   );
 }
-const ALARM_C = '#6E4F7E';
+const ALARM_C = 'var(--alarm)';
 const Block = (p) => (p.o.it.type === 'evento' ? <EvBlock {...p} /> : p.o.it.type === 'sveglia' ? <AlarmLine {...p} /> : <RemRow {...p} />);
 
-function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, setHourH, commitHourH, onOpen, onSave, onToggle, onShift, onPinchDays, onSwipe, onVisible, onNewAt, nonce }) {
+function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, setHourH, commitHourH, onOpen, onSave, onToggle, onShift, onPinchDays, onSwipe, onVisible, onNewAt, nonce, draft, setDraft }) {
   const today = todayStr();
   const scRef = useRef(null), colsRef = useRef(null), topRef = useRef(null);
   const [sel, setSel] = useState(null);
   const [drag, setDrag] = useState(null);
-  const [draft, setDraft] = useState(null);
+  const [adDrag, setAdDrag] = useState(null);
   const [colW, setColW] = useState(0);
   const [headW, setHeadW] = useState(0);
   const from = dates[0], to = dates[dates.length - 1];
@@ -1303,7 +1408,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
   }), [occ, dates, remMin]);
 
   const R = useRef({});
-  R.current = { dates, anchor, sx, colW, occ, hourH, sel, draft, onOpen, onSave, onShift, onPinchDays, onSwipe, onVisible, onNewAt, setHourH, commitHourH, setSel, setDraft };
+  R.current = { dates, anchor, sx, colW, occ, hourH, sel, draft, onOpen, onSave, onShift, onPinchDays, onSwipe, onVisible, onNewAt, setHourH, commitHourH, setSel, setDraft, setAdDrag };
 
   useLayoutEffect(() => {
     const el = scRef.current;
@@ -1334,7 +1439,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
 
   useEffect(() => {
     const el = scRef.current;
-    let lp = null, dg = null, pinch = null, edge = null, auto = null, md = null, wt = null, sw = null, scT = null;
+    let lp = null, dg = null, pinch = null, edge = null, auto = null, md = null, wt = null, sw = null, scT = null, hp = null, adp = null, adg = null;
     let last = { x: 0, y: 0 }, lastTouch = 0;
     const geo = () => { const r = colsRef.current.getBoundingClientRect(); const n = R.current.dates.length; return { r, w: r.width / n, n }; };
     const minAt = (y) => ((y - geo().r.top) / R.current.hourH) * 60;
@@ -1428,6 +1533,16 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       R.current.setSel('__draft@' + d);
     };
     const cancelLP = () => { if (lp && lp.timer) clearTimeout(lp.timer); lp = null; };
+    /* elementi di tutto il giorno: pressione lunga (o trascinamento col mouse) e spostamento su un altro giorno */
+    const adStart = (key, x) => { adg = { key, col0: colAt(x), delta: 0 }; R.current.setAdDrag({ key, delta: 0 }); try { if (navigator.vibrate) navigator.vibrate(8); } catch (e) { /* niente */ } };
+    const adMove = (x) => { const dlt = colAt(x) - adg.col0; if (dlt !== adg.delta) { adg.delta = dlt; R.current.setAdDrag({ key: adg.key, delta: dlt }); } };
+    const adEnd = () => {
+      const g = adg; adg = null; R.current.setAdDrag(null);
+      R.current.noClick = Date.now();
+      const o = findOcc(g.key);
+      if (o && g.delta) { R.current.onSave(shiftItem(o.it, g.delta), true); R.current.setSel(o.it.id + '@' + addDays(o.date, g.delta)); }
+    };
+    const cancelAD = () => { if (adp && adp.timer) clearTimeout(adp.timer); adp = null; };
 
     const onTS = (e) => {
       lastTouch = Date.now();
@@ -1445,8 +1560,11 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       last = { x: tc.clientX, y: tc.clientY };
       sw = { x: tc.clientX, y: tc.clientY, t: Date.now() };
       if (e.target.closest('[data-chk]')) return;
+      // maniglia: si trascina se il dito si muove, un tocco senza movimento apre l'elemento
       const h = e.target.closest('[data-h]');
-      if (h) { e.preventDefault(); begin(h.dataset.h, h.dataset.key, tc.clientX, tc.clientY); return; }
+      if (h) { e.preventDefault(); hp = { mode: h.dataset.h, key: h.dataset.key, x: tc.clientX, y: tc.clientY }; return; }
+      const ad = e.target.closest('[data-ad]');
+      if (ad) { const k = ad.dataset.ad, x0 = tc.clientX; adp = { x: tc.clientX, y: tc.clientY, timer: setTimeout(() => { adp = null; adStart(k, x0); }, 380) }; return; }
       const evEl = e.target.closest('[data-key]');
       // elemento già selezionato: si sposta subito, senza pressione lunga
       lp = { x: tc.clientX, y: tc.clientY, t: Date.now(), key: evEl ? evEl.dataset.key : null, inCols: !!e.target.closest('.g-cols'), sel: !!evEl && evEl.dataset.key === R.current.sel };
@@ -1472,6 +1590,9 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       if (!tc) return;
       last = { x: tc.clientX, y: tc.clientY };
       if (dg) { e.preventDefault(); update(tc.clientX, tc.clientY); return; }
+      if (adg) { e.preventDefault(); adMove(tc.clientX); return; }
+      if (adp && (Math.abs(tc.clientX - adp.x) > 8 || Math.abs(tc.clientY - adp.y) > 8)) cancelAD();
+      if (hp && (Math.abs(tc.clientX - hp.x) > 4 || Math.abs(tc.clientY - hp.y) > 4)) { e.preventDefault(); const h0 = hp; hp = null; begin(h0.mode, h0.key, h0.x, h0.y); update(tc.clientX, tc.clientY); return; }
       if (lp && lp.sel && lp.key && (Math.abs(tc.clientX - lp.x) > 6 || Math.abs(tc.clientY - lp.y) > 6)) {
         e.preventDefault();
         const l = lp; cancelLP();
@@ -1483,6 +1604,9 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     const onTE = (e) => {
       if (pinch) { if (e.touches.length < 2) { if (pinch.axis === 'v') R.current.commitHourH(); pinch = null; } return; }
       if (dg) { e.preventDefault(); finish(); sw = null; return; }
+      if (adg) { e.preventDefault(); adEnd(); sw = null; return; }
+      if (adp) { cancelAD(); sw = null; return; }
+      if (hp) { e.preventDefault(); const h0 = hp; hp = null; sw = null; tap(h0.key, h0.x, h0.y, true); return; }
       if (lp) {
         const l = lp, quick = Date.now() - lp.t < 380;
         cancelLP(); sw = null;
@@ -1501,7 +1625,9 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
       if (e.target.closest('[data-chk]')) return;
       last = { x: e.clientX, y: e.clientY };
       const h = e.target.closest('[data-h]');
-      if (h) { e.preventDefault(); begin(h.dataset.h, h.dataset.key, e.clientX, e.clientY); return; }
+      if (h) { e.preventDefault(); md = { x: e.clientX, y: e.clientY, key: h.dataset.key, h: h.dataset.h, inCols: true }; return; }
+      const ad = e.target.closest('[data-ad]');
+      if (ad) { md = { x: e.clientX, y: e.clientY, ad: ad.dataset.ad }; return; }
       const evEl = e.target.closest('[data-key]');
       md = { x: e.clientX, y: e.clientY, key: evEl ? evEl.dataset.key : null, inCols: !!e.target.closest('.g-cols') };
       if (evEl) e.preventDefault();
@@ -1509,11 +1635,17 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     const onMM = (e) => {
       last = { x: e.clientX, y: e.clientY };
       if (dg) { update(e.clientX, e.clientY); return; }
-      if (md && md.key && (Math.abs(e.clientX - md.x) > 4 || Math.abs(e.clientY - md.y) > 4)) { const m0 = md; md = null; begin('move', m0.key, m0.x, m0.y); update(e.clientX, e.clientY); }
+      if (adg) { adMove(e.clientX); return; }
+      if (md && (md.key || md.ad) && (Math.abs(e.clientX - md.x) > 4 || Math.abs(e.clientY - md.y) > 4)) {
+        const m0 = md; md = null;
+        if (m0.ad) { adStart(m0.ad, m0.x); adMove(e.clientX); return; }
+        begin(m0.h || 'move', m0.key, m0.x, m0.y); update(e.clientX, e.clientY);
+      }
     };
     const onMU = () => {
       if (dg) { finish(); return; }
-      if (md) { const m0 = md; md = null; tap(m0.key, m0.x, m0.y, m0.inCols); }
+      if (adg) { adEnd(); return; }
+      if (md) { const m0 = md; md = null; if (!m0.ad) tap(m0.key, m0.x, m0.y, m0.inCols); }
     };
     const onWheel = (e) => {
       if (!e.ctrlKey) return;
@@ -1535,7 +1667,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
     window.addEventListener('mouseup', onMU);
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => {
-      clearInterval(auto); clearEdge(); cancelLP(); clearTimeout(scT);
+      clearInterval(auto); clearEdge(); cancelLP(); cancelAD(); clearTimeout(scT);
       el.removeEventListener('touchstart', onTS); el.removeEventListener('touchmove', onTM);
       el.removeEventListener('touchend', onTE); el.removeEventListener('touchcancel', onTE);
       el.removeEventListener('mousedown', onMD); el.removeEventListener('scroll', onScroll);
@@ -1548,7 +1680,14 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
   const nm = nowMin();
   /* più elementi alla stessa ora: affiancati se c'è spazio, altrimenti a cascata (ognuno lascia vedere l'inizio del precedente) */
   const colPx = headW > 0 ? headW : 0;
+  /* colonne strette (5 e 7 giorni sul telefono): solo l'icona colorata, al massimo 3 per fascia, poi "..." */
+  const narrow = colPx > 0 && colPx < 60;
   const boxOf = (x) => {
+    if (narrow) {
+      const k = Math.min(x.n, 3);
+      if (x.lane >= 3) return null;
+      return { ...laneBox(x.lane, k, x.n <= 3 ? x.span : 1), mini: true, more: x.n > 3 && x.lane === 2 };
+    }
     if (x.n === 1 || colPx / x.n >= 84) return laneBox(x.lane, x.n, x.span);
     const step = Math.max(10, Math.min(28, (colPx - 64) / (x.n - 1)));
     const left = x.lane * step;
@@ -1570,8 +1709,10 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
   const showAllday = cols.some((c) => c.allday.length);
   const cw = sx ? { width: colW, flex: 'none' } : undefined;
   const sunY = sun ? [sun.rise, sun.set].map((m) => (m / 60) * hourH) : [];
+  /* celle orarie: un rettangolo arrotondato per ogni ora */
+  const slots = useMemo(() => Array.from({ length: 24 }, (_, h) => <i key={'s' + h} className="slot" style={{ top: h * hourH + 1.5, height: hourH - 3 }} />), [hourH]);
   return (
-    <div className={'grid' + (sx ? ' sx' : '')}>
+    <div className={'grid' + (sx ? ' sx' : '') + (narrow ? ' narrow' : '')}>
       <div className={'g-scroll' + (drag ? ' dragging' : '')} ref={scRef}>
         <div className="g-wide" style={sx ? { width: `calc(var(--gut) + ${n * colW}px)` } : undefined}>
           {(
@@ -1580,7 +1721,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                 <div className="g-head">
                   <span className="g-gut" />
                   {dates.map((d) => (
-                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')}><span>{fmtHead(d, headW)}</span></div>
+                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '') + (headW > 0 && headW < 92 ? ' xs' : '')}><span>{fmtHead(d, headW)}</span></div>
                   ))}
                 </div>
               )}
@@ -1591,9 +1732,11 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                     {adRows.bars.map(({ o, i, j, r }) => {
                       const tn = catTone(st.cats, o.it.cat);
                       const done = isDone(o.it, o.date);
+                      const dl = adDrag && adDrag.key === o.key ? adDrag.delta : 0;
                       return (
-                        <button key={o.key} className={'ad-chip' + (o.date < dates[0] ? ' cut-l' : '') + (o.end > dates[n - 1] ? ' cut-r' : '')} onClick={() => onOpen(o)}
-                          style={{ top: r * 25, left: `calc(${(i / n) * 100}% + 1px)`, width: `calc(${((j - i + 1) / n) * 100}% - 3px)`, background: tn.tint, color: tn.ink, borderColor: tn.c }}>
+                        <button key={o.key} data-ad={o.key} className={'ad-chip' + (o.date < dates[0] ? ' cut-l' : '') + (o.end > dates[n - 1] ? ' cut-r' : '') + (adDrag && adDrag.key === o.key ? ' lift' : '')}
+                          onClick={() => { if (Date.now() - (R.current.noClick || 0) > 500) onOpen(o); }}
+                          style={{ top: r * 25, left: `calc(${((i + dl) / n) * 100}% + 1px)`, width: `calc(${((j - i + 1) / n) * 100}% - 3px)`, background: tn.tint, color: tn.ink, borderColor: tn.c }}>
                           {o.it.type === 'promemoria' && <TypeShape type="promemoria" only={o.it.onlyAlert} color={tn.c} done={done} size={10} />}
                           <span className={done && !o.it.onlyAlert ? 'strike' : ''}>{o.it.title || t('noTitle')}</span>
                         </button>
@@ -1610,14 +1753,14 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
               {sun && <span className="sunl" style={{ top: sunY[0] }} title={t('sunrise')}>↑{fmtTime(sun.rise)}</span>}
               {sun && <span className="sunl" style={{ top: sunY[1] }} title={t('sunset')}>↓{fmtTime(sun.set)}</span>}
             </div>
-            <div className="g-cols" ref={colsRef} style={gridBg(hourH)}>
+            <div className="g-cols" ref={colsRef}>
               {sun && <div className="night" style={{ top: 0, height: sunY[0] }} aria-hidden="true" />}
               {sun && <div className="night" style={{ top: sunY[1], bottom: 0 }} aria-hidden="true" />}
               {sun && sunY.map((y, i) => <div key={i} className="sun" style={{ top: y }} aria-hidden="true" />)}
               {cols.map((c, ci) => {
                 // un solo elenco con chiavi stabili: l'elemento toccato resta nel DOM anche se il giorno cambia durante il trascinamento
                 const blocks = [
-                  ...c.ev.map((x) => <Block key={x.o.key} o={x.o} box={boxOf(x)} start={x.s} end={x.e} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === x.o.key} faded={!!drag && drag.key === x.o.key} fixed={isTimedMulti(x.o.it)} />),
+                  ...c.ev.filter((x) => boxOf(x) || (drag && drag.key === x.o.key)).map((x) => <Block key={x.o.key} o={x.o} box={boxOf(x)} start={x.s} end={x.e} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === x.o.key} faded={!!drag && drag.key === x.o.key} fixed={isTimedMulti(x.o.it)} />),
                   ...c.rem.map((o) => <Block key={o.key} o={o} start={o.it.start} hourH={hourH} cats={st.cats} onToggle={onToggle} selected={sel === o.key} faded={!!drag && drag.key === o.key} />)
                 ];
                 if (drag && drag.origCol === ci && !blocks.some((b) => b.key === drag.key)) {
@@ -1625,7 +1768,8 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                   blocks.push(<Block key={drag.key} o={drag.orig} start={oi.start} end={oi.end ?? oi.start + 60} hourH={hourH} cats={st.cats} faded />);
                 }
                 return (
-                  <div key={ci} style={cw} className={'g-col' + (c.d === today && n > 1 ? ' today' : '')}>
+                  <div key={ci} style={cw} className={'g-col' + (c.d === today ? ' today' : '') + (wd(c.d) > 4 ? ' we' : '')}>
+                    {slots}
                     {blocks}
                     {drag && drag.col === ci && <Block o={drag.orig} start={drag.start} end={drag.end} hourH={hourH} cats={st.cats} ghost selected />}
                     {drag && drag.col === ci && <div className="drag-time" style={{ top: (drag.start / 60) * hourH }}>{fmtTime(drag.start)}</div>}
@@ -1666,7 +1810,7 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
   R.current = { setTitles, onPinchOut, onSwipe, titles, onVisible, gStart, ms };
   // scorrimento continuo: la settimana in alto resta ferma quando cambia il mese guardato
   const keep = useRef(null);
-  const rowH = () => { const c = scRef.current && scRef.current.querySelector('.m-cell'); return (c && c.offsetHeight) ? c.offsetHeight + 2 : titles ? 88 : 52; };
+  const rowH = () => { const c = scRef.current && scRef.current.querySelector('.m-cell'); return (c && c.offsetHeight) ? c.offsetHeight + 4 : titles ? 90 : 56; };
   const topWeek = () => addDays(gStart, 7 * Math.round(scRef.current.scrollTop / rowH()));
   useLayoutEffect(() => {
     const el = scRef.current;
@@ -1739,6 +1883,21 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
     onSelect(d);
   };
   const list = byDay[anchor] || [];
+  /* celle strette: niente titoli illeggibili, solo le icone colorate (al massimo 3, poi "...") */
+  const [cellW, setCellW] = useState(0);
+  useLayoutEffect(() => {
+    const m = () => { const el = ref.current; if (el) setCellW((el.clientWidth - 24) / 7); };
+    m();
+    window.addEventListener('resize', m);
+    return () => window.removeEventListener('resize', m);
+  }, []);
+  const showTitles = titles && cellW >= 72;
+  const mark = (o) => {
+    const tn = catTone(st.cats, o.it.cat);
+    return o.it.type === 'promemoria'
+      ? <TypeShape key={o.key} type="promemoria" only={o.it.onlyAlert} done={isDone(o.it, o.date)} color={tn.c} size={11} />
+      : <Icon key={o.key} name={catIcon(st.cats, o.it.cat)} size={12} sw={2.2} color={tn.c} />;
+  };
   return (
     <div className="month" ref={ref}>
       <div className="m-wd">{WD_LETTER[LANG].map((l, i) => <span key={i}>{l}</span>)}</div>
@@ -1748,17 +1907,18 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
           const its = (byDay[d] || []).filter((o) => o.it.type !== 'sveglia');
           const out = d.slice(0, 7) !== ms.slice(0, 7);
           return (
-            <button key={d} className={'m-cell' + (out ? ' out' : '') + (d === anchor ? ' sel' : '')} aria-label={fmtFull(d)} onClick={() => tapDay(d)}>
+            <button key={d} className={'m-cell' + (out ? ' out' : '') + (d === anchor ? ' sel' : '') + (wd(d) > 4 ? ' we' : '')} aria-label={fmtFull(d)} onClick={() => tapDay(d)}>
               {free && dnum(d) === 1 && <span className="m-mo">{mab(d)}</span>}
               <span className={'m-n' + (d === today ? ' today' : '')}>{dnum(d)}</span>
-              {titles ? (
+              {showTitles ? (
                 <span className="m-tl">
                   {its.slice(0, 3).map((o) => { const tn = catTone(st.cats, o.it.cat); return <span key={o.key} style={{ background: tn.tint, color: tn.ink, borderLeftColor: tn.c }}>{o.it.title}</span>; })}
                   {its.length > 3 && <em>+{its.length - 3}</em>}
                 </span>
               ) : (
-                <span className="m-dots">
-                  {its.slice(0, 4).map((o) => <i key={o.key} style={{ background: catTone(st.cats, o.it.cat).c }} />)}
+                <span className={'m-ics' + (titles ? ' col' : '')}>
+                  {its.slice(0, 3).map(mark)}
+                  {its.length > 3 && <em>...</em>}
                 </span>
               )}
             </button>
@@ -1801,7 +1961,7 @@ function Diamond({ x, c, size = 14 }) {
   return <svg className="gm" width={size} height={size} viewBox="0 0 16 16" style={{ left: x - size / 2 }} aria-hidden="true"><path d="M8 1l7 7-7 7-7-7z" fill={c} /></svg>;
 }
 function Dot({ x, c, done, size = 13 }) {
-  return <svg className="gm" width={size} height={size} viewBox="0 0 14 14" style={{ left: x - size / 2 }} aria-hidden="true"><circle cx="7" cy="7" r="5" fill={done ? c : '#FBFBF8'} stroke={c} strokeWidth="2.2" /></svg>;
+  return <svg className="gm" width={size} height={size} viewBox="0 0 14 14" style={{ left: x - size / 2 }} aria-hidden="true"><circle cx="7" cy="7" r="5" style={{ fill: done ? c : 'var(--card)' }} stroke={c} strokeWidth="2.2" /></svg>;
 }
 /* scorrimento infinito: una finestra larga attorno alla data guardata, che si ricentra quando ci si avvicina ai bordi */
 const G_WEEKS = 52, G_MONTHS = 48, DW = 20, MW = 64;
@@ -1957,7 +2117,7 @@ function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter
               if (r.kind === 'cat') {
                 const isNone = r.id === '__none';
                 const c = isNone ? null : catOf(st.cats, r.id);
-                const tn = isNone ? NONE_TONE : catTone(st.cats, r.id);
+                const tn = isNone ? noneTone() : catTone(st.cats, r.id);
                 const isOpen = open.has(r.id);
                 let mark = null;
                 if (r.occ.length) {
@@ -1969,7 +2129,7 @@ function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter
                 return (
                   <div key={'c' + r.id} className={'gt-row cat lv' + r.level}>
                     <button className="gt-label" style={{ width: LW, paddingLeft: 6 + r.level * 14 }} aria-expanded={isOpen} onClick={() => toggle(r.id)}>
-                      <UIcon n={isOpen ? 'down' : 'right'} size={13} sw={2.4} color="#5A6873" />
+                      <UIcon n={isOpen ? 'down' : 'right'} size={13} sw={2.4} color="var(--muted)" />
                       {r.level === 0 ? (isNone ? <span className="tile none" style={{ width: 22, height: 22 }}><Icon name="tag" size={12} sw={2} /></span> : <CatTile cats={st.cats} id={r.id} size={22} />) : <span className="dot" style={{ background: tn.c }} />}
                       <span className="gl-t">{isNone ? t('unassigned') : c.name}</span>
                     </button>
@@ -2166,7 +2326,8 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
     const it = { ...init, type: f.type, title, date: f.date || today, cat: f.cat || null, alert: f.alert, repeat: f.repeat && f.repeat.f !== 'none' ? f.repeat : { ...NO_REPEAT }, address: (f.address || '').trim(), link: (f.link || '').trim(), notes: f.notes || '', onlyAlert: false };
     if (f.type === 'sveglia') {
       const days = alarmDays(f.repeat || NO_REPEAT, it.date);
-      Object.assign(it, { start: f.start ?? 420, end: null, endDate: null, cat: null, alert: 0, address: '', link: '', notes: '', repeat: days.length ? { f: 'week', days: [...days].sort(), until: null } : { ...NO_REPEAT } });
+      const until = days.length && f.repeat && f.repeat.until ? f.repeat.until : null;
+      Object.assign(it, { start: f.start ?? 420, end: null, endDate: null, cat: null, alert: 0, address: '', link: '', notes: '', group: f.group || null, off: !!f.off, repeat: days.length ? { f: 'week', days: [...days].sort(), until } : { ...NO_REPEAT } });
     } else if (f.allDay) {
       it.start = null; it.end = null; it.endDate = f.type === 'evento' && f.endDate && f.endDate > it.date ? f.endDate : null;
     } else {
@@ -2211,7 +2372,7 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
         )}
         <div className="seg" role="group" aria-label={t('event') + ' / ' + t('reminder') + ' / ' + t('alarm')}>
           {[['evento', 'event', 11], ['promemoria', 'reminder', 12], ['sveglia', 'alarm', 13]].map(([v, k, sz]) => (
-            <button key={v} className={f.type === v ? 'on' : ''} onClick={() => setType(v)}><TypeShape type={v} color={f.type === v ? '#0E1D2A' : '#5A6873'} size={sz} />{t(k)}</button>
+            <button key={v} className={f.type === v ? 'on' : ''} onClick={() => setType(v)}><TypeShape type={v} color={f.type === v ? 'var(--ink)' : 'var(--muted)'} size={sz} />{t(k)}</button>
           ))}
         </div>
         {f.type === 'sveglia' ? (
@@ -2228,15 +2389,27 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
                     setF((p) => {
                       const cur = alarmDays(p.repeat || NO_REPEAT, p.date || today);
                       const nd = cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i].sort();
-                      return { ...p, repeat: nd.length ? { f: 'week', days: nd, until: null } : { ...NO_REPEAT } };
+                      return { ...p, repeat: nd.length ? { f: 'week', days: nd, until: (p.repeat && p.repeat.until) || null } : { ...NO_REPEAT } };
                     });
                   }}>{w.slice(0, 2)}</button>;
                 })}
               </div>
               {!aDays.length && <small className="muted">{t('alarmOnce')}</small>}
             </div>
+            {!!aDays.length && (
+              <label className="fl"><FL i="cal">{t('repeatUntil')} <small>{t('optional')}</small></FL>
+                <input type="date" min={today} value={(f.repeat && f.repeat.until) || ''} onChange={(e) => { touched.current.add('repeat'); setF((p) => ({ ...p, repeat: { ...(p.repeat || NO_REPEAT), until: e.target.value || null } })); }} />
+              </label>
+            )}
+            <label className="fl"><FL i="list">{t('group')}</FL>
+              <select value={f.group || ''} onChange={(e) => set('group', e.target.value || null)}>
+                <option value="">{t('noGroup')}</option>
+                {[...(st.alarmGroups || [])].sort(byOrder).map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </label>
+            <div className="fl"><FL i="bell">{t('active')}</FL><Switch on={!f.off} label={t('active')} onChange={(v) => set('off', !v)} /></div>
             {!aDays.length && <label className="fl"><FL i="cal">{t('dateL')}</FL><input type="date" value={f.date || ''} onChange={(e) => setStartDate(e.target.value)} /></label>}
-            {IS_ANDROID && <a className="lnk" href="intent:#Intent;action=android.intent.action.SHOW_ALARMS;end"><TypeShape type="sveglia" color="#23786D" size={15} />{t('openAlarms')}</a>}
+            {IS_ANDROID && <a className="lnk" href="intent:#Intent;action=android.intent.action.SHOW_ALARMS;end"><TypeShape type="sveglia" color="var(--tealInk)" size={15} />{t('openAlarms')}</a>}
             {IS_IOS && <p className="muted sm-p pt8">{t('alarmIos')}</p>}
             <p className="muted sm-p pt8">{t('alarmNote')}</p>
           </div>
@@ -2244,7 +2417,7 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
           <div className="form">
             <button className="fl btnrow" onClick={() => onPickCat(f.cat, (id) => set('cat', id))}>
               <FL i="tag">{t('category')}</FL>
-              <span className="row-c gap8"><CatTile cats={st.cats} id={f.cat} size={24} /><b style={{ color: f.cat ? tn.ink : '#5A6873' }}>{catLabel(st.cats, f.cat)}</b><UIcon n="right" size={14} sw={2.4} color="#5A6873" /></span>
+              <span className="row-c gap8"><CatTile cats={st.cats} id={f.cat} size={24} /><b style={{ color: f.cat ? tn.ink : 'var(--muted)' }}>{catLabel(st.cats, f.cat)}</b><UIcon n="right" size={14} sw={2.4} color="var(--muted)" /></span>
             </button>
             <label className="fl"><FL i="text">{t('title')}</FL><input value={f.title || ''} placeholder={t('titlePh')} onChange={(e) => set('title', e.target.value)} /></label>
             <div className="fl"><FL i="sun">{t('allDay')}</FL><Switch on={f.allDay} label={t('allDay')} onChange={(v) => { touched.current.add('time'); setF((p) => ({ ...p, allDay: v, start: v ? null : p.start ?? 540, end: v ? null : p.end ?? (p.start ?? 540) + 60 })); }} /></div>
@@ -2347,7 +2520,7 @@ function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
     <button key={c.id} className={'li' + (sub ? ' sub' : '') + (current === c.id ? ' cur' : '')} onClick={() => pick(c.id)}>
       {sub ? <span className="dot" style={{ background: catTone(st.cats, c.id).c }} /> : <CatTile cats={st.cats} id={c.id} size={28} />}
       <span className={'li-t' + (sub ? '' : ' b')}>{c.name}</span>
-      {current === c.id && <UIcon n="check" size={18} color="#23786D" sw={2.4} />}
+      {current === c.id && <UIcon n="check" size={18} color="var(--tealInk)" sw={2.4} />}
     </button>
   );
   return (
@@ -2355,7 +2528,7 @@ function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
       <SheetHead title={t('category')} onClose={onClose} />
       <div className="sh-body">
         <div className="search">
-          <UIcon n="search" size={18} color="#5A6873" />
+          <UIcon n="search" size={18} color="var(--muted)" />
           <input value={q} aria-label={t('searchCatPh')} placeholder={t('searchCatPh')} onChange={(e) => setQ(e.target.value)} />
         </div>
         {q.trim() && !exact && (
@@ -2384,7 +2557,7 @@ function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
               <div key={top.id}>
                 <div className="li-wrap">
                   {row(top, false)}
-                  {!!subs.length && <button className="ib" aria-label={top.name} aria-expanded={isOpen} onClick={() => setOpenIds((s) => { const n = new Set(s); if (n.has(top.id)) n.delete(top.id); else n.add(top.id); return n; })}><UIcon n={isOpen ? 'down' : 'right'} size={16} sw={2.4} color="#5A6873" /></button>}
+                  {!!subs.length && <button className="ib" aria-label={top.name} aria-expanded={isOpen} onClick={() => setOpenIds((s) => { const n = new Set(s); if (n.has(top.id)) n.delete(top.id); else n.add(top.id); return n; })}><UIcon n={isOpen ? 'down' : 'right'} size={16} sw={2.4} color="var(--muted)" /></button>}
                 </div>
                 {isOpen && (nq ? subsHit : subs).map((s) => row(s, true))}
               </div>
@@ -2392,7 +2565,7 @@ function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
           })}
           <button className={'li' + (!current ? ' cur' : '')} onClick={() => pick(null)}>
             <span className="tile none dashed" style={{ width: 28, height: 28 }} /><span className="li-t muted">{t('unassigned')}</span>
-            {!current && <UIcon n="check" size={18} color="#23786D" sw={2.4} />}
+            {!current && <UIcon n="check" size={18} color="var(--tealInk)" sw={2.4} />}
           </button>
         </div>
         <button className="lnk center" onClick={onManage}><Icon name="tag" size={16} sw={2} />{t('manageCats')}</button>
@@ -2417,7 +2590,7 @@ function ImportScreen({ st, drafts, origin, onClose, onConfirm, onPickCat }) {
       {!rows.length && <p className="muted pad">{t('noneFound')}</p>}
       <div className="card list">
         {rows.map((r) => {
-          const tn = r.missing ? NONE_TONE : catTone(st.cats, r.cat);
+          const tn = r.missing ? noneTone() : catTone(st.cats, r.cat);
           return (
             <div key={r.k} className={'imp' + (r.on ? '' : ' off')}>
               <button className={'cb' + (r.on ? ' on' : '')} role="checkbox" aria-checked={r.on} aria-label={r.title} onClick={() => upd(r.k, { on: !r.on })}>
@@ -2456,7 +2629,7 @@ function SearchScreen({ st, onClose, onOpen }) {
   return (
     <Screen title={t('search')} onBack={onClose}>
       <div className="pad-x">
-        <div className="search"><UIcon n="search" size={18} color="#5A6873" /><input ref={ref} value={q} aria-label={t('searchPh')} placeholder={t('searchPh')} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="search"><UIcon n="search" size={18} color="var(--muted)" /><input ref={ref} value={q} aria-label={t('searchPh')} placeholder={t('searchPh')} onChange={(e) => setQ(e.target.value)} /></div>
       </div>
       {nq && !res.length && <p className="muted pad">{t('noResults')}</p>}
       <div className="card list">
@@ -2562,7 +2735,7 @@ function CatsScreen({ st, onBack, onEdit, onNew, onSetCats }) {
   const grip = (c) => (
     <span className="grip" role="button" tabIndex={-1} aria-label={c.name} style={{ touchAction: 'none' }}
       onPointerDown={(e) => onDown(e, c)} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-      <UIcon n="grip" color="#A7B1B6" />
+      <UIcon n="grip" color="var(--faint)" />
     </span>
   );
   return (
@@ -2584,7 +2757,7 @@ function CatsScreen({ st, onBack, onEdit, onNew, onSetCats }) {
                 </button>
                 {subs.length > 0 && (
                   <button className="ib" aria-expanded={!isClosed} aria-label={top.name} onClick={() => setClosed((s) => { const n = new Set(s); if (n.has(top.id)) n.delete(top.id); else n.add(top.id); return n; })}>
-                    <UIcon n={isClosed ? 'right' : 'down'} size={16} sw={2.4} color="#5A6873" />
+                    <UIcon n={isClosed ? 'right' : 'down'} size={16} sw={2.4} color="var(--muted)" />
                   </button>
                 )}
               </div>
@@ -2607,7 +2780,7 @@ function CatsScreen({ st, onBack, onEdit, onNew, onSetCats }) {
         {drag && drag.ind != null && <div className="drop-ind" style={{ top: drag.ind - 1 }} />}
       </div>
       <div className="unas"><span>{t('unassigned')}</span><span className="num">{unassigned}</span></div>
-      <div className="pad-x"><button className="btn wide" onClick={onNew}><UIcon n="plus" size={18} color="#23786D" />{t('newCat')}</button></div>
+      <div className="pad-x"><button className="btn wide" onClick={onNew}><UIcon n="plus" size={18} color="var(--tealInk)" />{t('newCat')}</button></div>
     </Screen>
   );
 }
@@ -2674,7 +2847,7 @@ function CatEdit({ st, catId, parentId, onBack, onSave, onDelete, onOpenSub, onA
               <button key={s.id} className="li" onClick={() => { if (commit()) onOpenSub(s.id); }}>
                 <span className="dot lg" style={{ background: catTone(st.cats, s.id).c }} />
                 <span className="li-t col"><span>{s.name}</span>{s.details ? <small>{s.details.slice(0, 60)}</small> : null}</span>
-                <UIcon n="right" size={14} sw={2.4} color="#5A6873" />
+                <UIcon n="right" size={14} sw={2.4} color="var(--muted)" />
               </button>
             ))}
             <button className="li teal-t" onClick={() => { if (commit()) onAddSub(c.id); }}><UIcon n="plus" size={18} />{t('addSub')}</button>
@@ -2691,25 +2864,321 @@ function CatEdit({ st, catId, parentId, onBack, onSave, onDelete, onOpenSub, onA
   );
 }
 
-/* ============ Impostazioni: gruppi in blocchi tenui ============ */
-const tintOf = (id) => mix(colorHex(id), '#FFFFFF', 0.86);
-function SGroup({ icon, title, color, children }) {
+
+
+/* ============ Importare da un'altra app con l'IA ============ */
+const AI_GUIDE = `# Istruzioni per l'IA: dati di calendario verso hora
+
+Converti i dati che ti allego (export di un'altra app, testo copiato, foglio, foto di un'agenda) in un blocco di testo che hora sa leggere. Rispondi solo con il blocco, dentro un unico riquadro di codice, senza commenti.
+
+## Formato
+
+Prima riga: \`#hora\`. Poi una riga per ogni elemento, campi separati da \` | \`:
+
+\`\`\`
+#hora
+13/10 07:00-07:45 | Corsa | evento | Personale | ripete mar gio sab
+14/10 18:30 | Spesa | promemoria | Casa | avviso 30 minuti
+23/10-25/10 | Lisbona | evento | Personale › Viaggio Lisbona | link: https://...
+23/10-24/10 22:00-08:30 | Volo notturno | evento | Personale
+13/10 06:45 | Sveglia | sveglia | ripete lun mar mer gio ven
+\`\`\`
+
+## Regole
+
+1. Campo 1, quando: data \`GG/MM\` (aggiungi \`/AAAA\` se l'anno non è quello in corso), intervallo \`GG/MM-GG/MM\` per più giorni, poi l'ora \`HH:MM\` o la fascia \`HH:MM-HH:MM\` (24 ore). Senza ora l'elemento vale tutto il giorno.
+2. Campo 2: titolo breve, senza il carattere \`|\`.
+3. Campo 3, tipo: \`evento\` (ha una durata), \`promemoria\` (una cosa da fare, con o senza ora), \`sveglia\` (suona a un'ora precisa, senza categoria).
+4. Campo 4, categoria: una parola o due (es. Lavoro, Casa, Personale); per una sottocategoria usa \`Categoria › Sottocategoria\`. Riusa sempre gli stessi nomi.
+5. Campi facoltativi, in qualsiasi ordine dopo la categoria:
+   - \`ripete lun mer ven\`, \`ripete ogni giorno\`, \`ripete ogni settimana\`, \`ripete ogni mese\`, \`ripete ogni anno\`
+   - \`avviso 10 minuti\`, \`avviso 1 ora\`, \`avviso 1 giorno\`
+   - \`indirizzo: Via Roma 10, Parma\`
+   - \`link: https://...\`
+   - \`note: testo libero su una riga\`
+6. Fusi orari: converti tutto nell'ora italiana.
+7. Elementi ricorrenti: una sola riga con \`ripete\`, non una riga per ogni volta.
+8. Se un dato è incerto, scegli l'interpretazione più probabile e non inventare elementi.
+
+## Dopo
+
+Copia il blocco e incollalo in hora: Impostazioni > Dati > Importa da un'altra app (riquadro "Incolla qui"), oppure nel campo "Scrivi o detta" del Nuovo. hora mostra l'elenco "Da aggiungere": controlla e conferma.
+`;
+function AiImportScreen({ onBack, onRead, toast }) {
+  const [txt, setTxt] = useState('');
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(AI_GUIDE); toast(t('copied')); }
+    catch (e) { download('hora-istruzioni-ia.md', AI_GUIDE, 'text/markdown'); }
+  };
   return (
-    <section className="sgroup" style={{ background: tintOf(color) }}>
-      <h3 className="sg-h" style={{ color: mix(colorHex(color), '#0E1D2A', 0.4) }}><span className="sg-i" style={{ background: mix(colorHex(color), '#FFFFFF', 0.7) }}><UIcon n={icon} size={16} sw={2} /></span>{title}</h3>
+    <Screen title={t('aiImport')} onBack={onBack}>
+      <p className="muted intro">{t('aiTxt')}</p>
+      <div className="steps">
+        <div className="step"><b>1</b><span>{t('aiStep1')}</span></div>
+        <div className="step"><b>2</b><span>{t('aiStep2')}</span></div>
+        <div className="row-c gap8 pad-x">
+          <button className="btn grow" onClick={copy}><UIcon n="copy" size={18} />{t('copyMd')}</button>
+          <button className="btn grow" onClick={() => download('hora-istruzioni-ia.md', AI_GUIDE, 'text/markdown')}><UIcon n="download" size={18} />{t('downloadMd')}</button>
+        </div>
+        <div className="step"><b>3</b><span>{t('aiStep3')}</span></div>
+      </div>
+      <div className="pad-x">
+        <textarea className="paste" rows={7} value={txt} placeholder={'#hora\n13/10 07:00 | ...'} aria-label={t('pasteHere')} onChange={(e) => setTxt(e.target.value)} />
+        <button className="btn pri wide" disabled={!txt.trim()} onClick={() => onRead(txt)}>{t('readBlock')}</button>
+      </div>
+    </Screen>
+  );
+}
+
+/* ============ Elenco: eventi e promemoria in fila, sveglie a gruppi ============ */
+const AL = (title, start, days) => ({ title, start, days });
+const ALARM_TEMPLATES = [
+  { key: 'mattina', name: 'Mattina', en: 'Morning', items: [AL('Sveglia', 420, [0, 1, 2, 3, 4]), AL('Sveglia del weekend', 540, [5, 6])] },
+  { key: 'medicinali', name: 'Medicinali', en: 'Medicines', items: [AL('Medicina del mattino', 480, []), AL('Medicina della sera', 1200, [])] },
+  { key: 'lavoro', name: 'Lavoro', en: 'Work', items: [AL('Pausa', 630, [0, 1, 2, 3, 4]), AL('Fine giornata', 1080, [0, 1, 2, 3, 4])] },
+  { key: 'riposo', name: 'Riposo', en: 'Rest', items: [AL('Stacca dagli schermi', 1350, []), AL('A letto', 1380, [])] }
+];
+const tplDays = (d) => (d.length ? { f: 'week', days: d, until: null } : { f: 'day', days: [], until: null });
+function alarmText(it) {
+  const r = it.repeat || NO_REPEAT;
+  let s = r.f === 'day' ? t('everyDay') : r.f === 'week' ? (r.days && r.days.length === 7 ? t('everyDay') : (r.days || []).map((d) => WD_SHORT[LANG][d].toLowerCase()).join(' ')) : t('onceOn', { d: fmtDayShort(it.date) });
+  if (r.until) s += ' - ' + t('untilD', { d: fmtDayShort(r.until) });
+  return s;
+}
+function AgendaScreen({ st, tab: tab0, onBack, onOpen, onNewAlarm, onSaveItem, onSetGroups, onAddTemplate, onSetting }) {
+  const today = todayStr();
+  const [tab, setTab] = useState(tab0 || 'list');
+  const [types, setTypes] = useState(['evento', 'promemoria']);
+  const [cat, setCat] = useState('');
+  const [q, setQ] = useState('');
+  const [past, setPast] = useState(false);
+  const [span, setSpan] = useState(120);
+  const [edit, setEdit] = useState(null);
+  const tops = st.cats.filter((c) => !c.parent).sort(byOrder);
+  const days = useMemo(() => {
+    if (tab !== 'list') return [];
+    const fam = cat ? (cat === '__none' ? null : new Set(catFamily(st.cats, cat))) : null;
+    const nq = q.trim().toLowerCase();
+    const its = st.items.filter((it) => it.type !== 'sveglia' && types.includes(it.type)
+      && (!cat || (cat === '__none' ? !it.cat || !catOf(st.cats, it.cat) : fam.has(it.cat)))
+      && (!nq || [it.title, it.notes, it.address].some((x) => (x || '').toLowerCase().includes(nq))));
+    const list = expand(its, past ? addDays(today, -365) : today, addDays(today, span)).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.it.start ?? -1) - (b.it.start ?? -1)));
+    const g = [];
+    for (const o of list) { if (!g.length || g[g.length - 1].d !== o.date) g.push({ d: o.date, list: [] }); g[g.length - 1].list.push(o); }
+    return g;
+  }, [tab, st.items, st.cats, types, cat, q, past, span]);
+  const groups = [...(st.alarmGroups || [])].sort(byOrder);
+  const alarms = st.items.filter((it) => it.type === 'sveglia').sort((a, b) => (a.start ?? 0) - (b.start ?? 0));
+  const moveGroup = (id, dir) => {
+    const i = groups.findIndex((g) => g.id === id), j = i + dir;
+    if (j < 0 || j >= groups.length) return;
+    const ng = [...groups]; [ng[i], ng[j]] = [ng[j], ng[i]];
+    onSetGroups(ng.map((g, k) => ({ ...g, order: k })));
+  };
+  const renameGroup = (id, name) => { if (name.trim()) onSetGroups(groups.map((g) => (g.id === id ? { ...g, name: name.trim() } : g))); setEdit(null); };
+  const addGroup = () => { const id = uid(); onSetGroups([...groups, { id, name: t('newGroup'), order: groups.length }]); setEdit(id); };
+  const delGroup = (id) => { onSetGroups(groups.filter((g) => g.id !== id)); for (const a of alarms) if (a.group === id) onSaveItem({ ...a, group: null }); };
+  const usedTpl = new Set(groups.map((g) => g.tpl).filter(Boolean));
+  const tpls = ALARM_TEMPLATES.filter((x) => !usedTpl.has(x.key));
+  const alarmRow = (a) => (
+    <div key={a.id} className={'al-row' + (a.off ? ' off' : '')}>
+      <button className="al-main" onClick={() => onOpen({ it: a, date: a.date, end: a.date, key: a.id + '@' + a.date })}>
+        <span className="al-time">{toHHMM(a.start ?? 420)}</span>
+        <span className="li-t col"><span>{a.title || t('alarm')}</span><small>{alarmText(a)}</small></span>
+      </button>
+      <Switch on={!a.off} label={a.title || t('alarm')} onChange={(v) => onSaveItem({ ...a, off: !v })} />
+    </div>
+  );
+  const groupCard = (g) => {
+    const list = alarms.filter((a) => (g ? a.group === g.id : !a.group || !groups.some((x) => x.id === a.group)));
+    if (!g && !list.length) return null;
+    return (
+      <section key={g ? g.id : '__none'} className="al-group">
+        <div className="al-gh">
+          {g && edit === g.id
+            ? <input autoFocus defaultValue={g.name} aria-label={t('name')} onBlur={(e) => renameGroup(g.id, e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
+            : <h3 onClick={() => g && setEdit(g.id)}>{g ? g.name : t('noGroup')}</h3>}
+          {g && (
+            <span className="row-c">
+              <button className="ib sm" aria-label={t('up')} onClick={() => moveGroup(g.id, -1)}><UIcon n="up" size={16} /></button>
+              <button className="ib sm" aria-label={t('down')} onClick={() => moveGroup(g.id, 1)}><UIcon n="down" size={16} /></button>
+              <button className="ib sm" aria-label={t('del')} onClick={() => delGroup(g.id)}><UIcon n="trash" size={16} /></button>
+            </span>
+          )}
+        </div>
+        {list.map(alarmRow)}
+        <button className="li teal-t" onClick={() => onNewAlarm(g ? g.id : null)}><UIcon n="plus" size={18} />{t('newAlarm')}</button>
+      </section>
+    );
+  };
+  return (
+    <Screen title={t('agenda')} onBack={onBack}>
+      <div className="pad-x">
+        <div className="seg" role="tablist">
+          <button role="tab" aria-selected={tab === 'list'} className={tab === 'list' ? 'on' : ''} onClick={() => setTab('list')}><UIcon n="list" size={17} />{t('evRem')}</button>
+          <button role="tab" aria-selected={tab === 'alarms'} className={tab === 'alarms' ? 'on' : ''} onClick={() => setTab('alarms')}><TypeShape type="sveglia" color="currentColor" size={14} />{t('alarms')}</button>
+        </div>
+      </div>
+      {tab === 'list' && (
+        <>
+          <div className="pad-x ag-tools">
+            <div className="search"><UIcon n="search" size={18} color="var(--muted)" /><input value={q} aria-label={t('searchPh')} placeholder={t('searchPh')} onChange={(e) => setQ(e.target.value)} /></div>
+            <div className="chips">
+              {[['evento', 'events'], ['promemoria', 'reminders']].map(([v, k]) => {
+                const on = types.includes(v);
+                return <button key={v} className={'chip' + (on ? ' on' : '')} aria-pressed={on} onClick={() => { const n = on ? types.filter((x) => x !== v) : [...types, v]; if (n.length) setTypes(n); }}><TypeShape type={v} color="currentColor" size={12} />{t(k)}</button>;
+              })}
+              <select className="chip sel" value={cat} aria-label={t('category')} onChange={(e) => setCat(e.target.value)}>
+                <option value="">{t('allCats')}</option>
+                {tops.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                <option value="__none">{t('unassigned')}</option>
+              </select>
+              <button className={'chip' + (past ? ' on' : '')} aria-pressed={past} onClick={() => setPast(!past)}>{t('past')}</button>
+            </div>
+          </div>
+          {!days.length && <p className="muted pad">{t('empty')}</p>}
+          {days.map((g) => (
+            <section key={g.d} className="ag-day">
+              <h3 className={g.d === today ? 'today' : ''}>{fmtHead(g.d, 999)}</h3>
+              <div className="card list">
+                {g.list.map((o) => {
+                  const it = o.it, tn = catTone(st.cats, it.cat), done = isDone(it, o.date);
+                  return (
+                    <button key={o.key} className="li ag-row" onClick={() => onOpen(o)}>
+                      <span className="ag-time">{it.start == null ? t('allDayShort') : o.date === it.date || !isMulti(it) ? fmtTime(it.start) : ''}</span>
+                      <span className="ag-bar" style={{ background: tn.c }} />
+                      <span className="li-t col"><span className={done && it.type === 'promemoria' && !it.onlyAlert ? 'strike' : ''}>{it.title || t('noTitle')}</span><small>{catLabel(st.cats, it.cat)}{isMulti(it) ? ' - ' + fmtRange(o.date, o.end) : ''}</small></span>
+                      <TypeShape type={it.type} only={it.onlyAlert} done={done} color={tn.c} size={12} />
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+          <div className="pad-x"><button className="btn wide" onClick={() => setSpan(span + 120)}>{t('showMore')}</button></div>
+        </>
+      )}
+      {tab === 'alarms' && (
+        <div className="al-wrap">
+          {groups.map(groupCard)}
+          {groupCard(null)}
+          {!alarms.length && !groups.length && <p className="muted pad">{t('noAlarms')}</p>}
+          <div className="pad-x"><button className="btn wide" onClick={addGroup}><UIcon n="plus" size={18} color="var(--tealInk)" />{t('newGroup')}</button></div>
+          {st.settings.alarmTips !== false && tpls.length > 0 && (
+            <section className="al-tpl">
+              <div className="al-gh"><h3>{t('suggested')}</h3><button className="lnk sm" onClick={() => onSetting({ alarmTips: false })}>{t('hideTips')}</button></div>
+              <p className="muted sm-p">{t('tplTxt')}</p>
+              {tpls.map((x) => (
+                <div key={x.key} className="tpl">
+                  <div className="li-t col"><b>{LANG === 'en' ? x.en : x.name}</b><small>{x.items.map((a) => `${toHHMM(a.start)} ${a.title}`).join(', ')}</small></div>
+                  <button className="ctl txt" onClick={() => onAddTemplate(x)}>{t('add')}</button>
+                </div>
+              ))}
+            </section>
+          )}
+          <p className="muted sm-p pad">{t('alarmNote')}</p>
+        </div>
+      )}
+    </Screen>
+  );
+}
+
+/* ============ Sincronizzazione con Dropbox (cartella dell'app, file /hora.json) ============ */
+/* Chiave dell'app Dropbox (App key, pubblica: con PKCE non serve il segreto). Vuota finché non viene fornita. */
+const DBX_KEY = '';
+const DBX = 'hora.dbx', UPD = 'hora.upd';
+const dbxGet = () => { try { return JSON.parse(localStorage.getItem(DBX)) || {}; } catch (e) { return {}; } };
+const dbxSet = (p) => { const v = { ...dbxGet(), ...p }; try { localStorage.setItem(DBX, JSON.stringify(v)); } catch (e) { /* niente */ } return v; };
+const localUpd = () => { try { return +localStorage.getItem(UPD) || 0; } catch (e) { return 0; } };
+const setLocalUpd = (v) => { try { localStorage.setItem(UPD, String(v)); } catch (e) { /* niente */ } };
+const dbxLinked = () => !!(DBX_KEY && dbxGet().refresh);
+const redirectUri = () => location.origin + location.pathname;
+const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function dbxLink() {
+  const v = b64url(crypto.getRandomValues(new Uint8Array(48)));
+  const ch = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)));
+  sessionStorage.setItem('hora.dbx.v', v);
+  location.href = 'https://www.dropbox.com/oauth2/authorize?' + new URLSearchParams({ client_id: DBX_KEY, response_type: 'code', code_challenge: ch, code_challenge_method: 'S256', redirect_uri: redirectUri(), token_access_type: 'offline' });
+}
+async function dbxToken(params) {
+  const r = await fetch('https://api.dropboxapi.com/oauth2/token', { method: 'POST', body: new URLSearchParams({ client_id: DBX_KEY, ...params }) });
+  if (!r.ok) throw new Error('token');
+  const j = await r.json();
+  return dbxSet({ access: j.access_token, exp: Date.now() + ((j.expires_in || 14400) - 60) * 1000, ...(j.refresh_token ? { refresh: j.refresh_token } : null) });
+}
+/* ritorno da Dropbox dopo l'autorizzazione (?code=...) */
+async function dbxFinish() {
+  if (typeof location === 'undefined' || !DBX_KEY) return false;
+  const code = new URLSearchParams(location.search).get('code');
+  let v = null;
+  try { v = sessionStorage.getItem('hora.dbx.v'); } catch (e) { /* niente */ }
+  if (!code || !v) return false;
+  try { history.replaceState(null, '', location.pathname); sessionStorage.removeItem('hora.dbx.v'); } catch (e) { /* niente */ }
+  await dbxToken({ code, grant_type: 'authorization_code', redirect_uri: redirectUri(), code_verifier: v });
+  return true;
+}
+async function dbxAccess() {
+  const d = dbxGet();
+  if (!d.refresh) throw new Error('nolink');
+  if (d.access && d.exp > Date.now()) return d.access;
+  return (await dbxToken({ grant_type: 'refresh_token', refresh_token: d.refresh })).access;
+}
+async function dbxDown() {
+  const a = await dbxAccess();
+  const r = await fetch('https://content.dropboxapi.com/2/files/download', { method: 'POST', headers: { Authorization: 'Bearer ' + a, 'Dropbox-API-Arg': JSON.stringify({ path: '/hora.json' }) } });
+  if (r.status === 409) return null;
+  if (!r.ok) throw new Error('down');
+  return r.json();
+}
+async function dbxUp(data) {
+  const a = await dbxAccess();
+  const r = await fetch('https://content.dropboxapi.com/2/files/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + a, 'Content-Type': 'application/octet-stream', 'Dropbox-API-Arg': JSON.stringify({ path: '/hora.json', mode: 'overwrite', mute: true }) }, body: JSON.stringify(data) });
+  if (!r.ok) throw new Error('up');
+}
+async function dbxUnlink() {
+  try { const a = await dbxAccess(); await fetch('https://api.dropboxapi.com/2/auth/token/revoke', { method: 'POST', headers: { Authorization: 'Bearer ' + a } }); } catch (e) { /* niente */ }
+  try { localStorage.removeItem(DBX); } catch (e) { /* niente */ }
+}
+
+/* ============ Impostazioni: elenco in alto, poi gruppi su un solo fondo tenue ============ */
+function SGroup({ icon, title, children }) {
+  return (
+    <section className="sgroup">
+      <h3 className="sg-h"><span className="sg-i"><UIcon n={icon} size={16} sw={2} /></span>{title}</h3>
       <div className="sg-list">{children}</div>
     </section>
   );
 }
 const SIcon = ({ n }) => <span className="si"><UIcon n={n} size={18} sw={1.8} /></span>;
-function SettingsScreen({ st, onBack, onCats, onSetting, onNotify, onMyPos, onExportJson, onImportJson, onExportIcs, onImportCal }) {
+function SettingsScreen({ st, sync, onBack, onCats, onAgenda, onAi, onSetting, onNotify, onMyPos, onExportJson, onImportJson, onExportIcs, onImportCal, onSyncNow, onLink, onUnlink }) {
   const jRef = useRef(null), iRef = useRef(null);
   const sun = st.settings.sun || DEFAULT_SUN;
   const known = PLACES.some((p) => p[0] === sun.name);
   const readFile = (e, cb) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return; const r = new FileReader(); r.onload = () => cb(String(r.result)); r.readAsText(f); };
+  const th = st.settings.theme || 'auto';
+  const nAl = st.items.filter((it) => it.type === 'sveglia').length;
+  const nEv = st.items.filter((it) => it.type !== 'sveglia').length;
   return (
     <Screen title={t('settings')} onBack={onBack}>
-      <SGroup icon="cal" title={t('sCal')} color="verderame">
+      <div className="s-top">
+        <button className="s-tile" onClick={() => onAgenda('list')}><UIcon n="list" size={20} /><b>{t('evRem')}</b><small>{nEv}</small></button>
+        <button className="s-tile" onClick={() => onAgenda('alarms')}><TypeShape type="sveglia" color="currentColor" size={18} /><b>{t('alarms')}</b><small>{nAl}</small></button>
+      </div>
+      <SGroup icon="palette" title={t('sLook')}>
+        <div className="li"><SIcon n="moon" /><span className="li-t">{t('theme')}</span>
+          <div className="seg mini-seg" role="group" aria-label={t('theme')}>
+            {[['auto', 'thAuto'], ['light', 'thLight'], ['dark', 'thDark']].map(([v, k]) => <button key={v} className={th === v ? 'on' : ''} onClick={() => onSetting({ theme: v })}>{t(k)}</button>)}
+          </div>
+        </div>
+        <div className="li"><SIcon n="tap" /><span className="li-t col"><span>{t('sSplash')}</span><small>{t('sSplashTxt')}</small></span><Switch on={st.settings.splash !== false} label={t('sSplash')} onChange={(v) => onSetting({ splash: v })} /></div>
+        <div className="li"><SIcon n="globe" /><span className="li-t">{t('sLang')}</span>
+          <div className="seg mini-seg" role="group" aria-label={t('sLang')}>
+            <button className={st.settings.lang === 'it' ? 'on' : ''} onClick={() => onSetting({ lang: 'it' })}>Italiano</button>
+            <button className={st.settings.lang === 'en' ? 'on' : ''} onClick={() => onSetting({ lang: 'en' })}>English</button>
+          </div>
+        </div>
+      </SGroup>
+      <SGroup icon="cal" title={t('sCal')}>
         <div className="li"><SIcon n="swipe" /><span className="li-t col"><span>{t('sFree')}</span><small>{t('sFreeTxt')}</small></span><Switch on={!!st.settings.freeScroll} label={t('sFree')} onChange={(v) => onSetting({ freeScroll: v })} /></div>
         <div className="li"><SIcon n="sunrise" /><span className="li-t col"><span>{t('sSun')}</span><small>{t('sSunTxt')}</small></span><Switch on={!!sun.on} label={t('sSunOn')} onChange={(v) => onSetting({ sun: { ...sun, on: v } })} /></div>
         {sun.on && (
@@ -2723,31 +3192,35 @@ function SettingsScreen({ st, onBack, onCats, onSetting, onNotify, onMyPos, onEx
             <button className="li teal-t" onClick={onMyPos}><SIcon n="globe" />{t('myPos')}</button>
           </>
         )}
-      </SGroup>
-      <SGroup icon="tag" title={t('sCats') + ' - ' + t('gantt2')} color="ottone">
-        <button className="li" onClick={onCats}><SIcon n="tag" /><span className="li-t col"><span className="b">{t('sCats')}</span><small>{t('sCatsTxt')}</small></span><span className="num">{st.cats.length}</span><UIcon n="right" size={14} sw={2.4} color="#5A6873" /></button>
-        <div className="li"><SIcon n="gantt" /><span className="li-t">{t('showUnassigned')}</span><Switch on={!!st.settings.ganttUnassigned} label={t('showUnassigned')} onChange={(v) => onSetting({ ganttUnassigned: v })} /></div>
-      </SGroup>
-      <SGroup icon="bell" title={t('sNotify')} color="mare">
         <div className="li"><SIcon n="bell" /><span className="li-t col"><span>{t('sNotifyOn')}</span><small>{t('sNotifyTxt')}</small></span><Switch on={!!st.settings.notify} label={t('sNotifyOn')} onChange={onNotify} /></div>
       </SGroup>
-      <SGroup icon="download" title={t('sData')} color="salvia">
+      <SGroup icon="tag" title={t('sCats') + ' - ' + t('gantt2')}>
+        <button className="li" onClick={onCats}><SIcon n="tag" /><span className="li-t col"><span className="b">{t('sCats')}</span><small>{t('sCatsTxt')}</small></span><span className="num">{st.cats.length}</span><UIcon n="right" size={14} sw={2.4} color="var(--muted)" /></button>
+        <div className="li"><SIcon n="gantt" /><span className="li-t">{t('showUnassigned')}</span><Switch on={!!st.settings.ganttUnassigned} label={t('showUnassigned')} onChange={(v) => onSetting({ ganttUnassigned: v })} /></div>
+      </SGroup>
+      <SGroup icon="cloud" title={t('sSync')}>
+        {!DBX_KEY && <div className="li"><SIcon n="cloud" /><span className="li-t col"><span>Dropbox</span><small>{t('dbxNoKey')}</small></span><span className="tag">{t('soon')}</span></div>}
+        {DBX_KEY && !sync.linked && <button className="li teal-t" onClick={onLink}><SIcon n="cloud" />{t('dbxLink')}</button>}
+        {DBX_KEY && sync.linked && (
+          <>
+            <button className="li" onClick={onSyncNow}><SIcon n="cloud" /><span className="li-t col"><span>{t('dbxSync')}</span><small>{sync.busy ? t('syncing') : sync.last ? t('lastSync', { d: new Date(sync.last).toLocaleString(LANG === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }) : t('never')}</small></span></button>
+            <button className="li" onClick={onUnlink}><SIcon n="x" /><span className="li-t">{t('dbxUnlink')}</span></button>
+          </>
+        )}
+      </SGroup>
+      <SGroup icon="download" title={t('sData')}>
         <button className="li" onClick={onExportJson}><SIcon n="download" /><span className="li-t">{t('expJson')}</span></button>
         <button className="li" onClick={() => jRef.current.click()}><SIcon n="upload" /><span className="li-t">{t('impJson')}</span></button>
         <button className="li" onClick={onExportIcs}><SIcon n="download" /><span className="li-t">{t('expIcs')}</span></button>
         <button className="li" onClick={() => iRef.current.click()}><SIcon n="upload" /><span className="li-t">{t('impIcs')}</span></button>
+        <button className="li" onClick={onAi}><SIcon n="ai" /><span className="li-t col"><span>{t('aiImport')}</span><small>{t('aiShort')}</small></span><UIcon n="right" size={14} sw={2.4} color="var(--muted)" /></button>
         <input ref={jRef} type="file" accept=".json,application/json" hidden onChange={(e) => readFile(e, onImportJson)} />
         <input ref={iRef} type="file" accept=".ics,.zip,text/calendar,application/zip" hidden onChange={(e) => { const fl = e.target.files && e.target.files[0]; e.target.value = ''; if (fl) onImportCal(fl); }} />
       </SGroup>
-      <SGroup icon="globe" title={t('sLang')} color="lavanda">
-        <div className="seg" role="group" aria-label={t('sLang')}>
-          <button className={st.settings.lang === 'it' ? 'on' : ''} onClick={() => onSetting({ lang: 'it' })}>Italiano</button>
-          <button className={st.settings.lang === 'en' ? 'on' : ''} onClick={() => onSetting({ lang: 'en' })}>English</button>
-        </div>
-      </SGroup>
       <div className="about">
-        <Mark size={36} />
+        <Mark size={36} dark={isDark()} />
         <div><b className="wm">hora</b> {VERSION}</div>
+        <small>{t('splashSub')}</small>
         <small>{t('localTxt')}</small>
         <small><b>nautargo</b></small>
       </div>
@@ -2799,7 +3272,7 @@ function FilterSheet({ st, filter, onChange, onClose }) {
         <div className="chips">
           {[['evento', 'events'], ['promemoria', 'reminders'], ['sveglia', 'alarms']].map(([v, k]) => {
             const on = filter.types.includes(v);
-            return <button key={v} className={'chip' + (on ? ' on' : '')} aria-pressed={on} onClick={() => { const ts = tog(filter.types, v); if (ts.length) onChange({ ...filter, types: ts }); }}><TypeShape type={v} color={on ? '#1F635C' : '#5A6873'} size={12} />{t(k)}</button>;
+            return <button key={v} className={'chip' + (on ? ' on' : '')} aria-pressed={on} onClick={() => { const ts = tog(filter.types, v); if (ts.length) onChange({ ...filter, types: ts }); }}><TypeShape type={v} color={on ? 'var(--tealDeep)' : 'var(--muted)'} size={12} />{t(k)}</button>;
           })}
         </div>
         <div className="lbl">{t('categories')}</div>
@@ -2818,19 +3291,38 @@ function FilterSheet({ st, filter, onChange, onClose }) {
 }
 
 export function App() {
-  const [st, setSt] = useState(() => loadState() || defaultState(sysLang()));
+  const [st, setSt] = useState(() => { const s0 = loadState() || defaultState(sysLang()); return s0.alarmGroups ? s0 : { ...s0, alarmGroups: [] }; });
   setLang(st.settings.lang || 'it');
+  /* tema: automatico (come il sistema), chiaro o scuro */
+  const [sysDark, setSysDark] = useState(() => { try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; } });
+  useEffect(() => {
+    let mq = null;
+    try { mq = window.matchMedia('(prefers-color-scheme: dark)'); } catch (e) { return undefined; }
+    const on = (e) => setSysDark(e.matches);
+    if (mq.addEventListener) mq.addEventListener('change', on); else if (mq.addListener) mq.addListener(on);
+    return () => { if (mq.removeEventListener) mq.removeEventListener('change', on); else if (mq.removeListener) mq.removeListener(on); };
+  }, []);
+  const theme = st.settings.theme === 'dark' || (st.settings.theme !== 'light' && sysDark) ? 'dark' : 'light';
+  setTheme(theme);
+  useLayoutEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    const m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', theme === 'dark' ? '#0F1A20' : '#F3F4F1');
+  }, [theme]);
   useEffect(() => { saveState(st); }, [st]);
   const stRef = useRef(st);
   stRef.current = st;
 
-  const [splash, setSplash] = useState(true);
+  const [splash, setSplash] = useState(() => st.settings.splash !== false);
   const [view, setView] = useState('grid');
   const [days, setDays] = useState(1);
   const [anchor, setAnchor] = useState(todayStr());
   const [filter, setFilter] = useState(NO_FILTER);
   const [filterOpen, setFilterOpen] = useState(false);
   const [hourH, setHourH] = useState(st.settings.hourH || 48);
+  /* blocco nuovo disegnato nel calendario: si completa con un tocco o con il + */
+  const [draft, setDraft] = useState(null);
+  useEffect(() => { setDraft(null); }, [view, days]);
   const [nonce, setNonce] = useState(0);
   const [sheet, setSheet] = useState(null);
   const [picker, setPicker] = useState(null);
@@ -2969,13 +3461,66 @@ export function App() {
 
   /* avvisi e sveglie con l'app aperta */
   const fired = useRef(new Set());
+  /* nuova versione pubblicata: avviso con Ricarica */
+  const [newVer, setNewVer] = useState(null);
+  useEffect(() => {
+    const check = () => {
+      if (typeof fetch !== 'function' || location.protocol !== 'https:') return;
+      fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((j) => { if (j && j.v && j.v !== VERSION) setNewVer(j.v); }).catch(() => {});
+    };
+    check();
+    const iv = setInterval(check, 30 * 60000);
+    const vis = () => { if (document.visibilityState === 'visible') check(); };
+    document.addEventListener('visibilitychange', vis);
+    return () => { clearInterval(iv); document.removeEventListener('visibilitychange', vis); };
+  }, []);
+  const reloadApp = () => {
+    const go = () => location.reload();
+    try { if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then((r) => (r ? r.update() : null)).then(go, go); else go(); } catch (e) { go(); }
+  };
+  /* sincronizzazione con Dropbox: chi è più recente vince, se sono cambiati entrambi si chiede */
+  const [sync, setSync] = useState(() => ({ linked: dbxLinked(), busy: false, last: dbxGet().last || 0 }));
+  const fromSync = useRef(false), firstData = useRef(true), syncT = useRef(null);
+  const applyRemote = (r) => { fromSync.current = true; setSt((s) => ({ ...s, items: r.items || [], cats: r.cats || [], alarmGroups: r.alarmGroups || [] })); setLocalUpd(r.updated || Date.now()); };
+  const doSync = async (manual) => {
+    if (!dbxLinked()) return;
+    setSync((x) => ({ ...x, busy: true }));
+    try {
+      const remote = await dbxDown();
+      const last = dbxGet().last || 0, l = localUpd(), r = remote ? remote.updated || 0 : 0;
+      const s0 = stRef.current, data = { app: 'hora', version: VERSION, updated: l || Date.now(), items: s0.items, cats: s0.cats, alarmGroups: s0.alarmGroups || [] };
+      if (!remote || (l > r && r <= last)) { await dbxUp(data); dbxSet({ last: data.updated }); }
+      else if (r > l && l <= last) { applyRemote(remote); dbxSet({ last: r }); }
+      else if (r !== l && r > last && l > last) {
+        setConfirm({ q: t('syncConflictQ'), txt: t('syncConflictTxt'), ok: t('useDbx'), cancel: t('useHere'),
+          onOk: () => { applyRemote(remote); dbxSet({ last: r }); setConfirm(null); },
+          onCancelAlt: async () => { setConfirm(null); try { await dbxUp(data); dbxSet({ last: data.updated }); } catch (e) { toast(t('syncFail')); } } });
+      }
+      setSync({ linked: true, busy: false, last: Date.now() });
+      if (manual) toast(t('syncOk'));
+    } catch (e) { setSync((x) => ({ ...x, busy: false })); if (manual) toast(t('syncFail')); }
+  };
+  useEffect(() => {
+    dbxFinish().then((ok) => { if (ok) setSync((x) => ({ ...x, linked: true })); if (dbxLinked()) doSync(false); }).catch(() => toast(t('syncFail')));
+    const vis = () => { if (document.visibilityState === 'visible') doSync(false); };
+    document.addEventListener('visibilitychange', vis);
+    return () => document.removeEventListener('visibilitychange', vis);
+  }, []);
+  useEffect(() => {
+    if (firstData.current) { firstData.current = false; return; }
+    if (fromSync.current) { fromSync.current = false; return; }
+    setLocalUpd(Date.now());
+    if (!dbxLinked()) return;
+    clearTimeout(syncT.current);
+    syncT.current = setTimeout(() => doSync(false), 4000);
+  }, [st.items, st.cats, st.alarmGroups]);
   useEffect(() => {
     if (!st.settings.notify) return;
     const check = () => {
       const td = todayStr(), nm = nowMin();
       for (const o of expand(stRef.current.items, td, addDays(td, 1))) {
         const it = o.it;
-        if (it.alert == null || fired.current.has(o.key)) continue;
+        if (it.alert == null || it.off || fired.current.has(o.key)) continue;
         const at = diffDays(td, o.date) * 1440 + (it.start ?? 540) - it.alert;
         if (nm >= at && nm < at + 10) {
           fired.current.add(o.key);
@@ -3062,6 +3607,12 @@ export function App() {
     return () => window.removeEventListener('resize', m);
   }, []);
   const goDate = (v) => { if (!v) return; setAnchor(v); setNonce((n) => n + 1); };
+  const [datePick, setDatePick] = useState(false);
+  const openPick = () => setDatePick(true);
+  const lpTitle = useLongPress(openPick, openPick);
+  const lpToday = useLongPress(openPick, () => goToday());
+  const lpPrev = useLongPress(openPick, () => step(-1));
+  const lpNext = useLongPress(openPick, () => step(1));
 
   const openOcc = (o) => setSheet({ item: o.it, occDate: o.date, isNew: false });
   const newDate = () => (view === 'gantt' ? today : view === 'month' ? anchor : vis.includes(today) ? today : vis[0]);
@@ -3083,11 +3634,22 @@ export function App() {
           let data = null;
           try { data = JSON.parse(txt); } catch (e) { /* niente */ }
           if (!data || !Array.isArray(data.items) || !Array.isArray(data.cats)) { toast(t('badFile')); return; }
-          setConfirm({ q: t('restoreQ'), txt: t('restoreTxt'), ok: t('confirm'), onOk: () => { setSt({ v: 1, items: data.items, cats: data.cats, settings: { ...st.settings, ...(data.settings || {}) } }); setConfirm(null); toast(t('restored')); } });
+          setConfirm({ q: t('restoreQ'), txt: t('restoreTxt'), ok: t('confirm'), onOk: () => { setSt({ v: 1, items: data.items, cats: data.cats, alarmGroups: data.alarmGroups || [], settings: { ...st.settings, ...(data.settings || {}) } }); setConfirm(null); toast(t('restored')); } });
         }}
         onExportIcs={() => download(`hora-${todayStr()}.ics`, toICS(st.items, st.cats), 'text/calendar')}
-        onImportCal={importCal} />
+        onImportCal={importCal} sync={sync} onAgenda={(tab) => push({ kind: 'agenda', tab })} onAi={() => push({ kind: 'ai' })}
+        onSyncNow={() => doSync(true)} onLink={() => dbxLink().catch(() => toast(t('syncFail')))} onUnlink={() => { dbxUnlink().then(() => setSync({ linked: false, busy: false, last: 0 })); }} />
     );
+    if (sc.kind === 'agenda') return (
+      <AgendaScreen key={i} st={st} tab={sc.tab} onBack={pop} onOpen={openOcc} onNewAlarm={(g) => setSheet({ item: newItem({ type: 'sveglia', start: 420, group: g, date: todayStr() }), isNew: true })}
+        onSaveItem={saveItem} onSetGroups={(g) => setSt((s) => ({ ...s, alarmGroups: g }))} onSetting={setSettings}
+        onAddTemplate={(x) => setSt((s) => {
+          const g = { id: uid(), name: LANG === 'en' ? x.en : x.name, order: (s.alarmGroups || []).length, tpl: x.key };
+          const its = x.items.map((a) => newItem({ type: 'sveglia', title: a.title, start: a.start, alert: 0, repeat: tplDays(a.days), group: g.id, date: todayStr() }));
+          return { ...s, alarmGroups: [...(s.alarmGroups || []), g], items: [...s.items, ...its] };
+        })} />
+    );
+    if (sc.kind === 'ai') return <AiImportScreen key={i} onBack={pop} toast={toast} onRead={(txt) => openBlock(txt, 'paste')} />;
     if (sc.kind === 'cats') return <CatsScreen key={i} st={st} onBack={pop} onSetCats={setCats} onEdit={(id) => push({ kind: 'cat', id })} onNew={() => push({ kind: 'cat', id: null, parentId: null })} />;
     if (sc.kind === 'cat') return (
       <CatEdit key={i + (sc.id || 'n') + (sc.parentId || '')} st={st} catId={sc.id} parentId={sc.parentId} onBack={pop} onSave={upsertCat} onDelete={askDeleteCat}
@@ -3115,22 +3677,19 @@ export function App() {
           <button className="ib" aria-label={t('settings')} onClick={() => push({ kind: 'settings' })}><UIcon n="gear" /></button>
         </div>
         <div className="hdr2">
-          <h1>{title}</h1>
+          <h1 {...lpTitle} title={t('goDate')}>{title}</h1>
           <div className="row-c gap6">
             {view !== 'gantt' && (
               <button className={'ctl filt' + (fOn ? ' on' : '')} aria-label={t('filter')} aria-pressed={fOn} onClick={() => setFilterOpen(true)}><UIcon n="filter" size={18} />{fOn && <i />}</button>
             )}
             {view === 'gantt' && (
-              <label className="ctl date" aria-label={t('goDate')} title={t('goDate')}>
-                <UIcon n="cal" size={17} /><span>{t('goDate')}</span>
-                <input type="date" value="" onChange={(e) => goDate(e.target.value)} />
-              </label>
+              <button className="ctl date" aria-label={t('goDate')} title={t('goDate')} onClick={openPick}><UIcon n="cal" size={17} /><span>{t('goDate')}</span></button>
             )}
-            <button className="ctl txt" onClick={goToday}>{t('today')}</button>
+            <button className="ctl txt" {...lpToday}>{t('today')}</button>
             {view !== 'gantt' && (
               <span className="ctl-pair">
-                <button className="ctl" aria-label={t('prev')} onClick={() => step(-1)}><UIcon n="left" size={17} sw={2.1} /></button>
-                <button className="ctl" aria-label={t('next')} onClick={() => step(1)}><UIcon n="right" size={17} sw={2.1} /></button>
+                <button className="ctl" aria-label={t('prev')} {...lpPrev}><UIcon n="left" size={17} sw={2.1} /></button>
+                <button className="ctl" aria-label={t('next')} {...lpNext}><UIcon n="right" size={17} sw={2.1} /></button>
               </span>
             )}
           </div>
@@ -3140,7 +3699,7 @@ export function App() {
         {view === 'grid' && (
           <GridView st={st} dates={dates} anchor={anchor} sx={sx} visN={days} pass={pass} newCat={newCat} sun={sun} hourH={hourH} setHourH={setHourH} commitHourH={commitHourH} onOpen={openOcc}
             onSave={(it) => saveItem(it)} onToggle={toggleDone} onShift={(dir) => setAnchor((a) => addDays(a, dir * (days === 7 ? 7 : 1)))} onPinchDays={pinchDays}
-            onSwipe={step} onVisible={setAnchor} onNewAt={onNewAt} nonce={nonce} />
+            onSwipe={step} onVisible={setAnchor} onNewAt={onNewAt} nonce={nonce} draft={draft} setDraft={setDraft} />
         )}
         {view === 'month' && (
           <MonthView st={st} anchor={anchor} pass={pass} titles={!!st.settings.monthTitles} setTitles={(v) => setSettings({ monthTitles: v })} free={free}
@@ -3153,7 +3712,7 @@ export function App() {
             onRecenter={setAnchor} onRange={(a, b) => setGRange((r) => (r && r[0] === a && r[1] === b ? r : [a, b]))} />
         )}
       </main>
-      <button ref={fabRef} className="fab" aria-label={t('add')} onClick={() => newSheet(true)}><UIcon n="plus" size={26} sw={2.2} /></button>
+      <button ref={fabRef} className={'fab' + (draft ? ' ready' : '')} aria-label={t('add')} onClick={() => { if (draft && view === 'grid') { const d = draft; setDraft(null); onNewAt(d); } else newSheet(true); }}><UIcon n="plus" size={26} sw={2.2} /></button>
 
       {sheet && (
         <ItemSheet key={sheet.item.id} st={st} init={sheet.item} occDate={sheet.occDate} isNew={sheet.isNew} autoMic={sheet.autoMic} preset={sheet.preset}
@@ -3167,8 +3726,16 @@ export function App() {
         <CatPicker st={st} current={picker.current} onClose={() => setPicker(null)} onPick={(id) => { picker.cb(id); remember(id); }}
           onCreate={createCat} onManage={() => { setPicker(null); push({ kind: 'cats' }); }} />
       )}
+      {datePick && <DatePicker value={view === 'grid' ? vis[0] : anchor} onPick={(d) => { goDate(view === 'grid' && days === 5 && wd(d) < 5 ? startOfWeek(d) : d); }} onClose={() => setDatePick(false)} />}
       {confirm && <Confirm {...confirm} onCancel={() => setConfirm(null)} />}
       {toastMsg && <div className="toast" role="status">{toastMsg}</div>}
+      {newVer && !splash && (
+        <div className="upd" role="status">
+          <UIcon n="info" size={18} /><span>{t('newVer', { v: newVer })}</span>
+          <button className="ctl txt" onClick={reloadApp}>{t('reload')}</button>
+          <button className="ib sm" aria-label={t('close')} onClick={() => setNewVer(null)}><UIcon n="x" size={16} /></button>
+        </div>
+      )}
       {splash && <Splash onDone={() => setSplash(false)} />}
     </div>
   );

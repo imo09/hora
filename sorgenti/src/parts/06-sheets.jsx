@@ -121,7 +121,8 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
     const it = { ...init, type: f.type, title, date: f.date || today, cat: f.cat || null, alert: f.alert, repeat: f.repeat && f.repeat.f !== 'none' ? f.repeat : { ...NO_REPEAT }, address: (f.address || '').trim(), link: (f.link || '').trim(), notes: f.notes || '', onlyAlert: false };
     if (f.type === 'sveglia') {
       const days = alarmDays(f.repeat || NO_REPEAT, it.date);
-      Object.assign(it, { start: f.start ?? 420, end: null, endDate: null, cat: null, alert: 0, address: '', link: '', notes: '', repeat: days.length ? { f: 'week', days: [...days].sort(), until: null } : { ...NO_REPEAT } });
+      const until = days.length && f.repeat && f.repeat.until ? f.repeat.until : null;
+      Object.assign(it, { start: f.start ?? 420, end: null, endDate: null, cat: null, alert: 0, address: '', link: '', notes: '', group: f.group || null, off: !!f.off, repeat: days.length ? { f: 'week', days: [...days].sort(), until } : { ...NO_REPEAT } });
     } else if (f.allDay) {
       it.start = null; it.end = null; it.endDate = f.type === 'evento' && f.endDate && f.endDate > it.date ? f.endDate : null;
     } else {
@@ -166,7 +167,7 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
         )}
         <div className="seg" role="group" aria-label={t('event') + ' / ' + t('reminder') + ' / ' + t('alarm')}>
           {[['evento', 'event', 11], ['promemoria', 'reminder', 12], ['sveglia', 'alarm', 13]].map(([v, k, sz]) => (
-            <button key={v} className={f.type === v ? 'on' : ''} onClick={() => setType(v)}><TypeShape type={v} color={f.type === v ? '#0E1D2A' : '#5A6873'} size={sz} />{t(k)}</button>
+            <button key={v} className={f.type === v ? 'on' : ''} onClick={() => setType(v)}><TypeShape type={v} color={f.type === v ? 'var(--ink)' : 'var(--muted)'} size={sz} />{t(k)}</button>
           ))}
         </div>
         {f.type === 'sveglia' ? (
@@ -183,15 +184,27 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
                     setF((p) => {
                       const cur = alarmDays(p.repeat || NO_REPEAT, p.date || today);
                       const nd = cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i].sort();
-                      return { ...p, repeat: nd.length ? { f: 'week', days: nd, until: null } : { ...NO_REPEAT } };
+                      return { ...p, repeat: nd.length ? { f: 'week', days: nd, until: (p.repeat && p.repeat.until) || null } : { ...NO_REPEAT } };
                     });
                   }}>{w.slice(0, 2)}</button>;
                 })}
               </div>
               {!aDays.length && <small className="muted">{t('alarmOnce')}</small>}
             </div>
+            {!!aDays.length && (
+              <label className="fl"><FL i="cal">{t('repeatUntil')} <small>{t('optional')}</small></FL>
+                <input type="date" min={today} value={(f.repeat && f.repeat.until) || ''} onChange={(e) => { touched.current.add('repeat'); setF((p) => ({ ...p, repeat: { ...(p.repeat || NO_REPEAT), until: e.target.value || null } })); }} />
+              </label>
+            )}
+            <label className="fl"><FL i="list">{t('group')}</FL>
+              <select value={f.group || ''} onChange={(e) => set('group', e.target.value || null)}>
+                <option value="">{t('noGroup')}</option>
+                {[...(st.alarmGroups || [])].sort(byOrder).map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </label>
+            <div className="fl"><FL i="bell">{t('active')}</FL><Switch on={!f.off} label={t('active')} onChange={(v) => set('off', !v)} /></div>
             {!aDays.length && <label className="fl"><FL i="cal">{t('dateL')}</FL><input type="date" value={f.date || ''} onChange={(e) => setStartDate(e.target.value)} /></label>}
-            {IS_ANDROID && <a className="lnk" href="intent:#Intent;action=android.intent.action.SHOW_ALARMS;end"><TypeShape type="sveglia" color="#23786D" size={15} />{t('openAlarms')}</a>}
+            {IS_ANDROID && <a className="lnk" href="intent:#Intent;action=android.intent.action.SHOW_ALARMS;end"><TypeShape type="sveglia" color="var(--tealInk)" size={15} />{t('openAlarms')}</a>}
             {IS_IOS && <p className="muted sm-p pt8">{t('alarmIos')}</p>}
             <p className="muted sm-p pt8">{t('alarmNote')}</p>
           </div>
@@ -199,7 +212,7 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
           <div className="form">
             <button className="fl btnrow" onClick={() => onPickCat(f.cat, (id) => set('cat', id))}>
               <FL i="tag">{t('category')}</FL>
-              <span className="row-c gap8"><CatTile cats={st.cats} id={f.cat} size={24} /><b style={{ color: f.cat ? tn.ink : '#5A6873' }}>{catLabel(st.cats, f.cat)}</b><UIcon n="right" size={14} sw={2.4} color="#5A6873" /></span>
+              <span className="row-c gap8"><CatTile cats={st.cats} id={f.cat} size={24} /><b style={{ color: f.cat ? tn.ink : 'var(--muted)' }}>{catLabel(st.cats, f.cat)}</b><UIcon n="right" size={14} sw={2.4} color="var(--muted)" /></span>
             </button>
             <label className="fl"><FL i="text">{t('title')}</FL><input value={f.title || ''} placeholder={t('titlePh')} onChange={(e) => set('title', e.target.value)} /></label>
             <div className="fl"><FL i="sun">{t('allDay')}</FL><Switch on={f.allDay} label={t('allDay')} onChange={(v) => { touched.current.add('time'); setF((p) => ({ ...p, allDay: v, start: v ? null : p.start ?? 540, end: v ? null : p.end ?? (p.start ?? 540) + 60 })); }} /></div>
@@ -302,7 +315,7 @@ function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
     <button key={c.id} className={'li' + (sub ? ' sub' : '') + (current === c.id ? ' cur' : '')} onClick={() => pick(c.id)}>
       {sub ? <span className="dot" style={{ background: catTone(st.cats, c.id).c }} /> : <CatTile cats={st.cats} id={c.id} size={28} />}
       <span className={'li-t' + (sub ? '' : ' b')}>{c.name}</span>
-      {current === c.id && <UIcon n="check" size={18} color="#23786D" sw={2.4} />}
+      {current === c.id && <UIcon n="check" size={18} color="var(--tealInk)" sw={2.4} />}
     </button>
   );
   return (
@@ -310,7 +323,7 @@ function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
       <SheetHead title={t('category')} onClose={onClose} />
       <div className="sh-body">
         <div className="search">
-          <UIcon n="search" size={18} color="#5A6873" />
+          <UIcon n="search" size={18} color="var(--muted)" />
           <input value={q} aria-label={t('searchCatPh')} placeholder={t('searchCatPh')} onChange={(e) => setQ(e.target.value)} />
         </div>
         {q.trim() && !exact && (
@@ -339,7 +352,7 @@ function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
               <div key={top.id}>
                 <div className="li-wrap">
                   {row(top, false)}
-                  {!!subs.length && <button className="ib" aria-label={top.name} aria-expanded={isOpen} onClick={() => setOpenIds((s) => { const n = new Set(s); if (n.has(top.id)) n.delete(top.id); else n.add(top.id); return n; })}><UIcon n={isOpen ? 'down' : 'right'} size={16} sw={2.4} color="#5A6873" /></button>}
+                  {!!subs.length && <button className="ib" aria-label={top.name} aria-expanded={isOpen} onClick={() => setOpenIds((s) => { const n = new Set(s); if (n.has(top.id)) n.delete(top.id); else n.add(top.id); return n; })}><UIcon n={isOpen ? 'down' : 'right'} size={16} sw={2.4} color="var(--muted)" /></button>}
                 </div>
                 {isOpen && (nq ? subsHit : subs).map((s) => row(s, true))}
               </div>
@@ -347,7 +360,7 @@ function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
           })}
           <button className={'li' + (!current ? ' cur' : '')} onClick={() => pick(null)}>
             <span className="tile none dashed" style={{ width: 28, height: 28 }} /><span className="li-t muted">{t('unassigned')}</span>
-            {!current && <UIcon n="check" size={18} color="#23786D" sw={2.4} />}
+            {!current && <UIcon n="check" size={18} color="var(--tealInk)" sw={2.4} />}
           </button>
         </div>
         <button className="lnk center" onClick={onManage}><Icon name="tag" size={16} sw={2} />{t('manageCats')}</button>
@@ -372,7 +385,7 @@ function ImportScreen({ st, drafts, origin, onClose, onConfirm, onPickCat }) {
       {!rows.length && <p className="muted pad">{t('noneFound')}</p>}
       <div className="card list">
         {rows.map((r) => {
-          const tn = r.missing ? NONE_TONE : catTone(st.cats, r.cat);
+          const tn = r.missing ? noneTone() : catTone(st.cats, r.cat);
           return (
             <div key={r.k} className={'imp' + (r.on ? '' : ' off')}>
               <button className={'cb' + (r.on ? ' on' : '')} role="checkbox" aria-checked={r.on} aria-label={r.title} onClick={() => upd(r.k, { on: !r.on })}>
@@ -411,7 +424,7 @@ function SearchScreen({ st, onClose, onOpen }) {
   return (
     <Screen title={t('search')} onBack={onClose}>
       <div className="pad-x">
-        <div className="search"><UIcon n="search" size={18} color="#5A6873" /><input ref={ref} value={q} aria-label={t('searchPh')} placeholder={t('searchPh')} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="search"><UIcon n="search" size={18} color="var(--muted)" /><input ref={ref} value={q} aria-label={t('searchPh')} placeholder={t('searchPh')} onChange={(e) => setQ(e.target.value)} /></div>
       </div>
       {nq && !res.length && <p className="muted pad">{t('noResults')}</p>}
       <div className="card list">

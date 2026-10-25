@@ -86,7 +86,7 @@ function CatsScreen({ st, onBack, onEdit, onNew, onSetCats }) {
   const grip = (c) => (
     <span className="grip" role="button" tabIndex={-1} aria-label={c.name} style={{ touchAction: 'none' }}
       onPointerDown={(e) => onDown(e, c)} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-      <UIcon n="grip" color="#A7B1B6" />
+      <UIcon n="grip" color="var(--faint)" />
     </span>
   );
   return (
@@ -108,7 +108,7 @@ function CatsScreen({ st, onBack, onEdit, onNew, onSetCats }) {
                 </button>
                 {subs.length > 0 && (
                   <button className="ib" aria-expanded={!isClosed} aria-label={top.name} onClick={() => setClosed((s) => { const n = new Set(s); if (n.has(top.id)) n.delete(top.id); else n.add(top.id); return n; })}>
-                    <UIcon n={isClosed ? 'right' : 'down'} size={16} sw={2.4} color="#5A6873" />
+                    <UIcon n={isClosed ? 'right' : 'down'} size={16} sw={2.4} color="var(--muted)" />
                   </button>
                 )}
               </div>
@@ -131,7 +131,7 @@ function CatsScreen({ st, onBack, onEdit, onNew, onSetCats }) {
         {drag && drag.ind != null && <div className="drop-ind" style={{ top: drag.ind - 1 }} />}
       </div>
       <div className="unas"><span>{t('unassigned')}</span><span className="num">{unassigned}</span></div>
-      <div className="pad-x"><button className="btn wide" onClick={onNew}><UIcon n="plus" size={18} color="#23786D" />{t('newCat')}</button></div>
+      <div className="pad-x"><button className="btn wide" onClick={onNew}><UIcon n="plus" size={18} color="var(--tealInk)" />{t('newCat')}</button></div>
     </Screen>
   );
 }
@@ -198,7 +198,7 @@ function CatEdit({ st, catId, parentId, onBack, onSave, onDelete, onOpenSub, onA
               <button key={s.id} className="li" onClick={() => { if (commit()) onOpenSub(s.id); }}>
                 <span className="dot lg" style={{ background: catTone(st.cats, s.id).c }} />
                 <span className="li-t col"><span>{s.name}</span>{s.details ? <small>{s.details.slice(0, 60)}</small> : null}</span>
-                <UIcon n="right" size={14} sw={2.4} color="#5A6873" />
+                <UIcon n="right" size={14} sw={2.4} color="var(--muted)" />
               </button>
             ))}
             <button className="li teal-t" onClick={() => { if (commit()) onAddSub(c.id); }}><UIcon n="plus" size={18} />{t('addSub')}</button>
@@ -215,66 +215,3 @@ function CatEdit({ st, catId, parentId, onBack, onSave, onDelete, onOpenSub, onA
   );
 }
 
-/* ============ Impostazioni: gruppi in blocchi tenui ============ */
-const tintOf = (id) => mix(colorHex(id), '#FFFFFF', 0.86);
-function SGroup({ icon, title, color, children }) {
-  return (
-    <section className="sgroup" style={{ background: tintOf(color) }}>
-      <h3 className="sg-h" style={{ color: mix(colorHex(color), '#0E1D2A', 0.4) }}><span className="sg-i" style={{ background: mix(colorHex(color), '#FFFFFF', 0.7) }}><UIcon n={icon} size={16} sw={2} /></span>{title}</h3>
-      <div className="sg-list">{children}</div>
-    </section>
-  );
-}
-const SIcon = ({ n }) => <span className="si"><UIcon n={n} size={18} sw={1.8} /></span>;
-function SettingsScreen({ st, onBack, onCats, onSetting, onNotify, onMyPos, onExportJson, onImportJson, onExportIcs, onImportCal }) {
-  const jRef = useRef(null), iRef = useRef(null);
-  const sun = st.settings.sun || DEFAULT_SUN;
-  const known = PLACES.some((p) => p[0] === sun.name);
-  const readFile = (e, cb) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return; const r = new FileReader(); r.onload = () => cb(String(r.result)); r.readAsText(f); };
-  return (
-    <Screen title={t('settings')} onBack={onBack}>
-      <SGroup icon="cal" title={t('sCal')} color="verderame">
-        <div className="li"><SIcon n="swipe" /><span className="li-t col"><span>{t('sFree')}</span><small>{t('sFreeTxt')}</small></span><Switch on={!!st.settings.freeScroll} label={t('sFree')} onChange={(v) => onSetting({ freeScroll: v })} /></div>
-        <div className="li"><SIcon n="sunrise" /><span className="li-t col"><span>{t('sSun')}</span><small>{t('sSunTxt')}</small></span><Switch on={!!sun.on} label={t('sSunOn')} onChange={(v) => onSetting({ sun: { ...sun, on: v } })} /></div>
-        {sun.on && (
-          <>
-            <label className="li"><SIcon n="pin" /><span className="li-t">{t('place')}</span>
-              <select className="li-sel" value={known ? sun.name : '__here'} onChange={(e) => { const p = PLACES.find((x) => x[0] === e.target.value); if (p) onSetting({ sun: { on: true, name: p[0], lat: p[1], lon: p[2] } }); }}>
-                {PLACES.map(([n]) => <option key={n} value={n}>{n}</option>)}
-                {!known && <option value="__here">{t('posHere')}</option>}
-              </select>
-            </label>
-            <button className="li teal-t" onClick={onMyPos}><SIcon n="globe" />{t('myPos')}</button>
-          </>
-        )}
-      </SGroup>
-      <SGroup icon="tag" title={t('sCats') + ' - ' + t('gantt2')} color="ottone">
-        <button className="li" onClick={onCats}><SIcon n="tag" /><span className="li-t col"><span className="b">{t('sCats')}</span><small>{t('sCatsTxt')}</small></span><span className="num">{st.cats.length}</span><UIcon n="right" size={14} sw={2.4} color="#5A6873" /></button>
-        <div className="li"><SIcon n="gantt" /><span className="li-t">{t('showUnassigned')}</span><Switch on={!!st.settings.ganttUnassigned} label={t('showUnassigned')} onChange={(v) => onSetting({ ganttUnassigned: v })} /></div>
-      </SGroup>
-      <SGroup icon="bell" title={t('sNotify')} color="mare">
-        <div className="li"><SIcon n="bell" /><span className="li-t col"><span>{t('sNotifyOn')}</span><small>{t('sNotifyTxt')}</small></span><Switch on={!!st.settings.notify} label={t('sNotifyOn')} onChange={onNotify} /></div>
-      </SGroup>
-      <SGroup icon="download" title={t('sData')} color="salvia">
-        <button className="li" onClick={onExportJson}><SIcon n="download" /><span className="li-t">{t('expJson')}</span></button>
-        <button className="li" onClick={() => jRef.current.click()}><SIcon n="upload" /><span className="li-t">{t('impJson')}</span></button>
-        <button className="li" onClick={onExportIcs}><SIcon n="download" /><span className="li-t">{t('expIcs')}</span></button>
-        <button className="li" onClick={() => iRef.current.click()}><SIcon n="upload" /><span className="li-t">{t('impIcs')}</span></button>
-        <input ref={jRef} type="file" accept=".json,application/json" hidden onChange={(e) => readFile(e, onImportJson)} />
-        <input ref={iRef} type="file" accept=".ics,.zip,text/calendar,application/zip" hidden onChange={(e) => { const fl = e.target.files && e.target.files[0]; e.target.value = ''; if (fl) onImportCal(fl); }} />
-      </SGroup>
-      <SGroup icon="globe" title={t('sLang')} color="lavanda">
-        <div className="seg" role="group" aria-label={t('sLang')}>
-          <button className={st.settings.lang === 'it' ? 'on' : ''} onClick={() => onSetting({ lang: 'it' })}>Italiano</button>
-          <button className={st.settings.lang === 'en' ? 'on' : ''} onClick={() => onSetting({ lang: 'en' })}>English</button>
-        </div>
-      </SGroup>
-      <div className="about">
-        <Mark size={36} />
-        <div><b className="wm">hora</b> {VERSION}</div>
-        <small>{t('localTxt')}</small>
-        <small><b>nautargo</b></small>
-      </div>
-    </Screen>
-  );
-}

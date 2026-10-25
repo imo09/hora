@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 
 const root = path.dirname(new URL(import.meta.url).pathname);
 const P = (...a) => path.join(root, ...a);
-const VERSION = '1.3';
+const VERSION = '1.4';
 
 // 1. file sorgente unico
 if (fs.existsSync(P('src/parts'))) {
@@ -69,6 +69,7 @@ const html = `<!doctype html>
 <meta name="apple-mobile-web-app-title" content="hora">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
+<script>try{var s=(JSON.parse(localStorage.getItem('hora.v1')||'{}').settings)||{};if(s.theme==='dark'||(s.theme!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(favicon)}">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>${fonts}${css}</style>
@@ -84,7 +85,7 @@ fs.writeFileSync(P('dist/index.html'), html);
 // 6. manifest e service worker
 fs.writeFileSync(P('dist/manifest.webmanifest'), JSON.stringify({
   name: 'hora', short_name: 'hora', description: 'Calendario calmo e locale di nautargo', lang: 'it',
-  start_url: './', scope: './', display: 'standalone', orientation: 'portrait',
+  start_url: './', scope: './', display: 'standalone', orientation: 'any',
   background_color: '#EEF1EF', theme_color: '#F3F4F1',
   icons: [
     { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
@@ -100,6 +101,7 @@ self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) =
 self.addEventListener('fetch', (e) => {
   const r = e.request;
   if (r.method !== 'GET' || new URL(r.url).origin !== location.origin) return;
+  if (new URL(r.url).pathname.endsWith('version.json')) return;
   if (r.mode === 'navigate') {
     e.respondWith(fetch(r).then((res) => { const cp = res.clone(); caches.open(CACHE).then((c) => c.put('index.html', cp)); return res; }).catch(() => caches.match('index.html')));
     return;
@@ -109,4 +111,5 @@ self.addEventListener('fetch', (e) => {
 self.addEventListener('notificationclick', (e) => { e.notification.close(); e.waitUntil(self.clients.matchAll({ type: 'window' }).then((cs) => (cs[0] ? cs[0].focus() : self.clients.openWindow('./')))); });
 `);
 fs.writeFileSync(P('dist/CNAME'), 'hora.nautargo.com\n');
+fs.writeFileSync(P('dist/version.json'), JSON.stringify({ v: VERSION }) + '\n');
 console.log('ok', (fs.statSync(P('dist/index.html')).size / 1024).toFixed(0) + ' KB');

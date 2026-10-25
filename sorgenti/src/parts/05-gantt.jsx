@@ -5,7 +5,7 @@ function Diamond({ x, c, size = 14 }) {
   return <svg className="gm" width={size} height={size} viewBox="0 0 16 16" style={{ left: x - size / 2 }} aria-hidden="true"><path d="M8 1l7 7-7 7-7-7z" fill={c} /></svg>;
 }
 function Dot({ x, c, done, size = 13 }) {
-  return <svg className="gm" width={size} height={size} viewBox="0 0 14 14" style={{ left: x - size / 2 }} aria-hidden="true"><circle cx="7" cy="7" r="5" fill={done ? c : '#FBFBF8'} stroke={c} strokeWidth="2.2" /></svg>;
+  return <svg className="gm" width={size} height={size} viewBox="0 0 14 14" style={{ left: x - size / 2 }} aria-hidden="true"><circle cx="7" cy="7" r="5" style={{ fill: done ? c : 'var(--card)' }} stroke={c} strokeWidth="2.2" /></svg>;
 }
 /* scorrimento infinito: una finestra larga attorno alla data guardata, che si ricentra quando ci si avvicina ai bordi */
 const G_WEEKS = 52, G_MONTHS = 48, DW = 20, MW = 64;
@@ -161,7 +161,7 @@ function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter
               if (r.kind === 'cat') {
                 const isNone = r.id === '__none';
                 const c = isNone ? null : catOf(st.cats, r.id);
-                const tn = isNone ? NONE_TONE : catTone(st.cats, r.id);
+                const tn = isNone ? noneTone() : catTone(st.cats, r.id);
                 const isOpen = open.has(r.id);
                 let mark = null;
                 if (r.occ.length) {
@@ -173,7 +173,7 @@ function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter
                 return (
                   <div key={'c' + r.id} className={'gt-row cat lv' + r.level}>
                     <button className="gt-label" style={{ width: LW, paddingLeft: 6 + r.level * 14 }} aria-expanded={isOpen} onClick={() => toggle(r.id)}>
-                      <UIcon n={isOpen ? 'down' : 'right'} size={13} sw={2.4} color="#5A6873" />
+                      <UIcon n={isOpen ? 'down' : 'right'} size={13} sw={2.4} color="var(--muted)" />
                       {r.level === 0 ? (isNone ? <span className="tile none" style={{ width: 22, height: 22 }}><Icon name="tag" size={12} sw={2} /></span> : <CatTile cats={st.cats} id={r.id} size={22} />) : <span className="dot" style={{ background: tn.c }} />}
                       <span className="gl-t">{isNone ? t('unassigned') : c.name}</span>
                     </button>
