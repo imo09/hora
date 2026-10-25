@@ -300,6 +300,48 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
   );
 }
 
+/* ============ Riepilogo di un elemento: tutto a colpo d'occhio, la matita porta alla modifica ============ */
+function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone }) {
+  const d = occDate || it.date;
+  const tn = catTone(st.cats, it.cat);
+  const live = st.items.find((x) => x.id === it.id) || it;
+  const done = isDone(live, d);
+  const rep = it.repeat || NO_REPEAT;
+  const alertK = (ALERTS.find(([v]) => v === it.alert) || [])[1];
+  const typeK = it.type === 'promemoria' ? (it.onlyAlert ? 'reminder' : 'reminder') : 'event';
+  const row = (icon, main, sub, extra) => (
+    <div className="iv-row"><span className="iv-i"><UIcon n={icon} size={18} /></span><span className="li-t col"><span>{main}</span>{sub ? <small>{sub}</small> : null}</span>{extra}</div>
+  );
+  return (
+    <Sheet onClose={onClose} label={it.title || t('noTitle')}>
+      <div className="sh-head iv-head">
+        <span className="iv-type" style={{ color: tn.ink, background: tn.tint }}><TypeShape type={it.type} only={it.onlyAlert} done={done} color={tn.c} size={11} />{t(typeK)}</span>
+        <span className="row-c">
+          <button className="ib" aria-label={t('editItem')} onClick={onEdit}><UIcon n="edit" size={20} /></button>
+          <button className="ib" aria-label={t('close')} onClick={onClose}><UIcon n="x" /></button>
+        </span>
+      </div>
+      <div className="sh-body">
+        <h2 className={'iv-title' + (done && it.type === 'promemoria' && !it.onlyAlert ? ' strike' : '')}>{it.title || t('noTitle')}</h2>
+        <div className="iv-list">
+          {row('clock', whenText(it, d), it.start == null ? t('allDay') : null)}
+          {rep.f && rep.f !== 'none' && row('repeat', repText(rep), rep.until ? t('untilD', { d: fmtDayShort(rep.until) }) : null)}
+          {row('tag', catLabel(st.cats, it.cat), null, <CatTile cats={st.cats} id={it.cat} size={26} />)}
+          {it.alert != null && row('bell', alertK ? t(alertK) : it.alert + ' min', it.onlyAlert ? t('toCompleteTxt') : null)}
+          {it.address && row('pin', it.address, null, <a className="ib act" aria-label={t('openMaps')} href={mapsUrl(it.address)} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
+          {it.link && row('link', it.link.replace(/^https?:\/\//, ''), null, <a className="ib act" aria-label={t('openLink')} href={fixLink(it.link.trim())} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
+          {it.notes && <div className="iv-notes"><span className="iv-i"><UIcon n="note" size={18} /></span><p>{it.notes}</p></div>}
+        </div>
+      </div>
+      {it.type === 'promemoria' && !it.onlyAlert && (
+        <div className="sh-foot">
+          <button className={'btn grow' + (done ? '' : ' pri')} onClick={() => onToggleDone(live, d)}><UIcon n="check" size={18} />{done ? t('notDone') : t('markDone') + ' ' + fmtDayShort(d)}</button>
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
 /* ============ Scelta categoria ============ */
 function CatPicker({ st, current, onPick, onClose, onManage, onCreate }) {
   const [q, setQ] = useState('');
@@ -414,30 +456,3 @@ function ImportScreen({ st, drafts, origin, onClose, onConfirm, onPickCat }) {
   );
 }
 
-/* ============ Ricerca ============ */
-function SearchScreen({ st, onClose, onOpen }) {
-  const [q, setQ] = useState('');
-  const ref = useRef(null);
-  useEffect(() => { setTimeout(() => ref.current && ref.current.focus(), 100); }, []);
-  const nq = q.trim().toLowerCase();
-  const res = nq ? st.items.filter((it) => [it.title, it.notes, it.address].some((s) => (s || '').toLowerCase().includes(nq))).sort((a, b) => (a.date < b.date ? -1 : 1)).slice(0, 80) : [];
-  return (
-    <Screen title={t('search')} onBack={onClose}>
-      <div className="pad-x">
-        <div className="search"><UIcon n="search" size={18} color="var(--muted)" /><input ref={ref} value={q} aria-label={t('searchPh')} placeholder={t('searchPh')} onChange={(e) => setQ(e.target.value)} /></div>
-      </div>
-      {nq && !res.length && <p className="muted pad">{t('noResults')}</p>}
-      <div className="card list">
-        {res.map((it) => {
-          const tn = catTone(st.cats, it.cat);
-          return (
-            <button key={it.id} className="li tall" onClick={() => onOpen(it)}>
-              <TypeShape type={it.type} only={it.onlyAlert} color={tn.c} size={12} />
-              <span className="li-t col"><b>{it.title}</b><small>{fmtFull(it.date)} - {catLabel(st.cats, it.cat)}</small></span>
-            </button>
-          );
-        })}
-      </div>
-    </Screen>
-  );
-}

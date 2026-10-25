@@ -1,6 +1,6 @@
 {
   "name": "hora",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "hora - calendario calmo e locale di nautargo",
   "type": "module",
