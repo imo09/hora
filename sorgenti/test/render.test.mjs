@@ -214,9 +214,12 @@ assert.ok(!byText('.gt-label', 'Non assegnate')); ok('Non assegnate spenta');
 assert.ok(!$$('.gt-row').some((r) => r.textContent.includes('Sveglia')), 'sveglie fuori dalle attività');
 click(byText('.seg.sm button', 'Mesi')); await wait();
 assert.equal($$('.gh-mm').length, 48); ok('scala mesi (4 anni, scorrimento infinito)');
-assert.ok(!$('button[aria-label="Successivo"]') && $('.ctl.date input'), 'Attività: senza frecce, con Vai a data');
-type($('.ctl.date input'), '2027-03-10'); await wait();
-assert.ok($('.hdr2 h1').textContent.includes('2027')); ok('vai a data');
+assert.ok(!$('button[aria-label="Successivo"]') && $('.ctl.date'), 'Attività: senza frecce, con Vai a data');
+click($('.ctl.date')); await wait();
+click(byText('.dp-grid button', '2027')); await wait();
+click(byText('.dp-grid button', 'Mar')); await wait();
+click($$('.dp-grid button').find((b) => b.textContent === '10')); await wait();
+assert.ok(!$('.dp-grid') && $('.hdr2 h1').textContent.includes('2027')); ok('vai a data: anno, mese, giorno');
 
 // impostazioni e categorie
 click($('button[aria-label="Impostazioni"]')); await wait();

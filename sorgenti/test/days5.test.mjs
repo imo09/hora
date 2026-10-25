@@ -71,7 +71,7 @@ assert.equal(range(), '2026-10-15/2026-10-21'); ok('scorrimento continuo: settim
 click(byText('.tabs button', 'Mese')); await wait();
 const ms = $('.m-scroll');
 assert.ok(ms, 'mese a scorrimento'); assert.equal(title(), 'Ottobre 2026');
-ms.scrollTop = ms.scrollTop + 52 * 5; ms.dispatchEvent(new w.Event('scroll')); await wait(260);
+ms.scrollTop = ms.scrollTop + 56 * 5; ms.dispatchEvent(new w.Event('scroll')); await wait(260);
 assert.equal(title(), 'Novembre 2026'); ok('scorrimento continuo: mese');
 // di nuovo a pagine
 click($('button[aria-label="Impostazioni"]')); await wait();

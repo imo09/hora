@@ -1,9 +1,9 @@
-/* hora 1.3 - calendario locale di nautargo
+/* hora 1.4 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.3';
+export const VERSION = '1.4';
 
 /* ============ Testi IT / EN ============ */
 const STR = {
@@ -50,7 +50,18 @@ const STR = {
     views: 'Viste', sCal: 'Calendario', sFree: 'Scorrimento continuo', sFreeTxt: 'Spento: si passa al periodo prima o dopo. Acceso: scorre liberamente. Attività scorre sempre.',
     sCatsTxt: 'Nomi, icone, colori e ordine', manage: 'Gestisci', voiceHelp: 'Come dettare', voiceTxt: 'Parla in modo semplice, poi controlla i campi qui sotto. Di\' "salva" alla fine per aggiungere subito.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|ricordami di pagare le bollette lunedì avvisami un\'ora prima|sveglia alle 6 e 45 dal lunedì al venerdì|cena da Anna in via Roma 10 sabato alle 20 con nota portare il vino',
-    goDate: 'Vai a data', expData: 'Esporta', impData: 'Importa', gantt2: 'Attività', ganttTxt: 'Cronoprogramma per categorie'
+    goDate: 'Vai a data', splashSub: 'ogni cosa a suo tempo', tapToEnter: 'Tocca lo schermo per entrare', copied: 'Copiato',
+    aiImport: 'Importa da un\'altra app', aiShort: 'Con l\'aiuto di un\'IA, ad esempio Claude', aiTxt: 'Per app e agende che non esportano in .ics: un\'IA converte i dati nel formato di hora.',
+    aiStep1: 'Esporta o copia i dati dall\'altra app: file, testo, anche una foto.', aiStep2: 'Dai all\'IA i dati insieme a queste istruzioni.', aiStep3: 'Incolla qui il blocco che ti restituisce, poi controlla e conferma.',
+    copyMd: 'Copia istruzioni', downloadMd: 'Scarica .md', pasteHere: 'Incolla qui', readBlock: 'Leggi e controlla',
+    agenda: 'Elenco', evRem: 'Eventi e promemoria', onceOn: 'una volta, {d}', untilD: 'fino al {d}', newGroup: 'Nuovo gruppo', noGroup: 'Senza gruppo', up: 'Su', down: 'Giù',
+    newAlarm: 'Nuova sveglia', past: 'Anche passati', showMore: 'Mostra altri', noAlarms: 'Nessuna sveglia', suggested: 'Suggerite', hideTips: 'Nascondi',
+    tplTxt: 'Gruppi pronti da aggiungere. Le sveglie suonano a un\'ora precisa e si ripetono: utili quando non si può rimandare, come un medicinale.',
+    sLook: 'Aspetto', theme: 'Tema', thAuto: 'Auto', thLight: 'Chiaro', thDark: 'Scuro', sSplash: 'Schermata iniziale', sSplashTxt: 'Il marchio all\'apertura, finché non tocchi lo schermo',
+    sSync: 'Sincronizzazione', dbxNoKey: 'Pronta: manca la chiave dell\'app Dropbox', soon: 'presto', dbxLink: 'Collega Dropbox', dbxSync: 'Sincronizza ora', syncing: 'Sincronizzazione...',
+    lastSync: 'Ultima: {d}', never: 'Mai', dbxUnlink: 'Scollega Dropbox', syncConflictQ: 'Dati diversi su Dropbox', syncConflictTxt: 'Sono cambiati sia qui sia su un altro dispositivo. Quali tieni?',
+    useDbx: 'Usa Dropbox', useHere: 'Usa questi', syncOk: 'Sincronizzato', syncFail: 'Sincronizzazione non riuscita', newVer: 'Nuova versione {v}', reload: 'Ricarica', group: 'Gruppo', active: 'Attiva',
+    expData: 'Esporta', impData: 'Importa', gantt2: 'Attività', ganttTxt: 'Cronoprogramma per categorie'
   },
   en: {
     today: 'Today', day: 'Day', days3: '3 days', days5: '5 days', week: 'Week', month: 'Month', gantt: 'Timeline',
@@ -95,7 +106,18 @@ const STR = {
     views: 'Views', sCal: 'Calendar', sFree: 'Continuous scrolling', sFreeTxt: 'Off: swipe to the previous or next period. On: scrolls freely. Timeline always scrolls.',
     sCatsTxt: 'Names, icons, colors and order', manage: 'Manage', voiceHelp: 'How to dictate', voiceTxt: 'The microphone always listens in Italian. Check the fields below; say "salva" at the end to add right away.',
     voiceEx: 'dentista giovedì alle 15 e 30|riunione domani dalle 9 alle 11 categoria lavoro|palestra dalle 18 per due ore ogni martedì|sveglia alle 6 e 45 dal lunedì al venerdì',
-    goDate: 'Go to date', expData: 'Export', impData: 'Import', gantt2: 'Timeline', ganttTxt: 'Schedule by category'
+    goDate: 'Go to date', splashSub: 'everything in its time', tapToEnter: 'Tap the screen to enter', copied: 'Copied',
+    aiImport: 'Import from another app', aiShort: 'With the help of an AI, e.g. Claude', aiTxt: 'For apps and planners without .ics export: an AI converts the data into hora\'s format.',
+    aiStep1: 'Export or copy the data from the other app: file, text, even a photo.', aiStep2: 'Give the AI the data together with these instructions.', aiStep3: 'Paste here the block it returns, then check and confirm.',
+    copyMd: 'Copy instructions', downloadMd: 'Download .md', pasteHere: 'Paste here', readBlock: 'Read and check',
+    agenda: 'List', evRem: 'Events and reminders', onceOn: 'once, {d}', untilD: 'until {d}', newGroup: 'New group', noGroup: 'No group', up: 'Up', down: 'Down',
+    newAlarm: 'New alarm', past: 'Include past', showMore: 'Show more', noAlarms: 'No alarms', suggested: 'Suggested', hideTips: 'Hide',
+    tplTxt: 'Ready-made groups. Alarms ring at an exact time and repeat: useful when something cannot wait, like a medicine.',
+    sLook: 'Appearance', theme: 'Theme', thAuto: 'Auto', thLight: 'Light', thDark: 'Dark', sSplash: 'Start screen', sSplashTxt: 'The logo on opening, until you tap the screen',
+    sSync: 'Sync', dbxNoKey: 'Ready: the Dropbox app key is missing', soon: 'soon', dbxLink: 'Connect Dropbox', dbxSync: 'Sync now', syncing: 'Syncing...',
+    lastSync: 'Last: {d}', never: 'Never', dbxUnlink: 'Disconnect Dropbox', syncConflictQ: 'Different data on Dropbox', syncConflictTxt: 'Data changed both here and on another device. Which do you keep?',
+    useDbx: 'Use Dropbox', useHere: 'Use these', syncOk: 'Synced', syncFail: 'Sync failed', newVer: 'New version {v}', reload: 'Reload', group: 'Group', active: 'On',
+    expData: 'Export', impData: 'Import', gantt2: 'Timeline', ganttTxt: 'Schedule by category'
   }
 };
 let LANG = 'it';
@@ -174,8 +196,14 @@ export const PALETTE = [
   ['acqua', '#4FA3A5'], ['glicine', '#8F86C2'], ['argilla', '#A8705A'], ['lavanda', '#7B7FB8']
 ];
 const PAL = Object.fromEntries(PALETTE);
-export const tones = (hex) => ({ c: hex, tint: mix(hex, '#FFFFFF', 0.82), ink: mix(hex, '#0E1D2A', 0.45) });
-export const NONE_TONE = { c: '#8A979F', tint: '#E8ECEE', ink: '#3C4952' };
+/* tema chiaro o scuro: i toni delle categorie si adattano allo sfondo */
+let THEME = 'light';
+export const setTheme = (th) => { THEME = th === 'dark' ? 'dark' : 'light'; };
+export const isDark = () => THEME === 'dark';
+export const tones = (hex) => (THEME === 'dark'
+  ? { c: mix(hex, '#FFFFFF', 0.12), tint: mix(hex, '#16232B', 0.7), ink: mix(hex, '#FFFFFF', 0.55) }
+  : { c: hex, tint: mix(hex, '#FFFFFF', 0.82), ink: mix(hex, '#0E1D2A', 0.45) });
+export const noneTone = () => (THEME === 'dark' ? { c: '#7F8D96', tint: '#23313A', ink: '#C3CDD2' } : { c: '#8A979F', tint: '#E8ECEE', ink: '#3C4952' });
 export const colorHex = (id) => PAL[id] || PAL.verderame;
 
 /* ============ Icone (tratto, griglia 24) ============ */
@@ -237,7 +265,7 @@ export const BASE_ICONS = ['tocco', 'libro', 'valigetta', 'casa', 'cuore', 'aere
 export function Icon({ name, size = 20, sw = 1.8, color = 'currentColor', style }) {
   const spec = ICONS[name] || ICONS.tag;
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={style}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={color === 'currentColor' ? style : { ...style, color }}>
       {spec.split('|').map((part, i) => {
         const [k, v] = [part[0], part.slice(2)];
         if (k === 'p') return <path key={i} d={v} />;
@@ -272,15 +300,15 @@ const UI = {
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14', upload: 'M12 16V5M7 10l5-5 5 5M5 20h14',
   swipe: 'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4', tag: 'M3 12V4h8l10 10-8 8zM7.5 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z',
   info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5v.5', help: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.5',
-  done: 'M4 5h16v14H4zM8 12l3 3 5-6', type: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5'
+  done: 'M4 5h16v14H4zM8 12l3 3 5-6', tap: 'M9 11V5.5a1.5 1.5 0 0 1 3 0V10l4.6 1.2a2 2 0 0 1 1.4 2.3L17 19a2 2 0 0 1-2 1.6h-4.2a2 2 0 0 1-1.6-.8L6 15.5a1.5 1.5 0 0 1 2.2-2L9 14.3', list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01', moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', cloud: 'M7 18a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18zM12 11v6M9.5 14.5L12 17l2.5-2.5', ai: 'M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8zM18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z', copy: 'M8 8h11v12H8zM5 16V4h11', palette: 'M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1.2-1-1.5-1-2.5s.8-1.5 2-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8.5-9-8.5zM7.5 11.5h.01M10 7.5h.01M15 7.5h.01', type: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5'
 };
 export function UIcon({ n, size = 20, sw = 1.9, color = 'currentColor' }) {
-  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true' };
+  const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', style: color === 'currentColor' ? undefined : { color } };
   if (n === 'search') return <svg {...common}><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></svg>;
   if (n === 'gear') return <svg {...common} strokeWidth={1.6}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
   if (n === 'mic') return <svg {...common} strokeWidth={1.8}><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>;
   if (n === 'pin') return <svg {...common}><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>;
-  if (n === 'grip') return <svg width={12} height={18} viewBox="0 0 12 18" aria-hidden="true">{[3, 9, 15].map((y) => [3, 9].map((x) => <circle key={x + '' + y} cx={x} cy={y} r="1.6" fill={color} />))}</svg>;
+  if (n === 'grip') return <svg width={12} height={18} viewBox="0 0 12 18" aria-hidden="true" style={{ color }}>{[3, 9, 15].map((y) => [3, 9].map((x) => <circle key={x + '' + y} cx={x} cy={y} r="1.6" fill="currentColor" />))}</svg>;
   return <svg {...common}><path d={UI[n]} /></svg>;
 }
 

@@ -1,6 +1,32 @@
-# hora 1.3
+# hora 1.4
 
 Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src/hora.jsx` (React, generato da `src/parts/`), stile in `src/style.css`.
+
+## Novità della 1.4
+
+1. Calendario a griglia: ogni ora è una cella arrotondata su un fondo più scuro, da 1 a 7 giorni; il mese è una griglia di giorni dove il mese guardato è pieno e gli altri giorni restano vuoti.
+2. Tema chiaro, scuro o automatico (Impostazioni > Aspetto), senza lampo di colore all'apertura.
+3. Rotazione: l'app installata si può usare anche in orizzontale.
+4. Intestazioni dei giorni leggibili anche sul telefono: "lun 26" nei 5 giorni, "L 26" più piccolo nei 7 giorni.
+5. Colonne strette (5 e 7 giorni sul telefono) e celle del mese: solo l'icona colorata degli elementi, al massimo 3, poi "...".
+6. Eventi di tutto il giorno: pressione lunga (o trascinamento col mouse) e spostamento su un altro giorno.
+7. Blocco nuovo disegnato nel calendario: si completa con un tocco sul blocco o con il +; un tocco su una maniglia apre, trascinarla cambia la durata.
+8. Vai a data in tre tocchi (anno, mese, giorno), anche con la pressione lunga su titolo, Oggi e frecce.
+9. Attività ha la stessa forma delle viste, in tono ottone; pulsanti delle due righe in alto allineati a 40 px.
+10. Schermata iniziale: resta finché non si tocca lo schermo, con il sottotitolo "ogni cosa a suo tempo"; si spegne dalle impostazioni.
+11. Impostazioni riorganizzate su un solo fondo tenue: in alto Eventi e promemoria e Sveglie, poi Aspetto, Calendario, Categorie - Attività, Sincronizzazione, Dati.
+12. Elenco: eventi e promemoria in fila, filtrabili per tipo, categoria e testo; sveglie a gruppi riordinabili, con interruttore, modelli suggeriti (Mattina, Medicinali, Lavoro, Riposo) e "Fino al".
+13. Dati > Importa da un'altra app: istruzioni .md da copiare o scaricare per far convertire i dati a un'IA, poi riquadro per incollare il risultato.
+14. Sincronizzazione con Dropbox predisposta (vedi sotto): manca solo la chiave dell'app.
+15. Avviso "Nuova versione" con Ricarica quando viene pubblicato un aggiornamento (file `version.json`).
+
+## Dropbox: cosa serve per attivarla
+
+1. Su https://www.dropbox.com/developers/apps crea un'app: "Scoped access", accesso "App folder", nome ad esempio `hora-nautargo`.
+2. In Permissions abilita `files.content.write` e `files.content.read`, poi Submit.
+3. In Settings > OAuth 2 > Redirect URIs aggiungi `https://hora.nautargo.com/`.
+4. Copia la "App key" (non serve il segreto: hora usa PKCE) e inseriscila in `src/parts/07b-screens.jsx`, costante `DBX_KEY`, poi `npm test` e pubblica.
+5. In hora: Impostazioni > Sincronizzazione > Collega Dropbox. I dati vanno nel file `/Apps/<nome app>/hora.json`; vince il più recente, se sono cambiati entrambi hora chiede quale tenere.
 
 ## Novità della 1.3
 
@@ -34,7 +60,7 @@ Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src
 ## Pubblicazione su hora.nautargo.com
 
 1. Crea su GitHub il repository `hora`.
-2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.3.zip` (index.html, manifest, sw.js, icone, CNAME).
+2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.4.zip` (index.html, manifest, sw.js, icone, CNAME).
 3. In Settings > Pages scegli il ramo `main` e la cartella `/ (root)`.
 4. Su Aruba aggiungi un record CNAME: nome `hora`, valore `imo09.github.io`.
 5. Torna in Settings > Pages, attendi il controllo del dominio e attiva "Enforce HTTPS".

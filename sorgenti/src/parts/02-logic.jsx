@@ -18,12 +18,13 @@ export function defaultState(lang) {
   return {
     v: 1,
     items: [],
+    alarmGroups: [],
     cats: [
       { id: uid(), name: lang === 'en' ? 'Work' : 'Lavoro', icon: 'valigetta', color: 'verderame', details: '', parent: null, order: 0, gantt: true },
       { id: uid(), name: lang === 'en' ? 'Personal' : 'Personale', icon: 'persone', color: 'ottone', details: '', parent: null, order: 1, gantt: true },
       { id: uid(), name: lang === 'en' ? 'Home' : 'Casa', icon: 'casa', color: 'salvia', details: '', parent: null, order: 2, gantt: true }
     ],
-    settings: { lang, ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], notify: false, sun: { ...DEFAULT_SUN } }
+    settings: { lang, ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], notify: false, sun: { ...DEFAULT_SUN }, theme: 'auto', splash: true }
   };
 }
 
@@ -48,10 +49,10 @@ export function saveState(st) { try { localStorage.setItem(KEY, JSON.stringify(s
 export function catOf(cats, id) { return id ? cats.find((c) => c.id === id) || null : null; }
 export function catTone(cats, id) {
   const c = catOf(cats, id);
-  if (!c) return NONE_TONE;
+  if (!c) return noneTone();
   if (c.color) return tones(colorHex(c.color));
   const p = catOf(cats, c.parent);
-  return p ? tones(colorHex(p.color)) : NONE_TONE;
+  return p ? tones(colorHex(p.color)) : noneTone();
 }
 export function catIcon(cats, id) {
   const c = catOf(cats, id);
@@ -770,7 +771,7 @@ export const NO_FILTER = { types: ALL_TYPES, cats: [] };
 export const filterOn = (f) => f.types.length < ALL_TYPES.length || f.cats.length > 0;
 export function makePass(f, cats) {
   const ids = f.cats.length ? new Set(f.cats.flatMap((id) => (id === '__none' ? [id] : catFamily(cats, id)))) : null;
-  return (it) => f.types.includes(it.type) && (!ids || it.type === 'sveglia' || ids.has(it.cat && catOf(cats, it.cat) ? it.cat : '__none'));
+  return (it) => !(it.type === 'sveglia' && it.off) && f.types.includes(it.type) && (!ids || it.type === 'sveglia' || ids.has(it.cat && catOf(cats, it.cat) ? it.cat : '__none'));
 }
 /* categoria per i nuovi elementi: la prima scelta nel filtro, nell'ordine delle categorie */
 export function filterCat(f, cats) {
