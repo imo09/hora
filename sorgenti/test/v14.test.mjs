@@ -69,8 +69,10 @@ assert.ok($('.sheet'), 'scheda aperta'); ok('maniglia: un tocco apre');
 click($('.sheet button[aria-label="Chiudi"]')); await wait();
 // vai a data dalla pressione lunga su Oggi
 const today = byText('.ctl.txt', 'Oggi');
-today.dispatchEvent(new w.Event('pointerdown', { bubbles: true })); await wait(560); today.dispatchEvent(new w.Event('pointerup', { bubbles: true }));
-assert.ok($('.dp-grid')); ok('pressione lunga su Oggi: Vai a data');
+today.dispatchEvent(new w.Event('pointerdown', { bubbles: true })); await wait(560); today.dispatchEvent(new w.Event('pointerup', { bubbles: true })); await wait();
+assert.ok($('.list.menu'), 'menu di Oggi');
+click(byText('.list.menu .li', 'Vai a data')); await wait();
+assert.ok($('.dp-grid')); ok('pressione lunga su Oggi: menu con Vai a data');
 click($('.sheet button[aria-label="Chiudi"]')); await wait();
 // impostazioni: sveglie a gruppi e modelli
 click($('button[aria-label="Impostazioni"]')); await wait();

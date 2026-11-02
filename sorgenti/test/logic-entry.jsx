@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { parseText, voiceSave, parseBlock, occurrences, toICS, parseICS, moveSub, moveCat, shiftItem, newItem, looksLikeBlock, expand, resolveCat, sunTimes, sunAvg, makePass, filterCat, NO_FILTER, unzip, parseZip, isTimedMulti } from '../src/hora.jsx';
+import { parseText, voiceSave, easter, holidaysIn, fmtSpan, parseBlock, occurrences, toICS, parseICS, moveSub, moveCat, shiftItem, newItem, looksLikeBlock, expand, resolveCat, sunTimes, sunAvg, makePass, filterCat, NO_FILTER, unzip, parseZip, isTimedMulti } from '../src/hora.jsx';
 import zlib from 'node:zlib';
 
 const T = '2026-10-12'; // lunedì
@@ -281,5 +281,23 @@ ok('voce: tipi, comandi, avvisi, categoria, indirizzo, note', () => {
   assert.equal(V('ferie tutto il giorno domani').start, null);
   assert.equal(voiceSave('dentista domani alle 15 salva'), 'dentista domani alle 15');
   assert.equal(voiceSave('dentista domani'), null);
+});
+
+ok('festività italiane e Pasqua', () => {
+  assert.equal(easter(2026), '2026-04-05');
+  assert.equal(easter(2027), '2027-03-28');
+  assert.equal(easter(2024), '2024-03-31');
+  const h = holidaysIn('2026-01-01', '2026-12-31');
+  assert.equal(Object.keys(h).length, 12);
+  assert.equal(h['2026-12-25'], 'Natale');
+  assert.equal(h['2026-04-06'], "Lunedì dell'Angelo");
+  assert.equal(h['2026-06-02'], 'Festa della Repubblica');
+  assert.ok(!h['2026-03-19']);
+  assert.deepEqual(Object.keys(holidaysIn('2026-12-20', '2027-01-07')), ['2026-12-25', '2026-12-26', '2027-01-01', '2027-01-06']);
+});
+ok('titolo del periodo, dal lungo al corto', () => {
+  assert.deepEqual([0, 1, 2].map((l) => fmtSpan('2026-09-01', '2026-09-30', l)), ['Settembre 2026', 'set 2026', 'set 26']);
+  assert.deepEqual([0, 1, 2].map((l) => fmtSpan('2026-10-28', '2026-11-03', l)), ['Ott - Nov 2026', 'ott - nov 2026', 'ott - nov 26']);
+  assert.equal(fmtSpan('2026-12-28', '2027-01-03', 2), 'dic 26 - gen 27');
 });
 console.log(`motore: ${n} test superati`);

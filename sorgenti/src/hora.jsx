@@ -1,9 +1,9 @@
-/* hora 1.5 - calendario locale di nautargo
+/* hora 1.6 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.5';
+export const VERSION = '1.6';
 
 /* ============ Testi IT / EN ============ */
 const STR = {
@@ -61,7 +61,7 @@ const STR = {
     agenda: 'Elenco', evRem: 'Eventi e promemoria', onceOn: 'una volta, {d}', untilD: 'fino al {d}', newGroup: 'Nuovo gruppo', noGroup: 'Senza gruppo', up: 'Su', down: 'Giù',
     newAlarm: 'Nuova sveglia', past: 'Anche passati', showMore: 'Mostra altri', noAlarms: 'Nessuna sveglia', suggested: 'Suggerite', hideTips: 'Nascondi',
     tplTxt: 'Gruppi pronti da aggiungere. Le sveglie suonano a un\'ora precisa e si ripetono: utili quando non si può rimandare, come un medicinale.',
-    sLook: 'Aspetto', theme: 'Tema', thAuto: 'Auto', thLight: 'Chiaro', thDark: 'Scuro', sSplash: 'Schermata iniziale', sSplashTxt: 'Il marchio all\'apertura, finché non tocchi lo schermo',
+    moreHint: 'Altre opzioni', goDateTxt: 'Anno, mese, giorno', searchTxt: 'Testo, data o intervallo', sHol: 'Festività italiane', sHolTxt: 'Colora i giorni di festa, come il fine settimana', sLook: 'Aspetto', theme: 'Tema', thAuto: 'Auto', thLight: 'Chiaro', thDark: 'Scuro', sSplash: 'Schermata iniziale', sSplashTxt: 'Il marchio all\'apertura, finché non tocchi lo schermo',
     sSync: 'Sincronizzazione', dbxNoKey: 'Pronta: manca la chiave dell\'app Dropbox', soon: 'presto', dbxLink: 'Collega Dropbox', dbxSync: 'Sincronizza', syncing: 'Sincronizzazione...',
     lastSync: 'Ultima: {d}', never: 'Mai', dbxUnlink: 'Scollega Dropbox', syncConflictQ: 'Dati diversi su Dropbox', syncConflictTxt: 'Sono cambiati sia qui sia su un altro dispositivo. Quali tieni?',
     useDbx: 'Usa Dropbox', useHere: 'Usa questi', syncOk: 'Sincronizzato', syncFail: 'Sincronizzazione non riuscita', newVer: 'Nuova versione {v}', reload: 'Ricarica', group: 'Gruppo', active: 'Attiva',
@@ -121,7 +121,7 @@ const STR = {
     agenda: 'List', evRem: 'Events and reminders', onceOn: 'once, {d}', untilD: 'until {d}', newGroup: 'New group', noGroup: 'No group', up: 'Up', down: 'Down',
     newAlarm: 'New alarm', past: 'Include past', showMore: 'Show more', noAlarms: 'No alarms', suggested: 'Suggested', hideTips: 'Hide',
     tplTxt: 'Ready-made groups. Alarms ring at an exact time and repeat: useful when something cannot wait, like a medicine.',
-    sLook: 'Appearance', theme: 'Theme', thAuto: 'Auto', thLight: 'Light', thDark: 'Dark', sSplash: 'Start screen', sSplashTxt: 'The logo on opening, until you tap the screen',
+    moreHint: 'More options', goDateTxt: 'Year, month, day', searchTxt: 'Text, date or range', sHol: 'Italian holidays', sHolTxt: 'Colours public holidays, like weekends', sLook: 'Appearance', theme: 'Theme', thAuto: 'Auto', thLight: 'Light', thDark: 'Dark', sSplash: 'Start screen', sSplashTxt: 'The logo on opening, until you tap the screen',
     sSync: 'Sync', dbxNoKey: 'Ready: the Dropbox app key is missing', soon: 'soon', dbxLink: 'Connect Dropbox', dbxSync: 'Sync', syncing: 'Syncing...',
     lastSync: 'Last: {d}', never: 'Never', dbxUnlink: 'Disconnect Dropbox', syncConflictQ: 'Different data on Dropbox', syncConflictTxt: 'Data changed both here and on another device. Which do you keep?',
     useDbx: 'Use Dropbox', useHere: 'Use these', syncOk: 'Synced', syncFail: 'Sync failed', newVer: 'New version {v}', reload: 'Reload', group: 'Group', active: 'On',
@@ -185,10 +185,13 @@ export const fmtHead = (s, w) => {
   return `${WD_LETTER[LANG][wd(s)]} ${n}`;
 };
 /* titolo di un intervallo: Ottobre 2026, Ott - Nov 2026, Dic 2026 - Gen 2027 */
-export const fmtSpan = (a, b) => {
-  if (a.slice(0, 7) === b.slice(0, 7)) return fmtMonthYear(a);
-  const m = (s) => cap(mab(s));
-  return a.slice(0, 4) === b.slice(0, 4) ? `${m(a)} - ${m(b)} ${a.slice(0, 4)}` : `${m(a)} ${a.slice(0, 4)} - ${m(b)} ${b.slice(0, 4)}`;
+/* lvl 0: Novembre 2026 - lvl 1: nov 2026 - lvl 2: nov 26 */
+export const fmtSpan = (a, b, lvl = 0) => {
+  const y = (s) => (lvl > 1 ? s.slice(2, 4) : s.slice(0, 4));
+  const m = (s) => (lvl ? mab(s) : cap(MONTHS[LANG][mnum(s)]));
+  if (a.slice(0, 7) === b.slice(0, 7)) return `${m(a)} ${y(a)}`;
+  const ms = (s) => (lvl ? mab(s) : cap(mab(s)));
+  return a.slice(0, 4) === b.slice(0, 4) ? `${ms(a)} - ${ms(b)} ${y(a)}` : `${ms(a)} ${y(a)} - ${ms(b)} ${y(b)}`;
 };
 export const fmtFull = (s) => `${fmtDayLong(s)} ${s.slice(0, 4)}`;
 
@@ -308,7 +311,7 @@ const UI = {
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14', upload: 'M12 16V5M7 10l5-5 5 5M5 20h14',
   swipe: 'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4', tag: 'M3 12V4h8l10 10-8 8zM7.5 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z',
   info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5v.5', help: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.5',
-  done: 'M4 5h16v14H4zM8 12l3 3 5-6', edit: 'M4 20l1-4L16 5l3 3L8 19zM14 7l3 3', eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', tap: 'M9 11V5.5a1.5 1.5 0 0 1 3 0V10l4.6 1.2a2 2 0 0 1 1.4 2.3L17 19a2 2 0 0 1-2 1.6h-4.2a2 2 0 0 1-1.6-.8L6 15.5a1.5 1.5 0 0 1 2.2-2L9 14.3', list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01', moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', cloud: 'M7 18a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18zM12 11v6M9.5 14.5L12 17l2.5-2.5', ai: 'M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8zM18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z', copy: 'M8 8h11v12H8zM5 16V4h11', palette: 'M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1.2-1-1.5-1-2.5s.8-1.5 2-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8.5-9-8.5zM7.5 11.5h.01M10 7.5h.01M15 7.5h.01', type: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5'
+  done: 'M4 5h16v14H4zM8 12l3 3 5-6', star: 'M12 3.5l2.6 5.4 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9L3.5 9.8l5.9-.9z', edit: 'M4 20l1-4L16 5l3 3L8 19zM14 7l3 3', eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', tap: 'M9 11V5.5a1.5 1.5 0 0 1 3 0V10l4.6 1.2a2 2 0 0 1 1.4 2.3L17 19a2 2 0 0 1-2 1.6h-4.2a2 2 0 0 1-1.6-.8L6 15.5a1.5 1.5 0 0 1 2.2-2L9 14.3', list: 'M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01', moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', cloud: 'M7 18a4 4 0 0 1-.5-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18zM12 11v6M9.5 14.5L12 17l2.5-2.5', ai: 'M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8zM18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z', copy: 'M8 8h11v12H8zM5 16V4h11', palette: 'M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1.2-1-1.5-1-2.5s.8-1.5 2-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8.5-9-8.5zM7.5 11.5h.01M10 7.5h.01M15 7.5h.01', type: 'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5'
 };
 export function UIcon({ n, size = 20, sw = 1.9, color = 'currentColor' }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', style: color === 'currentColor' ? undefined : { color } };
@@ -361,7 +364,7 @@ export function defaultState(lang) {
       { id: uid(), name: lang === 'en' ? 'Personal' : 'Personale', icon: 'persone', color: 'ottone', details: '', parent: null, order: 1, gantt: true },
       { id: uid(), name: lang === 'en' ? 'Home' : 'Casa', icon: 'casa', color: 'salvia', details: '', parent: null, order: 2, gantt: true }
     ],
-    settings: { lang, ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], notify: false, sun: { ...DEFAULT_SUN }, theme: 'auto', splash: true }
+    settings: { lang, holidays: true, ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], notify: false, sun: { ...DEFAULT_SUN }, theme: 'auto', splash: true }
   };
 }
 
@@ -1102,6 +1105,45 @@ export function sunAvg(dates, lat, lon) {
   return { rise: Math.round(v.reduce((a, x) => a + x.rise, 0) / v.length), set: Math.round(v.reduce((a, x) => a + x.set, 0) / v.length) };
 }
 
+/* ============ Festività italiane ============ */
+/* Pasqua (Meeus/Jones/Butcher), da cui lunedì dell'Angelo */
+export function easter(y) {
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const mo = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+  return `${y}-${pad(mo)}-${pad(day)}`;
+}
+const HOL_FIXED = [
+  ['01-01', 'Capodanno', "New Year's Day"], ['01-06', 'Epifania', 'Epiphany'], ['04-25', 'Festa della Liberazione', 'Liberation Day'],
+  ['05-01', 'Festa del lavoro', 'Labour Day'], ['06-02', 'Festa della Repubblica', 'Republic Day'], ['08-15', 'Ferragosto', 'Assumption'],
+  ['11-01', 'Ognissanti', "All Saints' Day"], ['12-08', 'Immacolata', 'Immaculate Conception'], ['12-25', 'Natale', 'Christmas'],
+  ['12-26', 'Santo Stefano', "St Stephen's Day"]
+];
+const holCache = {};
+export function holidaysOfYear(y) {
+  const k = y + LANG;
+  if (holCache[k]) return holCache[k];
+  const m = {};
+  for (const [md, it, en] of HOL_FIXED) m[`${y}-${md}`] = LANG === 'en' ? en : it;
+  const e = easter(y);
+  m[e] = LANG === 'en' ? 'Easter' : 'Pasqua';
+  m[addDays(e, 1)] = LANG === 'en' ? 'Easter Monday' : "Lunedì dell'Angelo";
+  holCache[k] = m;
+  return m;
+}
+/* mappa giorno -> nome, per l'intervallo guardato */
+export function holidaysIn(from, to) {
+  const out = {};
+  for (let y = +from.slice(0, 4); y <= +to.slice(0, 4); y++) {
+    const m = holidaysOfYear(y);
+    for (const d in m) if (d >= from && d <= to) out[d] = m[d];
+  }
+  return out;
+}
+
 /* ============ Filtro: tipi e categorie ============ */
 export const ALL_TYPES = ['evento', 'promemoria', 'sveglia'];
 export const NO_FILTER = { types: ALL_TYPES, cats: [] };
@@ -1384,7 +1426,7 @@ function AlarmLine({ o, start, hourH, ghost, selected, faded }) {
 const ALARM_C = 'var(--alarm)';
 const Block = (p) => (p.o.it.type === 'evento' ? <EvBlock {...p} /> : p.o.it.type === 'sveglia' ? <AlarmLine {...p} /> : <RemRow {...p} />);
 
-function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, setHourH, commitHourH, onOpen, onSave, onToggle, onShift, onPinchDays, onSwipe, onVisible, onNewAt, nonce, draft, setDraft }) {
+function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hol, hourH, setHourH, commitHourH, onOpen, onSave, onToggle, onShift, onPinchDays, onSwipe, onVisible, onNewAt, nonce, draft, setDraft }) {
   const today = todayStr();
   const scRef = useRef(null), colsRef = useRef(null), topRef = useRef(null);
   const [sel, setSel] = useState(null);
@@ -1749,7 +1791,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                 <div className="g-head">
                   <span className="g-gut" />
                   {dates.map((d) => (
-                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '') + (headW > 0 && headW < 92 ? ' xs' : '')}><span>{fmtHead(d, headW)}</span></div>
+                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '') + (hol[d] ? ' hol' : '') + (headW > 0 && headW < 92 ? ' xs' : '')} title={hol[d] || undefined}><span>{fmtHead(d, headW)}</span>{hol[d] && headW >= 150 && <em>{hol[d]}</em>}</div>
                   ))}
                 </div>
               )}
@@ -1794,7 +1836,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                   blocks.push(<Block key={drag.key} o={drag.orig} start={oi.start} end={oi.end ?? oi.start + 60} hourH={hourH} cats={st.cats} faded />);
                 }
                 return (
-                  <div key={ci} style={cw} className={'g-col' + (c.d === today ? ' today' : '') + (wd(c.d) > 4 ? ' we' : '')}>
+                  <div key={ci} style={cw} className={'g-col' + (c.d === today ? ' today' : '') + (wd(c.d) > 4 || hol[c.d] ? ' we' : '') + (hol[c.d] ? ' hol' : '')}>
                     {slots}
                     {blocks}
                     {drag && drag.col === ci && <Block o={drag.orig} start={drag.start} end={drag.end} hourH={hourH} cats={st.cats} ghost selected />}
@@ -1814,7 +1856,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
 
 /* ============ Mese ============ */
 const M_WEEKS = 26;
-function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen, onToggle, onOpenDay, onPinchOut, onSwipe, onVisible }) {
+function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, onOpen, onToggle, onOpenDay, onPinchOut, onSwipe, onVisible }) {
   const today = todayStr();
   const ms = monthStart(anchor);
   // a scorrimento continuo: mezzo anno di settimane prima e dopo il mese guardato
@@ -1934,7 +1976,7 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
           const its = (byDay[d] || []).filter((o) => o.it.type !== 'sveglia');
           const out = d.slice(0, 7) !== ms.slice(0, 7);
           return (
-            <button key={d} className={'m-cell' + (out ? ' out' : '') + (d === anchor ? ' sel' : '') + (wd(d) > 4 ? ' we' : '')} aria-label={fmtFull(d)} onClick={() => tapDay(d)}>
+            <button key={d} className={'m-cell' + (out ? ' out' : '') + (d === anchor ? ' sel' : '') + (wd(d) > 4 || hol[d] ? ' we' : '') + (hol[d] ? ' hol' : '')} aria-label={fmtFull(d) + (hol[d] ? ' - ' + hol[d] : '')} title={hol[d] || undefined} onClick={() => tapDay(d)}>
               {free && dnum(d) === 1 && <span className="m-mo">{mab(d)}</span>}
               <span className={'m-n' + (d === today ? ' today' : '')}>{dnum(d)}</span>
               {showTitles ? (
@@ -1955,7 +1997,7 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
       </div>
       <div className="m-list">
         <div className="m-lh">
-          <h2>{fmtDayLong(anchor)}</h2>
+          <h2>{fmtDayLong(anchor)}{hol[anchor] ? <em className="hol-n">{hol[anchor]}</em> : null}</h2>
           <button className="lnk" onClick={() => onOpenDay(anchor)}>{t('openDay')}</button>
         </div>
         {!list.length && <p className="muted pad">{t('empty')}</p>}
@@ -1992,7 +2034,7 @@ function Dot({ x, c, done, size = 13 }) {
 }
 /* scorrimento infinito: una finestra larga attorno alla data guardata, che si ricentra quando ci si avvicina ai bordi */
 const G_WEEKS = 52, G_MONTHS = 48, DW = 20, MW = 64;
-function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter, onRange, nonce }) {
+function GanttView({ st, anchor, scale, hols, setScale, onOpenItem, onCats, onRecenter, onRange, nonce }) {
   const today = todayStr();
   const [open, setOpen] = useState(() => new Set());
   const scRef = useRef(null), keep = useRef(null);
@@ -2099,7 +2141,12 @@ function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter
   }
   const bg = [];
   if (scale === 'week') {
-    for (let d = from; d <= to; d = addDays(d, 1)) if (wd(d) === 5) bg.push(<i key={d} className="gb-we" style={{ left: geo.x(d), width: 2 * DW }} />);
+    const hol = holidaysIn(from, to);
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+      if (wd(d) === 5) bg.push(<i key={d} className="gb-we" style={{ left: geo.x(d), width: 2 * DW }} />);
+      // festività: giorno colorato, senza una barra fra le attività
+      else if (hols && hol[d]) bg.push(<i key={'h' + d} className="gb-we hol" style={{ left: geo.x(d), width: DW }} title={hol[d]} />);
+    }
   } else {
     let k = 0;
     for (let m = from; m <= to; m = addMonths(m, 1), k++) if (k % 2) bg.push(<i key={m} className="gb-we" style={{ left: geo.x(m), width: MW }} />);
@@ -3287,6 +3334,7 @@ function SettingsScreen({ st, sync, onBack, onCats, onAgenda, onAi, onSetting, o
       </SGroup>
       <SGroup icon="cal" title={t('sCal')}>
         <div className="li"><SIcon n="swipe" /><span className="li-t col"><span>{t('sFree')}</span><small>{t('sFreeTxt')}</small></span><Switch on={!!st.settings.freeScroll} label={t('sFree')} onChange={(v) => onSetting({ freeScroll: v })} /></div>
+        <div className="li"><SIcon n="star" /><span className="li-t col"><span>{t('sHol')}</span><small>{t('sHolTxt')}</small></span><Switch on={st.settings.holidays !== false} label={t('sHol')} onChange={(v) => onSetting({ holidays: v })} /></div>
         <div className="li"><SIcon n="sunrise" /><span className="li-t col"><span>{t('sSun')}</span><small>{t('sSunTxt')}</small></span><Switch on={!!sun.on} label={t('sSunOn')} onChange={(v) => onSetting({ sun: { ...sun, on: v } })} /></div>
         {sun.on && (
           <>
@@ -3704,6 +3752,8 @@ export function App() {
     return Array.from({ length: days }, (_, i) => addDays(anchor, i));
   }, [days, anchor, sx]);
   const vis = useMemo(() => (sx ? dates.slice(SX_BUF, SX_BUF + days) : dates), [dates, days, sx]);
+  const hols = st.settings.holidays !== false;
+  const hol = useMemo(() => (hols && view !== 'gantt' ? holidaysIn(view === 'month' ? addDays(monthStart(anchor), -40) : dates[0], view === 'month' ? addDays(addMonths(monthStart(anchor), 7), 10) : dates[dates.length - 1]) : {}), [hols, view, anchor, dates]);
   const sunCfg = st.settings.sun || DEFAULT_SUN;
   const sun = useMemo(() => (sunCfg.on ? sunAvg(vis, sunCfg.lat, sunCfg.lon) : null), [vis, sunCfg.on, sunCfg.lat, sunCfg.lon]);
   const gScale = st.settings.ganttScale || 'week';
@@ -3728,15 +3778,21 @@ export function App() {
     else if (i > 0) toDays(seq[i - 1]);
   };
   const [gRange, setGRange] = useState(null);
-  let title;
-  if (view === 'grid') title = fmtSpan(vis[0], vis[vis.length - 1]);
-  else if (view === 'month') title = fmtMonthYear(anchor);
-  else title = gRange ? fmtSpan(gRange[0], gRange[1]) : fmtMonthYear(anchor);
+  /* titolo: per primo il mese per esteso, poi forme più corte se non ci sta */
+  const [tfmt, setTfmt] = useState(0);
+  const h1Ref = useRef(null);
+  const span = view === 'grid' ? [vis[0], vis[vis.length - 1]] : view === 'month' ? [anchor, anchor] : gRange || [anchor, anchor];
+  const title = fmtSpan(span[0], span[1], tfmt);
+  useLayoutEffect(() => { setTfmt(0); }, [span[0], span[1]]);
+  useLayoutEffect(() => {
+    const el = h1Ref.current;
+    if (el && tfmt < 2 && el.scrollWidth > el.clientWidth + 1) setTfmt(tfmt + 1);
+  });
   /* viste: solo icone quando i nomi non ci stanno */
   const navRef = useRef(null);
   const [compact, setCompact] = useState(false);
   useLayoutEffect(() => {
-    const m = () => { const n = navRef.current; if (n) setCompact(n.clientWidth < 330); };
+    const m = () => { const n = navRef.current; if (n) setCompact((c) => (c ? n.clientWidth < 380 : n.clientWidth < 330)); };
     m();
     window.addEventListener('resize', m);
     return () => window.removeEventListener('resize', m);
@@ -3745,7 +3801,8 @@ export function App() {
   const [datePick, setDatePick] = useState(false);
   const openPick = () => setDatePick(true);
   const lpTitle = useLongPress(openPick, openPick);
-  const lpToday = useLongPress(openPick, () => goToday());
+  const [menu, setMenu] = useState(false);
+  const lpToday = useLongPress(() => setMenu(true), () => goToday());
   const lpPrev = useLongPress(openPick, () => step(-1));
   const lpNext = useLongPress(openPick, () => step(1));
 
@@ -3802,27 +3859,23 @@ export function App() {
     <div className="app">
       <header className="hdr">
         <div className={'hdr1' + (compact ? ' compact' : '')}>
-          <span className="logo" aria-label="hora"><Mark size={30} /><b className="wm">hora</b></span>
+          <button className="logo" aria-label={t('settings')} title={t('settings')} onClick={() => push({ kind: 'settings' })}><Mark size={30} /><b className="wm">hora</b><i className="logo-g"><UIcon n="gear" size={13} sw={2} /></i></button>
           <nav className="seg tabs" ref={navRef} aria-label={t('views')}>
             <button className={view === 'grid' && days < 7 ? 'on' : ''} aria-label={view === 'grid' ? dayTab : t('day')} onClick={() => { setView('grid'); setDays(1); }}><UIcon n={view === 'grid' ? dayIcon : 'day1'} size={18} sw={1.7} /><span>{view === 'grid' ? dayTab : t('day')}</span></button>
             <button className={view === 'grid' && days === 7 ? 'on' : ''} aria-label={t('week')} onClick={() => { setView('grid'); toDays(7); }}><UIcon n="week" size={18} sw={1.7} /><span>{t('week')}</span></button>
             <button className={view === 'month' ? 'on' : ''} aria-label={t('month')} onClick={() => setView('month')}><UIcon n="month" size={18} sw={1.7} /><span>{t('month')}</span></button>
           </nav>
           <button className={'gbtn' + (view === 'gantt' ? ' on' : '')} aria-label={t('gantt')} aria-pressed={view === 'gantt'} title={t('ganttTxt')} onClick={() => setView('gantt')}><UIcon n="gantt" size={18} sw={2.1} /><span>{t('gantt')}</span></button>
-          <button className="ib" aria-label={t('search')} onClick={() => push({ kind: 'search' })}><UIcon n="search" /></button>
-          <button className="ib" aria-label={t('settings')} onClick={() => push({ kind: 'settings' })}><UIcon n="gear" /></button>
+          {!compact && <button className="ib" aria-label={t('search')} onClick={() => push({ kind: 'search' })}><UIcon n="search" /></button>}
         </div>
         <div className="hdr2">
-          <h1 {...lpTitle} title={t('goDate')}>{title}</h1>
+          <h1 ref={h1Ref} className={'tf' + tfmt} {...lpTitle} title={t('goDate')}>{title}</h1>
           <div className="row-c gap6">
             {sync.ro && <button className="ctl ro" title={t('roHere')} onClick={() => guard(() => {})}><UIcon n="eye" size={17} /><span>{t('roShort')}</span></button>}
             {view !== 'gantt' && (
               <button className={'ctl filt' + (fOn ? ' on' : '')} aria-label={t('filter')} aria-pressed={fOn} onClick={() => setFilterOpen(true)}><UIcon n="filter" size={18} />{fOn && <i />}</button>
             )}
-            {view === 'gantt' && (
-              <button className="ctl date" aria-label={t('goDate')} title={t('goDate')} onClick={openPick}><UIcon n="cal" size={17} /><span>{t('goDate')}</span></button>
-            )}
-            <button className="ctl txt" {...lpToday}>{t('today')}</button>
+            <button className="ctl txt today" {...lpToday} aria-haspopup="menu" title={t('today') + ' - ' + t('moreHint')}>{t('today')}<i className="corner" /></button>
             {view !== 'gantt' && (
               <span className="ctl-pair">
                 <button className="ctl" aria-label={t('prev')} {...lpPrev}><UIcon n="left" size={17} sw={2.1} /></button>
@@ -3834,18 +3887,18 @@ export function App() {
       </header>
       <main className="main" ref={mainRef} data-range={view === 'grid' ? vis[0] + '/' + vis[vis.length - 1] : undefined}>
         {view === 'grid' && (
-          <GridView st={st} dates={dates} anchor={anchor} sx={sx} visN={days} pass={pass} newCat={newCat} sun={sun} hourH={hourH} setHourH={setHourH} commitHourH={commitHourH} onOpen={openOcc}
+          <GridView st={st} dates={dates} anchor={anchor} sx={sx} visN={days} pass={pass} newCat={newCat} sun={sun} hol={hol} hourH={hourH} setHourH={setHourH} commitHourH={commitHourH} onOpen={openOcc}
             onSave={(it) => saveItem(it)} onToggle={toggleDone} onShift={(dir) => setAnchor((a) => addDays(a, dir * (days === 7 ? 7 : 1)))} onPinchDays={pinchDays}
             onSwipe={step} onVisible={setAnchor} onNewAt={onNewAt} nonce={nonce} draft={draft} setDraft={setDraft} />
         )}
         {view === 'month' && (
-          <MonthView st={st} anchor={anchor} pass={pass} titles={!!st.settings.monthTitles} setTitles={(v) => setSettings({ monthTitles: v })} free={free}
+          <MonthView st={st} anchor={anchor} pass={pass} titles={!!st.settings.monthTitles} setTitles={(v) => setSettings({ monthTitles: v })} free={free} hol={hol}
             onVisible={(m) => setAnchor((a) => m.slice(0, 8) + pad(Math.min(dnum(a), daysInMonth(m))))}
             onSelect={setAnchor} onOpen={openOcc} onToggle={toggleDone} onOpenDay={(d) => { setAnchor(d); setView('grid'); setDays(1); }}
             onPinchOut={() => { setView('grid'); toDays(7); }} onSwipe={step} />
         )}
         {view === 'gantt' && (
-          <GanttView st={st} anchor={anchor} scale={gScale} setScale={(v) => setSettings({ ganttScale: v })} onOpenItem={openOcc} onCats={() => setGanttCats(true)} nonce={nonce}
+          <GanttView st={st} anchor={anchor} scale={gScale} hols={hols} setScale={(v) => setSettings({ ganttScale: v })} onOpenItem={openOcc} onCats={() => setGanttCats(true)} nonce={nonce}
             onRecenter={setAnchor} onRange={(a, b) => setGRange((r) => (r && r[0] === a && r[1] === b ? r : [a, b]))} />
         )}
       </main>
@@ -3866,6 +3919,16 @@ export function App() {
       {picker && (
         <CatPicker st={st} current={picker.current} onClose={() => setPicker(null)} onPick={(id) => { picker.cb(id); remember(id); }}
           onCreate={createCat} onManage={() => { setPicker(null); push({ kind: 'cats' }); }} />
+      )}
+      {menu && (
+        <Sheet onClose={() => setMenu(false)} label={t('moreHint')}>
+          <SheetHead title={t('moreHint')} onClose={() => setMenu(false)} />
+          <div className="list menu">
+            <button className="li" onClick={() => { setMenu(false); goToday(); }}><span className="si"><UIcon n="cal" size={19} /></span><span className="li-t col"><span className="b">{t('today')}</span><small>{fmtFull(todayStr())}</small></span></button>
+            <button className="li" onClick={() => { setMenu(false); openPick(); }}><span className="si"><UIcon n="month" size={19} /></span><span className="li-t col"><span className="b">{t('goDate')}</span><small>{t('goDateTxt')}</small></span></button>
+            <button className="li" onClick={() => { setMenu(false); push({ kind: 'search' }); }}><span className="si"><UIcon n="search" size={19} /></span><span className="li-t col"><span className="b">{t('search')}</span><small>{t('searchTxt')}</small></span></button>
+          </div>
+        </Sheet>
       )}
       {datePick && <DatePicker value={view === 'grid' ? vis[0] : anchor} onPick={(d) => { goDate(view === 'grid' && days === 5 && wd(d) < 5 ? startOfWeek(d) : d); }} onClose={() => setDatePick(false)} />}
       {confirm && <Confirm {...confirm} onCancel={() => setConfirm(null)} />}

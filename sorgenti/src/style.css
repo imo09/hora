@@ -1,6 +1,6 @@
-:root{--gut:46px;--bg:#F3F4F1;--bg2:#EEF1EF;--card:#FBFBF8;--ink:#0E1D2A;--ink2:#33414B;--muted:#5A6873;--faint:var(--faint);--faint2:var(--faint2);--line:#DDE2DF;--line2:#EEF0EE;--line3:#CCD3D0;--soft:#E3E8E5;--teal:#2F9184;--tealInk:#23786D;--tealSoft:#DCEDE9;--tealDeep:var(--tealDeep);--tealFaint:#EAF4F1;--brass:#C99A4E;--brassInk:var(--brassInk);--brassSoft:#F3E9D6;--rust:var(--rust);--rust2:var(--rust2);--alarm:#6E4F7E;--alarmInk:#553D63;--alarmSoft:#ECE6F0;--sky:#4F7CA8;--skyInk:#3B6187;--we:#ECEFEC;--knob:#FFFFFF;--group:#E8EEEB;--gridbg:#E4E9E6;--slot:#FBFBF8;--slotWe:#F3F5F2;--slotToday:#EDF6F3;--night:rgba(79,124,168,.09);--shadow:rgba(14,29,42,.16);color-scheme:light}
+:root{--gut:46px;--bg:#F3F4F1;--bg2:#EEF1EF;--card:#FBFBF8;--ink:#0E1D2A;--ink2:#33414B;--muted:#5A6873;--faint:#7A878F;--faint2:#B7C1BD;--line:#DDE2DF;--line2:#EEF0EE;--line3:#CCD3D0;--soft:#E3E8E5;--teal:#2F9184;--tealInk:#23786D;--tealSoft:#DCEDE9;--tealDeep:#1F635C;--tealFaint:#EAF4F1;--brass:#C99A4E;--brassInk:#8E6A2C;--brassSoft:#F3E9D6;--rust:#9A4038;--rust2:#B4544A;--alarm:#6E4F7E;--alarmInk:#553D63;--alarmSoft:#ECE6F0;--sky:#4F7CA8;--skyInk:#3B6187;--we:#ECEFEC;--holSlot:#FBF3E6;--knob:#FFFFFF;--group:#E8EEEB;--gridbg:#E4E9E6;--slot:#FBFBF8;--slotWe:#F3F5F2;--slotToday:#EDF6F3;--night:rgba(79,124,168,.09);--shadow:rgba(14,29,42,.16);color-scheme:light}
 /* tema scuro: blu notte di nautargo, verderame e ottone più chiari */
-:root[data-theme=dark]{--bg:#0F1A20;--bg2:#0C161B;--card:#17242C;--ink:#E6ECEA;--ink2:#C3CDD0;--muted:#8E9DA5;--faint:#6F7E86;--faint2:#4B5A62;--line:#27363F;--line2:#1E2C34;--line3:#36474F;--soft:#22323B;--teal:#3DAA9A;--tealInk:#36A190;--tealSoft:#1B3936;--tealDeep:#93D6CA;--tealFaint:#18302E;--brass:#D6AA60;--brassInk:#E6C489;--brassSoft:#3A3122;--rust:#DB8378;--rust2:#C9645A;--alarm:#A385B6;--alarmInk:#D2BCDD;--alarmSoft:#2F2638;--sky:#75A3CE;--skyInk:#A3C3E0;--we:#14212A;--knob:#F3F4F1;--group:#16242B;--gridbg:#0A1318;--slot:#17242C;--slotWe:#14202A;--slotToday:#163231;--night:rgba(117,163,206,.08);--shadow:rgba(0,0,0,.45);color-scheme:dark}
+:root[data-theme=dark]{--bg:#0F1A20;--bg2:#0C161B;--card:#17242C;--ink:#E6ECEA;--ink2:#C3CDD0;--muted:#8E9DA5;--faint:#6F7E86;--faint2:#4B5A62;--line:#27363F;--line2:#1E2C34;--line3:#36474F;--soft:#22323B;--teal:#3DAA9A;--tealInk:#36A190;--tealSoft:#1B3936;--tealDeep:#93D6CA;--tealFaint:#18302E;--brass:#D6AA60;--brassInk:#E6C489;--brassSoft:#3A3122;--rust:#DB8378;--rust2:#C9645A;--alarm:#A385B6;--alarmInk:#D2BCDD;--alarmSoft:#2F2638;--sky:#75A3CE;--skyInk:#A3C3E0;--we:#14212A;--holSlot:#241F16;--knob:#F3F4F1;--group:#16242B;--gridbg:#0A1318;--slot:#17242C;--slotWe:#14202A;--slotToday:#163231;--night:rgba(117,163,206,.08);--shadow:rgba(0,0,0,.45);color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;font-size:15px;overscroll-behavior:none}
 body{position:fixed;inset:0;overflow:hidden}
@@ -25,7 +25,10 @@ input::placeholder,textarea::placeholder{color:var(--faint)}
 .hdr1,.hdr2{display:flex;align-items:center;gap:6px;padding:0 10px 0 12px}
 .hdr1{padding-top:10px}
 .hdr2{justify-content:space-between;gap:8px;padding-top:8px;padding-bottom:8px}
-.logo{display:flex;align-items:center;justify-content:center;gap:7px;flex:none;width:40px;height:40px}
+.logo{position:relative;display:flex;align-items:center;justify-content:center;gap:7px;flex:none;width:40px;height:40px;border-radius:12px}
+.logo:active{background:var(--soft)}
+.logo-g{position:absolute;right:-1px;bottom:-1px;width:16px;height:16px;border-radius:8px;background:var(--bg);color:var(--muted);display:grid;place-items:center}
+@media (min-width:760px){.logo-g{right:3px}}
 .logo .wm{display:none;font-size:19px}
 @media (min-width:760px){.logo{width:auto;padding:0 6px 0 2px}.logo .wm{display:inline}}
 .hdr1 .tabs{flex:1;min-width:0}
@@ -38,7 +41,7 @@ input::placeholder,textarea::placeholder{color:var(--faint)}
 .gbtn svg{color:var(--brass)}
 .gbtn.on{background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--brass),0 1px 3px var(--shadow)}
 .gbtn:active{filter:brightness(.96)}
-.hdr2 h1{margin:0 0 0 4px;font-size:20px;font-weight:600;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;cursor:pointer;-webkit-user-select:none;user-select:none}
+.hdr2 h1{margin:0 0 0 4px;font-size:20px;flex:1;font-weight:600;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;cursor:pointer;-webkit-user-select:none;user-select:none}
 /* comandi della seconda riga: 40 px, stesso bordo */
 .ctl{position:relative;height:40px;min-width:40px;padding:0 10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink2);display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;flex:none;-webkit-user-select:none;user-select:none}
 .ctl:active{background:var(--soft)}
@@ -134,8 +137,8 @@ input::placeholder,textarea::placeholder{color:var(--faint)}
 .alm span{position:absolute;left:4px;top:-1px;max-width:calc(100% - 6px);font-size:10px;line-height:12px;font-weight:600;color:var(--alarmInk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:3px}
 .alm.sel i{box-shadow:0 0 0 3px rgba(110,79,126,.22)}.alm.ghost{z-index:5}.alm.faded{opacity:.3}
 /* alba e tramonto: notte velata d'azzurro e bordo a puntini, ben distinti dalla sveglia (prugna) e dall'ora attuale (ottone) */
-.sun{position:absolute;left:0;right:0;height:0;border-top:1.5px dotted rgba(79,124,168,.65);pointer-events:none}
-.sunl{position:absolute;right:5px;transform:translateY(-7px);font:400 9.5px 'Space Mono',monospace;color:var(--skyInk);white-space:nowrap}
+.sun{position:absolute;left:0;right:0;height:0;border-top:1.5px dashed var(--sky);opacity:.85;pointer-events:none;z-index:4}
+.sunl{position:absolute;right:5px;transform:translateY(-7px);font:400 9.5px 'Space Mono',monospace;color:var(--skyInk);white-space:nowrap;z-index:5}
 .now{position:absolute;left:-4px;right:0;height:2px;background:var(--brass);z-index:3}
 .now::before{content:'';position:absolute;left:-1px;top:-4px;width:10px;height:10px;border-radius:5px;background:var(--brass)}
 /* mese */
@@ -431,3 +434,20 @@ textarea.paste{font:400 13px/1.5 'Space Mono',monospace;margin-top:4px}
 @media (max-width:420px){.ctl.ro span{display:none}}
 .ag-row.off{opacity:.55}
 .rem.mini{border-left-width:2px}.rem.mini svg{width:10px;height:10px}
+
+/* titolo: si accorcia e rimpicciolisce quando lo spazio è poco */
+.hdr2 h1.tf1{font-size:18px}.hdr2 h1.tf2{font-size:17px;letter-spacing:-.2px}
+.hdr2 h1.tf1,.hdr2 h1.tf2{text-transform:capitalize}
+/* Oggi: angolo illuminato, pressione lunga per Vai a data e Cerca */
+.ctl.today{overflow:hidden}
+.ctl.today .corner{position:absolute;right:3px;bottom:3px;width:0;height:0;border-left:9px solid transparent;border-bottom:9px solid var(--brass);border-bottom-right-radius:2px}
+.list.menu .li{min-height:60px;gap:12px}
+.list.menu .si{color:var(--tealInk)}
+/* festività: giorno colorato come il fine settimana, con un tocco di ottone */
+.g-col.hol .slot{background:var(--holSlot)}
+.g-day.hol span{color:var(--brassInk)}
+.g-day em{font-style:normal;font-size:10.5px;color:var(--brassInk);margin-left:6px;overflow:hidden;text-overflow:ellipsis}
+.m-cell.hol{background:var(--holSlot)}
+.m-cell.hol .m-n{color:var(--brassInk)}
+.gb-we.hol{background:var(--holSlot)}
+.hol-n{font-style:normal;color:var(--brassInk);font-weight:500;margin-left:8px}

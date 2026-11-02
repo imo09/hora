@@ -365,6 +365,8 @@ export function App() {
     return Array.from({ length: days }, (_, i) => addDays(anchor, i));
   }, [days, anchor, sx]);
   const vis = useMemo(() => (sx ? dates.slice(SX_BUF, SX_BUF + days) : dates), [dates, days, sx]);
+  const hols = st.settings.holidays !== false;
+  const hol = useMemo(() => (hols && view !== 'gantt' ? holidaysIn(view === 'month' ? addDays(monthStart(anchor), -40) : dates[0], view === 'month' ? addDays(addMonths(monthStart(anchor), 7), 10) : dates[dates.length - 1]) : {}), [hols, view, anchor, dates]);
   const sunCfg = st.settings.sun || DEFAULT_SUN;
   const sun = useMemo(() => (sunCfg.on ? sunAvg(vis, sunCfg.lat, sunCfg.lon) : null), [vis, sunCfg.on, sunCfg.lat, sunCfg.lon]);
   const gScale = st.settings.ganttScale || 'week';
@@ -389,15 +391,21 @@ export function App() {
     else if (i > 0) toDays(seq[i - 1]);
   };
   const [gRange, setGRange] = useState(null);
-  let title;
-  if (view === 'grid') title = fmtSpan(vis[0], vis[vis.length - 1]);
-  else if (view === 'month') title = fmtMonthYear(anchor);
-  else title = gRange ? fmtSpan(gRange[0], gRange[1]) : fmtMonthYear(anchor);
+  /* titolo: per primo il mese per esteso, poi forme più corte se non ci sta */
+  const [tfmt, setTfmt] = useState(0);
+  const h1Ref = useRef(null);
+  const span = view === 'grid' ? [vis[0], vis[vis.length - 1]] : view === 'month' ? [anchor, anchor] : gRange || [anchor, anchor];
+  const title = fmtSpan(span[0], span[1], tfmt);
+  useLayoutEffect(() => { setTfmt(0); }, [span[0], span[1]]);
+  useLayoutEffect(() => {
+    const el = h1Ref.current;
+    if (el && tfmt < 2 && el.scrollWidth > el.clientWidth + 1) setTfmt(tfmt + 1);
+  });
   /* viste: solo icone quando i nomi non ci stanno */
   const navRef = useRef(null);
   const [compact, setCompact] = useState(false);
   useLayoutEffect(() => {
-    const m = () => { const n = navRef.current; if (n) setCompact(n.clientWidth < 330); };
+    const m = () => { const n = navRef.current; if (n) setCompact((c) => (c ? n.clientWidth < 380 : n.clientWidth < 330)); };
     m();
     window.addEventListener('resize', m);
     return () => window.removeEventListener('resize', m);
@@ -406,7 +414,8 @@ export function App() {
   const [datePick, setDatePick] = useState(false);
   const openPick = () => setDatePick(true);
   const lpTitle = useLongPress(openPick, openPick);
-  const lpToday = useLongPress(openPick, () => goToday());
+  const [menu, setMenu] = useState(false);
+  const lpToday = useLongPress(() => setMenu(true), () => goToday());
   const lpPrev = useLongPress(openPick, () => step(-1));
   const lpNext = useLongPress(openPick, () => step(1));
 
@@ -463,27 +472,23 @@ export function App() {
     <div className="app">
       <header className="hdr">
         <div className={'hdr1' + (compact ? ' compact' : '')}>
-          <span className="logo" aria-label="hora"><Mark size={30} /><b className="wm">hora</b></span>
+          <button className="logo" aria-label={t('settings')} title={t('settings')} onClick={() => push({ kind: 'settings' })}><Mark size={30} /><b className="wm">hora</b><i className="logo-g"><UIcon n="gear" size={13} sw={2} /></i></button>
           <nav className="seg tabs" ref={navRef} aria-label={t('views')}>
             <button className={view === 'grid' && days < 7 ? 'on' : ''} aria-label={view === 'grid' ? dayTab : t('day')} onClick={() => { setView('grid'); setDays(1); }}><UIcon n={view === 'grid' ? dayIcon : 'day1'} size={18} sw={1.7} /><span>{view === 'grid' ? dayTab : t('day')}</span></button>
             <button className={view === 'grid' && days === 7 ? 'on' : ''} aria-label={t('week')} onClick={() => { setView('grid'); toDays(7); }}><UIcon n="week" size={18} sw={1.7} /><span>{t('week')}</span></button>
             <button className={view === 'month' ? 'on' : ''} aria-label={t('month')} onClick={() => setView('month')}><UIcon n="month" size={18} sw={1.7} /><span>{t('month')}</span></button>
           </nav>
           <button className={'gbtn' + (view === 'gantt' ? ' on' : '')} aria-label={t('gantt')} aria-pressed={view === 'gantt'} title={t('ganttTxt')} onClick={() => setView('gantt')}><UIcon n="gantt" size={18} sw={2.1} /><span>{t('gantt')}</span></button>
-          <button className="ib" aria-label={t('search')} onClick={() => push({ kind: 'search' })}><UIcon n="search" /></button>
-          <button className="ib" aria-label={t('settings')} onClick={() => push({ kind: 'settings' })}><UIcon n="gear" /></button>
+          {!compact && <button className="ib" aria-label={t('search')} onClick={() => push({ kind: 'search' })}><UIcon n="search" /></button>}
         </div>
         <div className="hdr2">
-          <h1 {...lpTitle} title={t('goDate')}>{title}</h1>
+          <h1 ref={h1Ref} className={'tf' + tfmt} {...lpTitle} title={t('goDate')}>{title}</h1>
           <div className="row-c gap6">
             {sync.ro && <button className="ctl ro" title={t('roHere')} onClick={() => guard(() => {})}><UIcon n="eye" size={17} /><span>{t('roShort')}</span></button>}
             {view !== 'gantt' && (
               <button className={'ctl filt' + (fOn ? ' on' : '')} aria-label={t('filter')} aria-pressed={fOn} onClick={() => setFilterOpen(true)}><UIcon n="filter" size={18} />{fOn && <i />}</button>
             )}
-            {view === 'gantt' && (
-              <button className="ctl date" aria-label={t('goDate')} title={t('goDate')} onClick={openPick}><UIcon n="cal" size={17} /><span>{t('goDate')}</span></button>
-            )}
-            <button className="ctl txt" {...lpToday}>{t('today')}</button>
+            <button className="ctl txt today" {...lpToday} aria-haspopup="menu" title={t('today') + ' - ' + t('moreHint')}>{t('today')}<i className="corner" /></button>
             {view !== 'gantt' && (
               <span className="ctl-pair">
                 <button className="ctl" aria-label={t('prev')} {...lpPrev}><UIcon n="left" size={17} sw={2.1} /></button>
@@ -495,18 +500,18 @@ export function App() {
       </header>
       <main className="main" ref={mainRef} data-range={view === 'grid' ? vis[0] + '/' + vis[vis.length - 1] : undefined}>
         {view === 'grid' && (
-          <GridView st={st} dates={dates} anchor={anchor} sx={sx} visN={days} pass={pass} newCat={newCat} sun={sun} hourH={hourH} setHourH={setHourH} commitHourH={commitHourH} onOpen={openOcc}
+          <GridView st={st} dates={dates} anchor={anchor} sx={sx} visN={days} pass={pass} newCat={newCat} sun={sun} hol={hol} hourH={hourH} setHourH={setHourH} commitHourH={commitHourH} onOpen={openOcc}
             onSave={(it) => saveItem(it)} onToggle={toggleDone} onShift={(dir) => setAnchor((a) => addDays(a, dir * (days === 7 ? 7 : 1)))} onPinchDays={pinchDays}
             onSwipe={step} onVisible={setAnchor} onNewAt={onNewAt} nonce={nonce} draft={draft} setDraft={setDraft} />
         )}
         {view === 'month' && (
-          <MonthView st={st} anchor={anchor} pass={pass} titles={!!st.settings.monthTitles} setTitles={(v) => setSettings({ monthTitles: v })} free={free}
+          <MonthView st={st} anchor={anchor} pass={pass} titles={!!st.settings.monthTitles} setTitles={(v) => setSettings({ monthTitles: v })} free={free} hol={hol}
             onVisible={(m) => setAnchor((a) => m.slice(0, 8) + pad(Math.min(dnum(a), daysInMonth(m))))}
             onSelect={setAnchor} onOpen={openOcc} onToggle={toggleDone} onOpenDay={(d) => { setAnchor(d); setView('grid'); setDays(1); }}
             onPinchOut={() => { setView('grid'); toDays(7); }} onSwipe={step} />
         )}
         {view === 'gantt' && (
-          <GanttView st={st} anchor={anchor} scale={gScale} setScale={(v) => setSettings({ ganttScale: v })} onOpenItem={openOcc} onCats={() => setGanttCats(true)} nonce={nonce}
+          <GanttView st={st} anchor={anchor} scale={gScale} hols={hols} setScale={(v) => setSettings({ ganttScale: v })} onOpenItem={openOcc} onCats={() => setGanttCats(true)} nonce={nonce}
             onRecenter={setAnchor} onRange={(a, b) => setGRange((r) => (r && r[0] === a && r[1] === b ? r : [a, b]))} />
         )}
       </main>
@@ -527,6 +532,16 @@ export function App() {
       {picker && (
         <CatPicker st={st} current={picker.current} onClose={() => setPicker(null)} onPick={(id) => { picker.cb(id); remember(id); }}
           onCreate={createCat} onManage={() => { setPicker(null); push({ kind: 'cats' }); }} />
+      )}
+      {menu && (
+        <Sheet onClose={() => setMenu(false)} label={t('moreHint')}>
+          <SheetHead title={t('moreHint')} onClose={() => setMenu(false)} />
+          <div className="list menu">
+            <button className="li" onClick={() => { setMenu(false); goToday(); }}><span className="si"><UIcon n="cal" size={19} /></span><span className="li-t col"><span className="b">{t('today')}</span><small>{fmtFull(todayStr())}</small></span></button>
+            <button className="li" onClick={() => { setMenu(false); openPick(); }}><span className="si"><UIcon n="month" size={19} /></span><span className="li-t col"><span className="b">{t('goDate')}</span><small>{t('goDateTxt')}</small></span></button>
+            <button className="li" onClick={() => { setMenu(false); push({ kind: 'search' }); }}><span className="si"><UIcon n="search" size={19} /></span><span className="li-t col"><span className="b">{t('search')}</span><small>{t('searchTxt')}</small></span></button>
+          </div>
+        </Sheet>
       )}
       {datePick && <DatePicker value={view === 'grid' ? vis[0] : anchor} onPick={(d) => { goDate(view === 'grid' && days === 5 && wd(d) < 5 ? startOfWeek(d) : d); }} onClose={() => setDatePick(false)} />}
       {confirm && <Confirm {...confirm} onCancel={() => setConfirm(null)} />}

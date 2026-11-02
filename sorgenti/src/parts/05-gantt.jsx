@@ -9,7 +9,7 @@ function Dot({ x, c, done, size = 13 }) {
 }
 /* scorrimento infinito: una finestra larga attorno alla data guardata, che si ricentra quando ci si avvicina ai bordi */
 const G_WEEKS = 52, G_MONTHS = 48, DW = 20, MW = 64;
-function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter, onRange, nonce }) {
+function GanttView({ st, anchor, scale, hols, setScale, onOpenItem, onCats, onRecenter, onRange, nonce }) {
   const today = todayStr();
   const [open, setOpen] = useState(() => new Set());
   const scRef = useRef(null), keep = useRef(null);
@@ -116,7 +116,12 @@ function GanttView({ st, anchor, scale, setScale, onOpenItem, onCats, onRecenter
   }
   const bg = [];
   if (scale === 'week') {
-    for (let d = from; d <= to; d = addDays(d, 1)) if (wd(d) === 5) bg.push(<i key={d} className="gb-we" style={{ left: geo.x(d), width: 2 * DW }} />);
+    const hol = holidaysIn(from, to);
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+      if (wd(d) === 5) bg.push(<i key={d} className="gb-we" style={{ left: geo.x(d), width: 2 * DW }} />);
+      // festività: giorno colorato, senza una barra fra le attività
+      else if (hols && hol[d]) bg.push(<i key={'h' + d} className="gb-we hol" style={{ left: geo.x(d), width: DW }} title={hol[d]} />);
+    }
   } else {
     let k = 0;
     for (let m = from; m <= to; m = addMonths(m, 1), k++) if (k % 2) bg.push(<i key={m} className="gb-we" style={{ left: geo.x(m), width: MW }} />);

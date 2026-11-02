@@ -11,3 +11,4 @@ node test/touch.test.mjs
 node test/days5.test.mjs
 node test/v14.test.mjs
 node test/v15.test.mjs
+node test/v16.test.mjs
