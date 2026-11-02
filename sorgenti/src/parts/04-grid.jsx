@@ -72,7 +72,7 @@ function AlarmLine({ o, start, hourH, ghost, selected, faded }) {
 const ALARM_C = 'var(--alarm)';
 const Block = (p) => (p.o.it.type === 'evento' ? <EvBlock {...p} /> : p.o.it.type === 'sveglia' ? <AlarmLine {...p} /> : <RemRow {...p} />);
 
-function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, setHourH, commitHourH, onOpen, onSave, onToggle, onShift, onPinchDays, onSwipe, onVisible, onNewAt, nonce, draft, setDraft }) {
+function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hol, hourH, setHourH, commitHourH, onOpen, onSave, onToggle, onShift, onPinchDays, onSwipe, onVisible, onNewAt, nonce, draft, setDraft }) {
   const today = todayStr();
   const scRef = useRef(null), colsRef = useRef(null), topRef = useRef(null);
   const [sel, setSel] = useState(null);
@@ -437,7 +437,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                 <div className="g-head">
                   <span className="g-gut" />
                   {dates.map((d) => (
-                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '') + (headW > 0 && headW < 92 ? ' xs' : '')}><span>{fmtHead(d, headW)}</span></div>
+                    <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '') + (hol[d] ? ' hol' : '') + (headW > 0 && headW < 92 ? ' xs' : '')} title={hol[d] || undefined}><span>{fmtHead(d, headW)}</span>{hol[d] && headW >= 150 && <em>{hol[d]}</em>}</div>
                   ))}
                 </div>
               )}
@@ -482,7 +482,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
                   blocks.push(<Block key={drag.key} o={drag.orig} start={oi.start} end={oi.end ?? oi.start + 60} hourH={hourH} cats={st.cats} faded />);
                 }
                 return (
-                  <div key={ci} style={cw} className={'g-col' + (c.d === today ? ' today' : '') + (wd(c.d) > 4 ? ' we' : '')}>
+                  <div key={ci} style={cw} className={'g-col' + (c.d === today ? ' today' : '') + (wd(c.d) > 4 || hol[c.d] ? ' we' : '') + (hol[c.d] ? ' hol' : '')}>
                     {slots}
                     {blocks}
                     {drag && drag.col === ci && <Block o={drag.orig} start={drag.start} end={drag.end} hourH={hourH} cats={st.cats} ghost selected />}
@@ -502,7 +502,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hourH, s
 
 /* ============ Mese ============ */
 const M_WEEKS = 26;
-function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen, onToggle, onOpenDay, onPinchOut, onSwipe, onVisible }) {
+function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, onOpen, onToggle, onOpenDay, onPinchOut, onSwipe, onVisible }) {
   const today = todayStr();
   const ms = monthStart(anchor);
   // a scorrimento continuo: mezzo anno di settimane prima e dopo il mese guardato
@@ -622,7 +622,7 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
           const its = (byDay[d] || []).filter((o) => o.it.type !== 'sveglia');
           const out = d.slice(0, 7) !== ms.slice(0, 7);
           return (
-            <button key={d} className={'m-cell' + (out ? ' out' : '') + (d === anchor ? ' sel' : '') + (wd(d) > 4 ? ' we' : '')} aria-label={fmtFull(d)} onClick={() => tapDay(d)}>
+            <button key={d} className={'m-cell' + (out ? ' out' : '') + (d === anchor ? ' sel' : '') + (wd(d) > 4 || hol[d] ? ' we' : '') + (hol[d] ? ' hol' : '')} aria-label={fmtFull(d) + (hol[d] ? ' - ' + hol[d] : '')} title={hol[d] || undefined} onClick={() => tapDay(d)}>
               {free && dnum(d) === 1 && <span className="m-mo">{mab(d)}</span>}
               <span className={'m-n' + (d === today ? ' today' : '')}>{dnum(d)}</span>
               {showTitles ? (
@@ -643,7 +643,7 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, onSelect, onOpen
       </div>
       <div className="m-list">
         <div className="m-lh">
-          <h2>{fmtDayLong(anchor)}</h2>
+          <h2>{fmtDayLong(anchor)}{hol[anchor] ? <em className="hol-n">{hol[anchor]}</em> : null}</h2>
           <button className="lnk" onClick={() => onOpenDay(anchor)}>{t('openDay')}</button>
         </div>
         {!list.length && <p className="muted pad">{t('empty')}</p>}

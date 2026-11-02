@@ -378,6 +378,7 @@ function SettingsScreen({ st, sync, onBack, onCats, onAgenda, onAi, onSetting, o
       </SGroup>
       <SGroup icon="cal" title={t('sCal')}>
         <div className="li"><SIcon n="swipe" /><span className="li-t col"><span>{t('sFree')}</span><small>{t('sFreeTxt')}</small></span><Switch on={!!st.settings.freeScroll} label={t('sFree')} onChange={(v) => onSetting({ freeScroll: v })} /></div>
+        <div className="li"><SIcon n="star" /><span className="li-t col"><span>{t('sHol')}</span><small>{t('sHolTxt')}</small></span><Switch on={st.settings.holidays !== false} label={t('sHol')} onChange={(v) => onSetting({ holidays: v })} /></div>
         <div className="li"><SIcon n="sunrise" /><span className="li-t col"><span>{t('sSun')}</span><small>{t('sSunTxt')}</small></span><Switch on={!!sun.on} label={t('sSunOn')} onChange={(v) => onSetting({ sun: { ...sun, on: v } })} /></div>
         {sun.on && (
           <>

@@ -24,7 +24,7 @@ export function defaultState(lang) {
       { id: uid(), name: lang === 'en' ? 'Personal' : 'Personale', icon: 'persone', color: 'ottone', details: '', parent: null, order: 1, gantt: true },
       { id: uid(), name: lang === 'en' ? 'Home' : 'Casa', icon: 'casa', color: 'salvia', details: '', parent: null, order: 2, gantt: true }
     ],
-    settings: { lang, ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], notify: false, sun: { ...DEFAULT_SUN }, theme: 'auto', splash: true }
+    settings: { lang, holidays: true, ganttUnassigned: true, hourH: 48, monthTitles: false, ganttScale: 'week', recent: [], notify: false, sun: { ...DEFAULT_SUN }, theme: 'auto', splash: true }
   };
 }
 
@@ -763,6 +763,45 @@ export function sunAvg(dates, lat, lon) {
   const v = dates.map((d) => sunTimes(d, lat, lon)).filter(Boolean);
   if (!v.length) return null;
   return { rise: Math.round(v.reduce((a, x) => a + x.rise, 0) / v.length), set: Math.round(v.reduce((a, x) => a + x.set, 0) / v.length) };
+}
+
+/* ============ Festività italiane ============ */
+/* Pasqua (Meeus/Jones/Butcher), da cui lunedì dell'Angelo */
+export function easter(y) {
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const mo = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+  return `${y}-${pad(mo)}-${pad(day)}`;
+}
+const HOL_FIXED = [
+  ['01-01', 'Capodanno', "New Year's Day"], ['01-06', 'Epifania', 'Epiphany'], ['04-25', 'Festa della Liberazione', 'Liberation Day'],
+  ['05-01', 'Festa del lavoro', 'Labour Day'], ['06-02', 'Festa della Repubblica', 'Republic Day'], ['08-15', 'Ferragosto', 'Assumption'],
+  ['11-01', 'Ognissanti', "All Saints' Day"], ['12-08', 'Immacolata', 'Immaculate Conception'], ['12-25', 'Natale', 'Christmas'],
+  ['12-26', 'Santo Stefano', "St Stephen's Day"]
+];
+const holCache = {};
+export function holidaysOfYear(y) {
+  const k = y + LANG;
+  if (holCache[k]) return holCache[k];
+  const m = {};
+  for (const [md, it, en] of HOL_FIXED) m[`${y}-${md}`] = LANG === 'en' ? en : it;
+  const e = easter(y);
+  m[e] = LANG === 'en' ? 'Easter' : 'Pasqua';
+  m[addDays(e, 1)] = LANG === 'en' ? 'Easter Monday' : "Lunedì dell'Angelo";
+  holCache[k] = m;
+  return m;
+}
+/* mappa giorno -> nome, per l'intervallo guardato */
+export function holidaysIn(from, to) {
+  const out = {};
+  for (let y = +from.slice(0, 4); y <= +to.slice(0, 4); y++) {
+    const m = holidaysOfYear(y);
+    for (const d in m) if (d >= from && d <= to) out[d] = m[d];
+  }
+  return out;
 }
 
 /* ============ Filtro: tipi e categorie ============ */

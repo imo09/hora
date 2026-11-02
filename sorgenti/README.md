@@ -1,6 +1,15 @@
-# hora 1.5
+# hora 1.6
 
 Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src/hora.jsx` (React, generato da `src/parts/`), stile in `src/style.css`.
+
+## Novità della 1.6
+
+1. Filtro: le caselle delle categorie si vedono sempre, anche quando sono spente. Erano invisibili per un difetto nei colori di base (alcune variabili rimandavano a se stesse), ora corretto: tornano visibili anche altri bordi e testi tenui.
+2. Festività italiane: i giorni di festa sono colorati come il fine settimana, con il nome nell'intestazione della vista Giorno e nell'elenco del Mese; in Attività colorano la colonna, senza diventare una barra. Si spengono da Impostazioni > Calendario. Pasqua e Lunedì dell'Angelo sono calcolati, le altre dodici date sono fisse.
+3. Alba e tramonto: le righe tratteggiate stanno sopra le celle, quindi si vedono sempre.
+4. Oggi ha un angolo ottone: tenendolo premuto si aprono Oggi, Vai a data e Cerca.
+5. Impostazioni dal marchio in alto a sinistra; l'ingranaggio è sparito e, sugli schermi stretti, anche la lente (Cerca resta nel menu di Oggi).
+6. Titolo del periodo: si accorcia da "Settembre 2026" a "set 2026" e "set 26" quando lo spazio non basta, invece di tagliarsi.
 
 ## Novità della 1.5
 
@@ -74,7 +83,7 @@ Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src
 ## Pubblicazione su hora.nautargo.com
 
 1. Crea su GitHub il repository `hora`.
-2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.5.zip` (index.html, manifest, sw.js, icone, CNAME).
+2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.6.zip` (index.html, manifest, sw.js, icone, CNAME).
 3. In Settings > Pages scegli il ramo `main` e la cartella `/ (root)`.
 4. Su Aruba aggiungi un record CNAME: nome `hora`, valore `imo09.github.io`.
 5. Torna in Settings > Pages, attendi il controllo del dominio e attiva "Enforce HTTPS".
