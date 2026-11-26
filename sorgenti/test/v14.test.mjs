@@ -75,8 +75,7 @@ click(byText('.list.menu .li', 'Vai a data')); await wait();
 assert.ok($('.dp-grid')); ok('pressione lunga su Oggi: menu con Vai a data');
 click($('.sheet button[aria-label="Chiudi"]')); await wait();
 // impostazioni: sveglie a gruppi e modelli
-click($('button[aria-label="Impostazioni"]')); await wait();
-click(byText('.s-tile', 'Sveglie')); await wait();
+click($('.hdr button[aria-label="Sveglie"]')); await wait();
 click($$('.tpl .ctl')[0]); await wait();
 let s = store();
 assert.equal(s.alarmGroups.length, 1); assert.equal(s.items.filter((x) => x.type === 'sveglia' && x.group === s.alarmGroups[0].id).length, 2); ok('modello di gruppo aggiunto');
@@ -85,6 +84,7 @@ assert.equal(store().items.find((x) => x.type === 'sveglia').off, true); ok('int
 click(byText('.seg button', 'Eventi e promemoria')); await wait();
 assert.ok(byText('.ag-row', 'Riunione') && byText('.ag-row', 'Ferie')); ok('elenco eventi e promemoria');
 click($('.screen button[aria-label="Indietro"]')); await wait();
+click($('button[aria-label="Impostazioni"]')); await wait();
 // tema scuro e schermata iniziale spenta
 click(byText('.screen .seg button', 'Scuro')); await wait();
 assert.equal(d.documentElement.dataset.theme, 'dark'); ok('tema scuro');

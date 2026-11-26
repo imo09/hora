@@ -61,7 +61,7 @@ function FilterSheet({ st, filter, onChange, onClose }) {
 }
 
 export function App() {
-  const [st, setSt] = useState(() => { const s0 = loadState() || defaultState(sysLang()); return s0.alarmGroups ? s0 : { ...s0, alarmGroups: [] }; });
+  const [st, setSt] = useState(() => { const s0 = loadState() || defaultState(sysLang()); return { ...s0, alarmGroups: s0.alarmGroups || [], todos: s0.todos || {} }; });
   setLang(st.settings.lang || 'it');
   /* tema: automatico (come il sistema), chiaro o scuro */
   const [sysDark, setSysDark] = useState(() => { try { return window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) { return false; } });
@@ -146,6 +146,27 @@ export function App() {
     onOk: () => { setSt((s) => ({ ...s, items: s.items.filter((x) => x.id !== it.id) })); setSheet(null); setConfirm(null); toast(t('deleted')); }
   }));
 
+  /* da fare del giorno */
+  const setTodos = (d, list) => guard(() => setSt((s) => { const td = { ...(s.todos || {}) }; if (list.length) td[d] = list; else delete td[d]; return { ...s, todos: td }; }));
+  const moveTodos = (d) => guard(() => setSt((s) => {
+    const td = { ...(s.todos || {}) }, cur = td[d] || [], und = cur.filter((x) => !x.done);
+    if (!und.length) return s;
+    const keep = cur.filter((x) => x.done), nx = addDays(d, 1);
+    td[nx] = [...(td[nx] || []), ...und.map((x) => ({ ...x, id: uid() }))];
+    if (keep.length) td[d] = keep; else delete td[d];
+    return { ...s, todos: td };
+  }));
+  /* nota in folio: si lega a uno o più elementi (una serie è un elemento solo) */
+  const setFolio = (ids, f) => guard(() => setSt((s) => ({ ...s, items: s.items.map((x) => { if (!ids.includes(x.id)) return x; const n = { ...x }; if (f) n.folio = f; else delete n.folio; return n; }) })));
+  const [folioFor, setFolioFor] = useState(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const doExport = (fmt, sel, everything) => {
+    const d = todayStr();
+    if (fmt === 'ics') { download(`hora-${d}.ics`, toICS(sel.items, stRef.current.cats), 'text/calendar'); return; }
+    if (everything) { download(`hora-backup-${d}.json`, JSON.stringify({ app: 'hora', version: VERSION, ...stRef.current }, null, 1), 'application/json'); return; }
+    download(`hora-parziale-${d}.json`, JSON.stringify({ app: 'hora', version: VERSION, partial: true, exported: d, ...sel }, null, 1), 'application/json');
+  };
+
   /* categorie */
   const remember = (id) => { if (id) setSettings({ recent: [id, ...(stRef.current.settings.recent || []).filter((x) => x !== id)].slice(0, 6) }); };
   const upsertCat = (c) => guard(() => setSt((s) => {
@@ -227,6 +248,13 @@ export function App() {
   useEffect(() => {
     const check = () => {
       const h = location.hash;
+      if (h.startsWith('#nota=')) {
+        const nid = decodeURIComponent(h.slice(6));
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* niente */ }
+        const it = stRef.current.items.find((x) => x.folio && x.folio.id === nid);
+        if (it) { setStack([]); setSheet({ item: it, occDate: it.date, isNew: false, view: true }); setAnchor(it.date); } else toast(t('folioNone'));
+        return;
+      }
       if (!h.startsWith('#aggiungi=')) return;
       let txt = h.slice(10);
       try { txt = decodeURIComponent(txt.replace(/\+/g, ' ')); } catch (e) { /* testo grezzo */ }
@@ -260,10 +288,10 @@ export function App() {
   /* sincronizzazione con Dropbox: un solo dispositivo modifica alla volta, gli altri vedono e, per modificare, prendono il controllo */
   const [sync, setSync] = useState(() => ({ linked: dbxLinked(), busy: false, last: dbxGet().last || 0, ro: false }));
   const fromSync = useRef(false), firstData = useRef(true), syncT = useRef(null);
-  const applyRemote = (r) => { fromSync.current = true; setSt((s) => ({ ...s, items: r.items || [], cats: r.cats || [], alarmGroups: r.alarmGroups || [] })); setLocalUpd(r.updated || Date.now()); };
+  const applyRemote = (r) => { fromSync.current = true; setSt((s) => ({ ...s, items: r.items || [], cats: r.cats || [], alarmGroups: r.alarmGroups || [], todos: 'todos' in r ? r.todos || {} : s.todos || {} })); setLocalUpd(r.updated || Date.now()); };
   const upload = async () => {
     const s0 = stRef.current, u = localUpd() || Date.now();
-    await dbxUp({ app: 'hora', version: VERSION, updated: u, editor: devId(), editorName: devName(), items: s0.items, cats: s0.cats, alarmGroups: s0.alarmGroups || [] });
+    await dbxUp({ app: 'hora', version: VERSION, updated: u, editor: devId(), editorName: devName(), items: s0.items, cats: s0.cats, alarmGroups: s0.alarmGroups || [], todos: s0.todos || {} });
     dbxSet({ last: u });
   };
   const doSync = async (manual) => {
@@ -309,7 +337,7 @@ export function App() {
     if (!dbxLinked() || lockRef.current) return;
     clearTimeout(syncT.current);
     syncT.current = setTimeout(() => doSync(false), 4000);
-  }, [st.items, st.cats, st.alarmGroups]);
+  }, [st.items, st.cats, st.alarmGroups, st.todos]);
   useEffect(() => {
     if (!st.settings.notify) return;
     const check = () => {
@@ -411,6 +439,19 @@ export function App() {
     return () => window.removeEventListener('resize', m);
   }, []);
   const goDate = (v) => { if (!v) return; setAnchor(v); setNonce((n) => n + 1); };
+  /* tablet e computer: accanto al calendario il pannello del giorno */
+  const vwNow = () => { try { return document.documentElement.clientWidth || window.innerWidth || 0; } catch (e) { return 0; } };
+  const [vw, setVw] = useState(vwNow);
+  useEffect(() => { const r = () => setVw(vwNow()); window.addEventListener('resize', r); return () => window.removeEventListener('resize', r); }, []);
+  const side = (view === 'month' && vw >= 760) || (view === 'grid' && (days <= 3 ? vw >= 760 : vw >= 1180));
+  const [selDay, setSelDay] = useState(null);
+  const panelDay = view === 'month' ? anchor : selDay && vis.includes(selDay) ? selDay : vis.includes(today) ? today : vis[0];
+  const pickPanel = (d) => {
+    if (view === 'month') { setAnchor(d); return; }
+    setSelDay(d);
+    if (!vis.includes(d)) goDate(days === 7 ? startOfWeek(d) : days === 5 ? (wd(d) > 4 ? addDays(startOfWeek(d), 7) : startOfWeek(d)) : d);
+  };
+  const openDay = (d) => { setAnchor(d); setView('grid'); setDays(1); };
   const [datePick, setDatePick] = useState(false);
   const openPick = () => setDatePick(true);
   const lpTitle = useLongPress(openPick, openPick);
@@ -435,15 +476,30 @@ export function App() {
   const renderScreen = (sc, i) => {
     if (sc.kind === 'settings') return (
       <SettingsScreen key={i} st={st} onBack={pop} onCats={() => push({ kind: 'cats' })} onSetting={setSettings} onNotify={onNotify} onMyPos={onMyPos}
-        onExportJson={() => download(`hora-backup-${todayStr()}.json`, JSON.stringify({ app: 'hora', version: VERSION, ...st }, null, 1), 'application/json')}
+        onExport={() => setExportOpen(true)}
         onImportJson={(txt) => {
           let data = null;
           try { data = JSON.parse(txt); } catch (e) { /* niente */ }
           if (!data || !Array.isArray(data.items) || !Array.isArray(data.cats)) { toast(t('badFile')); return; }
-          setConfirm({ q: t('restoreQ'), txt: t('restoreTxt'), ok: t('confirm'), onOk: () => guard(() => { setSt({ v: 1, items: data.items, cats: data.cats, alarmGroups: data.alarmGroups || [], settings: { ...st.settings, ...(data.settings || {}) } }); setConfirm(null); toast(t('restored')); }) });
+          if (data.partial) {
+            /* esportazione parziale: si aggiunge, senza togliere niente */
+            setConfirm({ q: t('mergeQ'), txt: t('mergeTxt', { n: data.items.length }), ok: t('add'), onOk: () => guard(() => {
+              setSt((s) => {
+                const byId = new Map(s.items.map((x) => [x.id, x]));
+                for (const x of data.items) byId.set(x.id, x);
+                const cats = [...s.cats, ...data.cats.filter((c) => !s.cats.some((x) => x.id === c.id))];
+                const groups = [...(s.alarmGroups || []), ...(data.alarmGroups || []).filter((g) => !(s.alarmGroups || []).some((x) => x.id === g.id))];
+                const td = { ...(s.todos || {}) };
+                for (const d in data.todos || {}) td[d] = [...(td[d] || []).filter((x) => !data.todos[d].some((y) => y.id === x.id)), ...data.todos[d]];
+                return { ...s, items: [...byId.values()], cats, alarmGroups: groups, todos: td };
+              });
+              setConfirm(null); toast(t('added', { n: data.items.length }));
+            }) });
+            return;
+          }
+          setConfirm({ q: t('restoreQ'), txt: t('restoreTxt'), ok: t('confirm'), onOk: () => guard(() => { setSt({ v: 1, items: data.items, cats: data.cats, alarmGroups: data.alarmGroups || [], todos: data.todos || {}, settings: { ...st.settings, ...(data.settings || {}) } }); setConfirm(null); toast(t('restored')); }) });
         }}
-        onExportIcs={() => download(`hora-${todayStr()}.ics`, toICS(st.items, st.cats), 'text/calendar')}
-        onImportCal={importCal} sync={sync} onAgenda={(tab) => push({ kind: 'agenda', tab })} onAi={() => push({ kind: 'ai' })}
+        onImportCal={importCal} sync={sync} onAi={() => push({ kind: 'ai' })}
         onSyncNow={() => doSync(true)} onLink={() => dbxLink().catch(() => toast(t('syncFail')))} onUnlink={() => { dbxUnlink().then(() => setSync({ linked: false, busy: false, last: 0 })); }} />
     );
     if (sc.kind === 'agenda') return (
@@ -468,18 +524,24 @@ export function App() {
 
   const dayTab = days === 3 ? t('days3') : days === 5 ? t('days5') : t('day');
   const dayIcon = days === 3 ? 'day3' : days === 5 ? 'day5' : 'day1';
+  const todoStrip = view === 'grid' && days === 1 && !side;
+  const todoProps = (d) => ({ date: d, list: (st.todos || {})[d] || [], onChange: (l) => setTodos(d, l), onMove: moveTodos });
   return (
-    <div className="app">
+    <div className={'app' + (side ? ' has-side' : '')}>
       <header className="hdr">
         <div className={'hdr1' + (compact ? ' compact' : '')}>
-          <button className="logo" aria-label={t('settings')} title={t('settings')} onClick={() => push({ kind: 'settings' })}><Mark size={30} /><b className="wm">hora</b><i className="logo-g"><UIcon n="gear" size={13} sw={2} /></i></button>
+          <button className="logo" aria-label={t('settings')} title={t('settings')} onClick={() => push({ kind: 'settings' })}><Mark size={30} /><b className="wm">hora</b></button>
           <nav className="seg tabs" ref={navRef} aria-label={t('views')}>
             <button className={view === 'grid' && days < 7 ? 'on' : ''} aria-label={view === 'grid' ? dayTab : t('day')} onClick={() => { setView('grid'); setDays(1); }}><UIcon n={view === 'grid' ? dayIcon : 'day1'} size={18} sw={1.7} /><span>{view === 'grid' ? dayTab : t('day')}</span></button>
             <button className={view === 'grid' && days === 7 ? 'on' : ''} aria-label={t('week')} onClick={() => { setView('grid'); toDays(7); }}><UIcon n="week" size={18} sw={1.7} /><span>{t('week')}</span></button>
             <button className={view === 'month' ? 'on' : ''} aria-label={t('month')} onClick={() => setView('month')}><UIcon n="month" size={18} sw={1.7} /><span>{t('month')}</span></button>
           </nav>
           <button className={'gbtn' + (view === 'gantt' ? ' on' : '')} aria-label={t('gantt')} aria-pressed={view === 'gantt'} title={t('ganttTxt')} onClick={() => setView('gantt')}><UIcon n="gantt" size={18} sw={2.1} /><span>{t('gantt')}</span></button>
-          {!compact && <button className="ib" aria-label={t('search')} onClick={() => push({ kind: 'search' })}><UIcon n="search" /></button>}
+          <span className="hdr-x">
+            <button className="ib" aria-label={t('evRem')} title={t('evRem')} onClick={() => push({ kind: 'agenda', tab: 'list' })}><UIcon n="list" size={20} /></button>
+            <button className="ib" aria-label={t('alarms')} title={t('alarms')} onClick={() => push({ kind: 'agenda', tab: 'alarms' })}><TypeShape type="sveglia" color="currentColor" size={19} /></button>
+            {!compact && <button className="ib" aria-label={t('search')} title={t('search')} onClick={() => push({ kind: 'search' })}><UIcon n="search" /></button>}
+          </span>
         </div>
         <div className="hdr2">
           <h1 ref={h1Ref} className={'tf' + tfmt} {...lpTitle} title={t('goDate')}>{title}</h1>
@@ -498,7 +560,9 @@ export function App() {
           </div>
         </div>
       </header>
-      <main className="main" ref={mainRef} data-range={view === 'grid' ? vis[0] + '/' + vis[vis.length - 1] : undefined}>
+      <main className={'main' + (side ? ' with-side' : '')} ref={mainRef} data-range={view === 'grid' ? vis[0] + '/' + vis[vis.length - 1] : undefined}>
+        <div className="mv">
+        {todoStrip && <TodoBox key={vis[0]} {...todoProps(vis[0])} strip open={!!st.settings.todoOpen} onOpen={(v) => setSettings({ todoOpen: v })} />}
         {view === 'grid' && (
           <GridView st={st} dates={dates} anchor={anchor} sx={sx} visN={days} pass={pass} newCat={newCat} sun={sun} hol={hol} hourH={hourH} setHourH={setHourH} commitHourH={commitHourH} onOpen={openOcc}
             onSave={(it) => saveItem(it)} onToggle={toggleDone} onShift={(dir) => setAnchor((a) => addDays(a, dir * (days === 7 ? 7 : 1)))} onPinchDays={pinchDays}
@@ -507,18 +571,25 @@ export function App() {
         {view === 'month' && (
           <MonthView st={st} anchor={anchor} pass={pass} titles={!!st.settings.monthTitles} setTitles={(v) => setSettings({ monthTitles: v })} free={free} hol={hol}
             onVisible={(m) => setAnchor((a) => m.slice(0, 8) + pad(Math.min(dnum(a), daysInMonth(m))))}
-            onSelect={setAnchor} onOpen={openOcc} onToggle={toggleDone} onOpenDay={(d) => { setAnchor(d); setView('grid'); setDays(1); }}
+            onSelect={setAnchor} onOpen={openOcc} onToggle={toggleDone} onOpenDay={openDay} side={side}
+            extra={<TodoBox key={anchor} {...todoProps(anchor)} />}
             onPinchOut={() => { setView('grid'); toDays(7); }} onSwipe={step} />
         )}
         {view === 'gantt' && (
           <GanttView st={st} anchor={anchor} scale={gScale} hols={hols} setScale={(v) => setSettings({ ganttScale: v })} onOpenItem={openOcc} onCats={() => setGanttCats(true)} nonce={nonce}
             onRecenter={setAnchor} onRange={(a, b) => setGRange((r) => (r && r[0] === a && r[1] === b ? r : [a, b]))} />
         )}
+        </div>
+        {side && (
+          <DayPanel st={st} date={panelDay} pass={pass} onPick={pickPanel} onOpen={openOcc} onToggle={toggleDone} onTodos={setTodos} onMove={moveTodos}
+            onOpenDay={view === 'month' || days > 1 ? openDay : null} />
+        )}
       </main>
       <button ref={fabRef} className={'fab' + (draft ? ' ready' : '')} aria-label={t('add')} onClick={() => { if (draft && view === 'grid') { const d = draft; setDraft(null); onNewAt(d); } else newSheet(true); }}><UIcon n="plus" size={26} sw={2.2} /></button>
 
       {sheet && sheet.view && (
         <ItemView key={'v' + sheet.item.id} st={st} it={sheet.item} occDate={sheet.occDate} onClose={() => setSheet(null)} onToggleDone={toggleDone}
+          onFolioPick={() => guard(() => setFolioFor(sheet.item.id))} onFolioUnlink={() => setFolio([sheet.item.id], null)}
           onEdit={() => guard(() => setSheet((x) => ({ ...x, view: false })))} />
       )}
       {sheet && !sheet.view && (
@@ -526,6 +597,8 @@ export function App() {
           onClose={() => setSheet(null)} onSave={onSaveSheet} onDelete={askDelete} onPickCat={openPicker} onBlock={openBlock}
           onToggleDone={toggleDone} toast={toast} />
       )}
+      {folioFor && st.items.some((x) => x.id === folioFor) && <FolioSheet st={st} it={st.items.find((x) => x.id === folioFor)} onLink={setFolio} onClose={() => setFolioFor(null)} />}
+      {exportOpen && <ExportSheet st={st} onClose={() => setExportOpen(false)} onExport={doExport} />}
       {filterOpen && <FilterSheet st={st} filter={fx} onChange={setFilter} onClose={() => setFilterOpen(false)} />}
       {ganttCats && <GanttCatsSheet st={st} onClose={() => setGanttCats(false)} onSetCats={setCats} onSetting={setSettings} />}
       {stack.map(renderScreen)}

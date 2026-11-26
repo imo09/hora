@@ -301,7 +301,7 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
 }
 
 /* ============ Riepilogo di un elemento: tutto a colpo d'occhio, la matita porta alla modifica ============ */
-function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone }) {
+function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone, onFolioPick, onFolioUnlink }) {
   const d = occDate || it.date;
   const tn = catTone(st.cats, it.cat);
   const live = st.items.find((x) => x.id === it.id) || it;
@@ -330,7 +330,8 @@ function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone }) {
           {it.alert != null && row('bell', alertK ? t(alertK) : it.alert + ' min', it.onlyAlert ? t('toCompleteTxt') : null)}
           {it.address && row('pin', it.address, null, <a className="ib act" aria-label={t('openMaps')} href={mapsUrl(it.address)} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
           {it.link && row('link', it.link.replace(/^https?:\/\//, ''), null, <a className="ib act" aria-label={t('openLink')} href={fixLink(it.link.trim())} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
-          {it.notes && <div className="iv-notes"><span className="iv-i"><UIcon n="note" size={18} /></span><p>{it.notes}</p></div>}
+          {it.notes && <div className="iv-notes"><span className="iv-i"><UIcon n="text" size={18} /></span><p>{it.notes}</p></div>}
+          {it.type !== 'sveglia' && onFolioPick && <FolioRow it={live} d={d} onPick={onFolioPick} onUnlink={onFolioUnlink} />}
         </div>
       </div>
       {it.type === 'promemoria' && !it.onlyAlert && (

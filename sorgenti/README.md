@@ -1,6 +1,18 @@
-# hora 1.6
+# hora 1.7
 
 Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src/hora.jsx` (React, generato da `src/parts/`), stile in `src/style.css`.
+
+## Novità della 1.7
+
+1. Festività: aggiunto San Francesco d'Assisi (4 ottobre), di nuovo festa nazionale dal 2026 (legge 151/2025); negli anni precedenti resta un giorno normale.
+2. Nota in folio: nel riepilogo di un evento o promemoria, "Aggiungi una nota in folio" crea un Foglio in folio (Gruppo "hora" del Quaderno aperto) o collega un Foglio esistente (in folio: menu del Foglio, Copia collegamento). Una serie ripetuta ha una sola nota; con "Anche agli altri N con questo titolo" la stessa nota va su più eventi separati. Dal Foglio, "Apri in hora" riapre l'elemento. Indirizzi: `https://folio.nautargo.com/#hora?id=...&t=titolo&q=quando` (crea o riapre), `#foglio=<id>` (apre un Foglio), `https://hora.nautargo.com/#nota=<id>` (ritorno in hora).
+3. Da fare del giorno: lista semplice per giorno, separata dagli eventi e salvata in hora (anche nella sincronizzazione e nei backup). Nella vista Giorno è una striscia che si apre in alto; nel Mese sta sotto il giorno scelto; su tablet e computer nel pannello del giorno. Tocco sul testo per modificarlo, "Sposta a domani i non fatti".
+4. Numero di settimana (ISO): nell'angolo dell'intestazione di Giorno, 3, 5 giorni e Settimana ("S48"), in una colonna a sinistra del Mese, su una riga dedicata in Attività (scala Settimane), nel mese piccolo e nel pannello del giorno.
+5. Tablet e computer: accanto al calendario il pannello del giorno con mese piccolo (giorni con elementi o da fare segnati), elementi e sveglie del giorno, da fare e prossimi giorni. Compare nel Mese e in Giorno e 3 giorni da 760 px, in 5 giorni e Settimana da 1.180 px. Nel Mese a pannello aperto le celle si allungano e mostrano i titoli. Larghezza massima dell'app portata a 1.680 px.
+6. Marchio nuovo: la "h" è lo gnomone di una meridiana sull'orizzonte, il punto ottone è il sole; fa coppia con la "f" di folio. Splash, icone e favicon rifatti. Le alternative con animazione sono in `marchio/opzioni-marchio.html` (si rigenera con `node marchio/opzioni.mjs`).
+7. Impostazioni dal marchio, senza l'ingranaggio.
+8. Barra in alto: icone di Eventi e promemoria e di Sveglie accanto ad Attività; tolte dalle impostazioni.
+9. Esporta: un solo pannello con formato (.json o .ics), cosa (tutto, eventi, promemoria, sveglie, da fare), categorie e periodo (sempre, da una data, intervallo), con il conteggio prima di scaricare. Un .json parziale, ripristinato, si aggiunge ai dati senza sostituirli.
 
 ## Novità della 1.6
 
@@ -83,7 +95,7 @@ Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src
 ## Pubblicazione su hora.nautargo.com
 
 1. Crea su GitHub il repository `hora`.
-2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.6.zip` (index.html, manifest, sw.js, icone, CNAME).
+2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.7.zip` (index.html, manifest, sw.js, icone, CNAME).
 3. In Settings > Pages scegli il ramo `main` e la cartella `/ (root)`.
 4. Su Aruba aggiungi un record CNAME: nome `hora`, valore `imo09.github.io`.
 5. Torna in Settings > Pages, attendi il controllo del dominio e attiva "Enforce HTTPS".

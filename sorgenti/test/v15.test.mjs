@@ -74,8 +74,7 @@ click(byText('.dp-grid button', '2027')); await wait(); click(byText('.dp-grid b
 click($$('.dp-grid button').find((b) => b.textContent === '5')); await wait();
 assert.ok(!$('.screen') && $('.main').dataset.range.startsWith('2027-01-05')); ok('Cerca: vai a data');
 // sveglie suggerite: nascoste e riaperte
-click($('button[aria-label="Impostazioni"]')); await wait();
-click(byText('.s-tile', 'Sveglie')); await wait();
+click($('.hdr button[aria-label="Sveglie"]')); await wait();
 click(byText('.lnk', 'Nascondi')); await wait();
 assert.ok(!$('.al-tpl')); click(byText('.lnk', 'Mostra le sveglie suggerite')); await wait();
 assert.ok($('.al-tpl')); ok('suggerite riapribili');
