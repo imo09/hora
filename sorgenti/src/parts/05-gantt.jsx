@@ -106,6 +106,7 @@ function GanttView({ st, anchor, scale, hols, setScale, onOpenItem, onCats, onRe
     for (let d = from; d <= to; d = addDays(d, 1)) {
       const x = geo.x(d);
       if (dnum(d) === 1 || d === from) head.push(<span key={'m' + d} className="gh-m" style={{ left: x + 2 }}>{MONTHS[LANG][mnum(d)].slice(0, 3)} {d.slice(2, 4)}</span>);
+      if (wd(d) === 0) head.push(<span key={'w' + d} className="gh-w" style={{ left: x + 1 }} title={t('wkLong', { n: isoWeek(d) })}>{t('wkShort')}{isoWeek(d)}</span>);
       head.push(<span key={d} className={'gh-d' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '')} style={{ left: x, width: DW }}><i>{WD_LETTER[LANG][wd(d)]}</i>{dnum(d)}</span>);
     }
   } else {

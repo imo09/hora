@@ -1,9 +1,9 @@
-/* hora 1.6 - calendario locale di nautargo
+/* hora 1.7 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.6';
+export const VERSION = '1.7';
 
 /* ============ Testi IT / EN ============ */
 const STR = {
@@ -58,6 +58,18 @@ const STR = {
     aiImport: 'Importa da un\'altra app', aiShort: 'Con l\'aiuto di un\'IA, ad esempio Claude', aiTxt: 'Per app e agende che non esportano in .ics: un\'IA converte i dati nel formato di hora.',
     aiStep1: 'Esporta o copia i dati dall\'altra app: file, testo, anche una foto.', aiStep2: 'Dai all\'IA i dati insieme a queste istruzioni.', aiStep3: 'Incolla qui il blocco che ti restituisce, poi controlla e conferma.',
     copyMd: 'Copia istruzioni', downloadMd: 'Scarica .md', pasteHere: 'Incolla qui', readBlock: 'Leggi e controlla',
+    /* 1.7 */
+    wkShort: 'S', wkLong: 'Settimana {n}', todo: 'Da fare', todoEmpty: 'tocca per aggiungere', todoPh: 'Aggiungi una cosa da fare', todoMove: 'Sposta a domani i non fatti ({n})',
+    folioNote: 'Nota in folio', folioTxt: 'Un Foglio di folio legato a questo elemento: se si ripete, vale per tutta la serie. Il Foglio resta in folio, nel Gruppo "hora".',
+    folioAll: 'Anche agli altri {n} con questo titolo', folioNew: 'Crea un Foglio in folio', folioKnown: 'Note già legate in hora', folioUsed: 'elementi legati: {n}',
+    folioPaste: 'Collegamento copiato da folio', folioPasteTxt: 'In folio: menu del Foglio, Copia collegamento; poi incollalo qui.', folioBad: 'Non è un collegamento di folio.',
+    folioLink: 'Collega', folioAdd: 'Aggiungi una nota in folio', folioAddTxt: 'Per appunti, liste e documenti legati a questo elemento o alla serie', folioUnlink: 'Scollega la nota',
+    folioOpen: 'Apri in folio', folioNone: 'Nessun elemento legato a questa nota',
+    export: 'Esporta', exportTxt: 'Tutto o una parte: tipi, categorie, periodo', exFormat: 'Formato', exJson: 'Backup hora (.json)', exIcs: 'Calendario (.ics)',
+    exJsonTxt: 'Si ripristina in hora. Un file parziale si aggiunge ai dati che ci sono, senza sostituirli.', exIcsTxt: 'Per Google Calendar, Calendario di Apple, Outlook. Senza categorie e senza da fare.',
+    exWhat: 'Cosa', exPeriod: 'Periodo', exAlways: 'Sempre', exFrom: 'Da una data in poi', exFromD: 'Dal {d}', exItems: 'Elementi: {n}', exTodos: 'giorni con da fare: {n}', exCats: 'categorie: {n}', exGo: 'Esporta',
+    mergeQ: 'Aggiungere questi elementi?', mergeTxt: 'È un\'esportazione parziale: {n} elementi si aggiungono a quelli che hai (gli stessi elementi vengono aggiornati) e niente viene tolto.',
+    dayPanel: 'Giorno scelto', nextDays: 'Prossimi giorni',
     agenda: 'Elenco', evRem: 'Eventi e promemoria', onceOn: 'una volta, {d}', untilD: 'fino al {d}', newGroup: 'Nuovo gruppo', noGroup: 'Senza gruppo', up: 'Su', down: 'Giù',
     newAlarm: 'Nuova sveglia', past: 'Anche passati', showMore: 'Mostra altri', noAlarms: 'Nessuna sveglia', suggested: 'Suggerite', hideTips: 'Nascondi',
     tplTxt: 'Gruppi pronti da aggiungere. Le sveglie suonano a un\'ora precisa e si ripetono: utili quando non si può rimandare, come un medicinale.',
@@ -118,6 +130,18 @@ const STR = {
     aiImport: 'Import from another app', aiShort: 'With the help of an AI, e.g. Claude', aiTxt: 'For apps and planners without .ics export: an AI converts the data into hora\'s format.',
     aiStep1: 'Export or copy the data from the other app: file, text, even a photo.', aiStep2: 'Give the AI the data together with these instructions.', aiStep3: 'Paste here the block it returns, then check and confirm.',
     copyMd: 'Copy instructions', downloadMd: 'Download .md', pasteHere: 'Paste here', readBlock: 'Read and check',
+    /* 1.7 */
+    wkShort: 'W', wkLong: 'Week {n}', todo: 'To do', todoEmpty: 'tap to add', todoPh: 'Add something to do', todoMove: 'Move the open ones to tomorrow ({n})',
+    folioNote: 'Note in folio', folioTxt: 'A folio Page linked to this item: if it repeats, it is for the whole series. The Page stays in folio, in the "hora" Group.',
+    folioAll: 'Also the other {n} with this title', folioNew: 'Create a Page in folio', folioKnown: 'Notes already linked in hora', folioUsed: 'linked items: {n}',
+    folioPaste: 'Link copied from folio', folioPasteTxt: 'In folio: Page menu, Copy link; then paste it here.', folioBad: 'This is not a folio link.',
+    folioLink: 'Link', folioAdd: 'Add a note in folio', folioAddTxt: 'For notes, lists and documents about this item or the series', folioUnlink: 'Unlink the note',
+    folioOpen: 'Open in folio', folioNone: 'No item is linked to this note',
+    export: 'Export', exportTxt: 'All or part: types, categories, period', exFormat: 'Format', exJson: 'hora backup (.json)', exIcs: 'Calendar (.ics)',
+    exJsonTxt: 'Restores in hora. A partial file is added to your data, without replacing it.', exIcsTxt: 'For Google Calendar, Apple Calendar, Outlook. No categories and no to-dos.',
+    exWhat: 'What', exPeriod: 'Period', exAlways: 'All time', exFrom: 'From a date on', exFromD: 'From {d}', exItems: 'Items: {n}', exTodos: 'days with to-dos: {n}', exCats: 'categories: {n}', exGo: 'Export',
+    mergeQ: 'Add these items?', mergeTxt: 'This is a partial export: {n} items are added to yours (the same items are updated) and nothing is removed.',
+    dayPanel: 'Selected day', nextDays: 'Next days',
     agenda: 'List', evRem: 'Events and reminders', onceOn: 'once, {d}', untilD: 'until {d}', newGroup: 'New group', noGroup: 'No group', up: 'Up', down: 'Down',
     newAlarm: 'New alarm', past: 'Include past', showMore: 'Show more', noAlarms: 'No alarms', suggested: 'Suggested', hideTips: 'Hide',
     tplTxt: 'Ready-made groups. Alarms ring at an exact time and repeat: useful when something cannot wait, like a medicine.',
@@ -153,6 +177,8 @@ export const diffDays = (a, b) => Math.round((toDate(b) - toDate(a)) / 864e5);
 export const wd = (s) => (toDate(s).getDay() + 6) % 7;
 export const startOfWeek = (s) => addDays(s, -wd(s));
 export const daysInMonth = (s) => { const [y, m] = s.split('-').map(Number); return new Date(y, m, 0).getDate(); };
+/* settimana ISO: la prima è quella che contiene il 4 gennaio */
+export const isoWeek = (s) => { const th = addDays(s, 3 - wd(s)); return 1 + Math.round(diffDays(startOfWeek(th.slice(0, 4) + '-01-04'), startOfWeek(s)) / 7); };
 export const monthStart = (s) => s.slice(0, 8) + '01';
 export const addMonths = (s, n) => {
   const [y, m, d] = s.split('-').map(Number);
@@ -323,17 +349,16 @@ export function UIcon({ n, size = 20, sw = 1.9, color = 'currentColor' }) {
   return <svg {...common}><path d={UI[n]} /></svg>;
 }
 
-/* Marchio: ciclo quasi chiuso, luna ottone, due onde */
+/* Marchio: la h è lo gnomone di una meridiana, sull'orizzonte; il punto ottone è il sole */
 export function Mark({ size = 26, dark = false, anim = false }) {
-  const c = dark ? '#54B7A9' : '#2F9184', moon = dark ? '#E0B063' : '#C99A4E';
+  const c = dark ? '#54B7A9' : '#2F9184', sun = dark ? '#E0B063' : '#C99A4E';
+  const S = { fill: 'none', stroke: c, strokeLinecap: 'round', strokeLinejoin: 'round' };
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" className={anim ? 'mk' : undefined}>
-      <circle className="mk-arc" cx="24" cy="24" r="19" fill="none" stroke={c} strokeWidth="3.3" strokeLinecap="round" strokeDasharray="99.5 200" transform="rotate(-90 24 24)" />
-      <path className="mk-w1" d="M14 23q3.33-3.4 6.67 0t6.67 0t6.67 0" fill="none" stroke={c} strokeWidth="3.3" strokeLinecap="round" />
-      <path className="mk-w2" d="M17.5 30q3.25-3 6.5 0t6.5 0" fill="none" stroke={c} strokeWidth="3.3" strokeLinecap="round" strokeOpacity="0.5" />
-      {anim
-        ? <g className="mk-moon"><circle cx="24" cy="5" r="4" fill={moon} /></g>
-        : <circle cx="7.55" cy="14.5" r="4.2" fill={moon} />}
+      <path className="mk-hz" d="M7 41h34" {...S} strokeWidth="3.2" strokeOpacity="0.45" />
+      <path className="mk-st" d="M15 41V7" {...S} strokeWidth="4.2" />
+      <path className="mk-ar" d="M15 25.5a9.5 9.5 0 0 1 19 0V41" {...S} strokeWidth="4.2" />
+      <g className="mk-sun"><circle cx="37.6" cy="9.6" r="4.8" fill={sun} /></g>
     </svg>
   );
 }

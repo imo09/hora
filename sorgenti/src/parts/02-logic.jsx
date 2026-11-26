@@ -788,6 +788,8 @@ export function holidaysOfYear(y) {
   if (holCache[k]) return holCache[k];
   const m = {};
   for (const [md, it, en] of HOL_FIXED) m[`${y}-${md}`] = LANG === 'en' ? en : it;
+  /* San Francesco d'Assisi, patrono d'Italia: di nuovo festa nazionale dal 2026 (legge 151/2025) */
+  if (y >= 2026) m[`${y}-10-04`] = LANG === 'en' ? 'St Francis of Assisi' : "San Francesco d'Assisi";
   const e = easter(y);
   m[e] = LANG === 'en' ? 'Easter' : 'Pasqua';
   m[addDays(e, 1)] = LANG === 'en' ? 'Easter Monday' : "Lunedì dell'Angelo";

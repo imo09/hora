@@ -348,20 +348,14 @@ function SGroup({ icon, title, children }) {
   );
 }
 const SIcon = ({ n }) => <span className="si"><UIcon n={n} size={18} sw={1.8} /></span>;
-function SettingsScreen({ st, sync, onBack, onCats, onAgenda, onAi, onSetting, onNotify, onMyPos, onExportJson, onImportJson, onExportIcs, onImportCal, onSyncNow, onLink, onUnlink }) {
+function SettingsScreen({ st, sync, onBack, onCats, onAi, onSetting, onNotify, onMyPos, onExport, onImportJson, onImportCal, onSyncNow, onLink, onUnlink }) {
   const jRef = useRef(null), iRef = useRef(null);
   const sun = st.settings.sun || DEFAULT_SUN;
   const known = PLACES.some((p) => p[0] === sun.name);
   const readFile = (e, cb) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return; const r = new FileReader(); r.onload = () => cb(String(r.result)); r.readAsText(f); };
   const th = st.settings.theme || 'auto';
-  const nAl = st.items.filter((it) => it.type === 'sveglia').length;
-  const nEv = st.items.filter((it) => it.type !== 'sveglia').length;
   return (
     <Screen title={t('settings')} onBack={onBack}>
-      <div className="s-top">
-        <button className="s-tile" onClick={() => onAgenda('list')}><UIcon n="list" size={20} /><b>{t('evRem')}</b><small>{nEv}</small></button>
-        <button className="s-tile" onClick={() => onAgenda('alarms')}><TypeShape type="sveglia" color="currentColor" size={18} /><b>{t('alarms')}</b><small>{nAl}</small></button>
-      </div>
       <SGroup icon="palette" title={t('sLook')}>
         <div className="li"><SIcon n="moon" /><span className="li-t">{t('theme')}</span>
           <div className="seg mini-seg" role="group" aria-label={t('theme')}>
@@ -410,9 +404,8 @@ function SettingsScreen({ st, sync, onBack, onCats, onAgenda, onAi, onSetting, o
         )}
       </SGroup>
       <SGroup icon="download" title={t('sData')}>
-        <button className="li" onClick={onExportJson}><SIcon n="download" /><span className="li-t">{t('expJson')}</span></button>
+        <button className="li" onClick={onExport}><SIcon n="download" /><span className="li-t col"><span className="b">{t('export')}</span><small>{t('exportTxt')}</small></span><UIcon n="right" size={14} sw={2.4} color="var(--muted)" /></button>
         <button className="li" onClick={() => jRef.current.click()}><SIcon n="upload" /><span className="li-t">{t('impJson')}</span></button>
-        <button className="li" onClick={onExportIcs}><SIcon n="download" /><span className="li-t">{t('expIcs')}</span></button>
         <button className="li" onClick={() => iRef.current.click()}><SIcon n="upload" /><span className="li-t">{t('impIcs')}</span></button>
         <button className="li" onClick={onAi}><SIcon n="ai" /><span className="li-t col"><span>{t('aiImport')}</span><small>{t('aiShort')}</small></span><UIcon n="right" size={14} sw={2.4} color="var(--muted)" /></button>
         <input ref={jRef} type="file" accept=".json,application/json" hidden onChange={(e) => readFile(e, onImportJson)} />

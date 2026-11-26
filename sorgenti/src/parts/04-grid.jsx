@@ -435,7 +435,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hol, hou
             <div className="g-top" ref={topRef}>
               {(
                 <div className="g-head">
-                  <span className="g-gut" />
+                  <span className="g-gut g-wk" title={t('wkLong', { n: isoWeek(sx ? anchor : dates[0]) })}>{t('wkShort')}{isoWeek(sx ? anchor : dates[0])}</span>
                   {dates.map((d) => (
                     <div key={d} style={cw} className={'g-day' + (d === today ? ' today' : '') + (wd(d) > 4 ? ' we' : '') + (hol[d] ? ' hol' : '') + (headW > 0 && headW < 92 ? ' xs' : '')} title={hol[d] || undefined}><span>{fmtHead(d, headW)}</span>{hol[d] && headW >= 150 && <em>{hol[d]}</em>}</div>
                   ))}
@@ -502,7 +502,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hol, hou
 
 /* ============ Mese ============ */
 const M_WEEKS = 26;
-function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, onOpen, onToggle, onOpenDay, onPinchOut, onSwipe, onVisible }) {
+function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, onOpen, onToggle, onOpenDay, onPinchOut, onSwipe, onVisible, side, extra }) {
   const today = todayStr();
   const ms = monthStart(anchor);
   // a scorrimento continuo: mezzo anno di settimane prima e dopo il mese guardato
@@ -601,12 +601,12 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, o
   /* celle strette: niente titoli illeggibili, solo le icone colorate (al massimo 3, poi "...") */
   const [cellW, setCellW] = useState(0);
   useLayoutEffect(() => {
-    const m = () => { const el = ref.current; if (el) setCellW((el.clientWidth - 24) / 7); };
+    const m = () => { const el = ref.current; if (el) setCellW((el.querySelector('.m-grid') || el).clientWidth / 7.4); };
     m();
     window.addEventListener('resize', m);
     return () => window.removeEventListener('resize', m);
   }, []);
-  const showTitles = titles && cellW >= 72;
+  const showTitles = (titles || side) && cellW >= 72;
   const mark = (o) => {
     const tn = catTone(st.cats, o.it.cat);
     return o.it.type === 'promemoria'
@@ -615,13 +615,14 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, o
   };
   return (
     <div className="month" ref={ref}>
-      <div className="m-wd">{WD_LETTER[LANG].map((l, i) => <span key={i}>{l}</span>)}</div>
+      <div className="m-wd"><span className="m-wk0">{t('wkShort')}</span>{WD_LETTER[LANG].map((l, i) => <span key={i}>{l}</span>)}</div>
       <div className={free ? 'm-scroll' + (titles ? ' titles' : '') : 'm-fix'} ref={scRef}>
       <div className={'m-grid' + (titles ? ' titles' : '')}>
         {days.map((d) => {
           const its = (byDay[d] || []).filter((o) => o.it.type !== 'sveglia');
           const out = d.slice(0, 7) !== ms.slice(0, 7);
-          return (
+          const wk = wd(d) === 0 ? <span key={'w' + d} className="m-wk" title={t('wkLong', { n: isoWeek(d) })}>{isoWeek(d)}</span> : null;
+          return [wk, (
             <button key={d} className={'m-cell' + (out ? ' out' : '') + (d === anchor ? ' sel' : '') + (wd(d) > 4 || hol[d] ? ' we' : '') + (hol[d] ? ' hol' : '')} aria-label={fmtFull(d) + (hol[d] ? ' - ' + hol[d] : '')} title={hol[d] || undefined} onClick={() => tapDay(d)}>
               {free && dnum(d) === 1 && <span className="m-mo">{mab(d)}</span>}
               <span className={'m-n' + (d === today ? ' today' : '')}>{dnum(d)}</span>
@@ -637,11 +638,11 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, o
                 </span>
               )}
             </button>
-          );
+          )];
         })}
       </div>
       </div>
-      <div className="m-list">
+      {!side && <div className="m-list">
         <div className="m-lh">
           <h2>{fmtDayLong(anchor)}{hol[anchor] ? <em className="hol-n">{hol[anchor]}</em> : null}</h2>
           <button className="lnk" onClick={() => onOpenDay(anchor)}>{t('openDay')}</button>
@@ -664,7 +665,8 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, o
             </div>
           );
         })}
-      </div>
+        {extra}
+      </div>}
     </div>
   );
 }

@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marchio hora</title>
+<style>
+{{FONTS}}
+:root{--bg:#F3F4F1;--card:#FBFBF8;--ink:#0E1D2A;--muted:#5A6873;--line:#DDE2DF;--splash:#EEF1EF;--frame:#1B2730}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1A20;--card:#16242C;--ink:#E6ECEE;--muted:#93A3AC;--line:#26363F;--splash:#132027;--frame:#05090C}}
+:root[data-theme="dark"]{--bg:#0F1A20;--card:#16242C;--ink:#E6ECEE;--muted:#93A3AC;--line:#26363F;--splash:#132027;--frame:#05090C}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 16px 48px}
+header h1{font-family:Poppins,sans-serif;font-weight:600;font-size:26px;letter-spacing:-.4px;margin:0 0 4px}
+header p{margin:0;color:var(--muted);max-width:720px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,500px),1fr));gap:20px;margin-top:22px}
+.opt{background:var(--card);border-radius:22px;padding:20px;border:1px solid var(--line)}
+.opt.cur{border:2px solid #2F9184}
+.opt h2{margin:0;font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.opt h2 span{font:400 12px 'Space Mono',monospace;color:var(--muted)}
+.opt h2 em{font-style:normal;font-size:12px;font-weight:600;color:#fff;background:#2F9184;border-radius:10px;padding:2px 9px}
+.opt .why{margin:6px 0 16px;color:var(--muted);font-size:14px}
+.row{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.phone{width:210px;height:420px;border-radius:34px;background:var(--splash);border:7px solid var(--frame);position:relative;overflow:hidden;flex:none;margin:0 auto;cursor:pointer}
+.phone .mid{position:absolute;top:110px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+.phone .word{font-family:Poppins,sans-serif;font-weight:600;font-size:36px;letter-spacing:-.8px;line-height:1;opacity:0}
+.phone .sub{font-size:11px;color:var(--muted);opacity:0}
+.phone .foot{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-size:11px;font-weight:600;opacity:0}
+.play .word{animation:fade .8s ease-out 1.5s forwards}.play .sub{animation:fade .8s ease-out 1.7s forwards}.play .foot{animation:fade .8s ease-out 1.8s forwards}
+.side{flex:1;min-width:210px;display:flex;flex-direction:column;gap:16px}
+.lbl{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px}
+.tiles{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.tile{background:#EEF1EF;display:grid;place-items:center;flex:none;box-shadow:0 1px 2px rgba(14,29,42,.12)}
+.tile.dark{background:#0E1D2A}
+.fav{display:flex;gap:10px;align-items:center}
+.lock{display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:14px;background:#F3F4F1;color:#0E1D2A}
+.lock b{font-family:Poppins,sans-serif;font-weight:600;font-size:24px;letter-spacing:-.5px}
+.lock.dark{background:#0E1D2A;color:#F3F4F1}
+.replay{height:40px;padding:0 16px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600;cursor:pointer;align-self:flex-start}
+.note{margin-top:22px;color:var(--muted);font-size:13.5px}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes pop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+@keyframes show{from{opacity:0}to{opacity:1}}
+/* A gnomone: orizzonte, h che si alza, sole che sale lungo l'arco */
+.play .a-hz{stroke-dasharray:34 40;stroke-dashoffset:34;animation:draw .5s ease-out .1s forwards}
+.play .a-st{stroke-dasharray:35 40;stroke-dashoffset:35;animation:draw .55s cubic-bezier(.5,0,.3,1) .4s forwards}
+.play .a-ar{stroke-dasharray:46 50;stroke-dashoffset:46;animation:draw .6s cubic-bezier(.5,0,.3,1) .8s forwards}
+.play .a-sun{transform-box:view-box;transform-origin:24px 41px;animation:arise 1.2s cubic-bezier(.25,.7,.2,1) .5s both}
+@keyframes arise{from{opacity:0;transform:rotate(70deg)}20%{opacity:1}to{opacity:1;transform:rotate(0)}}
+/* B quadrante: anello, tacche, lancette che girano fino alle 10 e 10 */
+.play .b-ring{stroke-dasharray:120 130;stroke-dashoffset:120;animation:draw 1s cubic-bezier(.65,0,.35,1) .1s forwards}
+.play .b-tk{opacity:0;animation:show .3s ease-out .9s forwards}
+.play .b-h{transform-box:view-box;transform-origin:24px 24px;animation:bh 1.4s cubic-bezier(.3,.7,.2,1) .2s both}
+.play .b-m{transform-box:view-box;transform-origin:24px 24px;animation:bm 1.4s cubic-bezier(.3,.7,.2,1) .2s both}
+.play .b-pin{transform-box:fill-box;transform-origin:center;animation:pop .4s cubic-bezier(.3,1.6,.5,1) 1.3s both}
+@keyframes bh{from{transform:rotate(-200deg)}to{transform:rotate(0)}}
+@keyframes bm{from{transform:rotate(-660deg)}to{transform:rotate(0)}}
+/* C foglio del giorno: il foglio cade, il settore delle ore si apre */
+.play .c-pg{transform-box:fill-box;transform-origin:center top;animation:cdrop .6s cubic-bezier(.3,1.4,.5,1) .1s both}
+.play .c-rg{opacity:0;animation:show .25s ease-out .55s forwards}
+.play .c-sec{stroke-dasharray:22 30;stroke-dashoffset:22;animation:draw .9s cubic-bezier(.5,0,.3,1) .7s forwards}
+.play .c-dot{transform-box:fill-box;transform-origin:center;animation:pop .35s cubic-bezier(.3,1.6,.5,1) 1.45s both}
+@keyframes cdrop{from{opacity:0;transform:translateY(-10px) scaleY(.8)}to{opacity:1;transform:none}}
+/* D alba: il sole sale dall'orizzonte, i raggi compaiono come tacche delle ore */
+.play .d-sun{animation:drise 1s cubic-bezier(.25,.7,.2,1) .2s both}
+.play .d-r{opacity:0;animation:show .25s ease-out forwards}
+.play .d-r1{animation-delay:1s}.play .d-r2{animation-delay:1.1s}.play .d-r3{animation-delay:1.2s}.play .d-r4{animation-delay:1.3s}.play .d-r5{animation-delay:1.4s}
+.play .d-hz{stroke-dasharray:36 40;stroke-dashoffset:36;animation:draw .5s ease-out .05s forwards}
+@keyframes drise{from{transform:translateY(12px)}to{transform:none}}
+/* E settimana: sette giorni che crescono, il punto si posa su oggi */
+.play .e-b{transform-box:fill-box;transform-origin:center bottom;animation:egrow .45s cubic-bezier(.3,1.3,.5,1) both}
+.play .e-dot{animation:edrop .5s cubic-bezier(.3,1.5,.5,1) 1.15s both}
+@keyframes egrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes edrop{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+/* F clessidra: la sabbia scende, poi la clessidra si gira */
+.play .f-all{transform-box:view-box;transform-origin:24px 24px;animation:fflip .6s cubic-bezier(.5,0,.3,1) 1.4s both}
+.play .f-top{transform-box:fill-box;transform-origin:center bottom;animation:fdown 1.2s linear .2s both}
+.play .f-bot{transform-box:fill-box;transform-origin:center bottom;animation:fup 1.2s linear .2s both}
+.play .f-fl{animation:fstream 1.2s linear .2s both}
+@keyframes fflip{from{transform:rotate(0)}to{transform:rotate(180deg)}}
+@keyframes fdown{from{transform:scaleY(1)}to{transform:scaleY(.25)}}
+@keyframes fup{from{transform:scaleY(.15)}to{transform:scaleY(1)}}
+@keyframes fstream{0%{opacity:0}10%,85%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.phone .word,.phone .sub,.phone .foot{opacity:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Marchio hora</h1>
+    <p>Il marchio nuovo (A, già nell'app dalla 1.7) e cinque alternative. Tutti in petrolio e ottone, come la famiglia nautargo; folio usa la sua "f" con il punto ottone, hora la sua "h". Tocca il telefono o "Rivedi" per far ripartire l'animazione.</p>
+  </header>
+  <div class="opts" id="opts"></div>
+  <p class="note">Le animazioni durano circa 1,6 secondi, come lo splash dell'app, e si fermano se il dispositivo chiede di ridurre il movimento. Per cambiare marchio basta indicare la lettera: si sostituiscono il componente Mark, le icone e lo splash.</p>
+</div>
+<script>
+const L = { c: '#2F9184', s: '#C99A4E' }, D = { c: '#54B7A9', s: '#E0B063' };
+const S = (w = 3.6) => `fill="none" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+/* A: la h è lo gnomone di una meridiana, sull'orizzonte; il punto ottone è il sole */
+const mA = (k) => `
+  <path class="a-hz" d="M7 41h34" ${S(3.2)} stroke="${k.c}" stroke-opacity=".45"/>
+  <path class="a-st" d="M15 41V7" ${S(4.2)} stroke="${k.c}"/>
+  <path class="a-ar" d="M15 25.5a9.5 9.5 0 0 1 19 0V41" ${S(4.2)} stroke="${k.c}"/>
+  <g class="a-sun"><circle cx="37.6" cy="9.6" r="4.8" fill="${k.s}"/></g>`;
+/* B: quadrante pieno con quattro tacche, lancette alle 10 e 10, perno ottone */
+const mB = (k) => `
+  <circle class="b-ring" cx="24" cy="24" r="18.5" ${S(3.4)} stroke="${k.c}"/>
+  <g class="b-tk" stroke="${k.c}" stroke-opacity=".5" stroke-width="2.6" stroke-linecap="round"><path d="M24 8.8v2.4M39.2 24h-2.4M24 39.2v-2.4M8.8 24h2.4"/></g>
+  <g class="b-h"><path d="M24 24l-6.4-3.7" ${S(3.6)} stroke="${k.c}"/></g>
+  <g class="b-m"><path d="M24 24l8.6-6.2" ${S(3.2)} stroke="${k.c}"/></g>
+  <circle class="b-pin" cx="24" cy="24" r="3.3" fill="${k.s}"/>`;
+/* C: foglio del calendario con due anelli; dentro, il settore delle ore passate */
+const mC = (k) => `
+  <g class="c-pg"><rect x="8" y="10" width="32" height="30" rx="7" ${S(3.4)} stroke="${k.c}"/><path d="M8 18.5h32" ${S(3)} stroke="${k.c}" stroke-opacity=".45"/></g>
+  <g class="c-rg"><path d="M17 7v6M31 7v6" ${S(3.4)} stroke="${k.c}"/></g>
+  <path class="c-sec" d="M24 23.5v6.5h7" ${S(3.4)} stroke="${k.c}"/>
+  <circle class="c-dot" cx="24" cy="30" r="2.6" fill="${k.s}"/>`;
+/* D: alba, mezzo sole ottone sull'orizzonte e cinque raggi come tacche delle ore */
+const mD = (k) => `
+  <defs><clipPath id="hz${k.c.slice(1)}"><rect x="0" y="0" width="48" height="32"/></clipPath></defs>
+  <g clip-path="url(#hz${k.c.slice(1)})"><circle class="d-sun" cx="24" cy="32" r="9" fill="${k.s}"/></g>
+  <path class="d-hz" d="M6 32h36" ${S(3.4)} stroke="${k.c}"/>
+  <g stroke="${k.c}" stroke-width="3.2" stroke-linecap="round">
+    <path class="d-r d-r1" d="M9.5 28l-2.6-1"/><path class="d-r d-r2" d="M13.6 19.6l-2-2"/><path class="d-r d-r3" d="M24 15.5V12"/><path class="d-r d-r4" d="M34.4 19.6l2-2"/><path class="d-r d-r5" d="M38.5 28l2.6-1"/>
+  </g>
+  <path d="M15 39h18" ${S(3)} stroke="${k.c}" stroke-opacity=".45"/>`;
+/* E: la settimana, sette giorni come colonne, punto ottone su oggi */
+const mE = (k) => {
+  const h = [14, 20, 16, 24, 18, 12, 10];
+  return h.map((v, i) => `<rect class="e-b" style="animation-delay:${(0.1 + i * 0.09).toFixed(2)}s" x="${7.2 + i * 5}" y="${40 - v}" width="3.6" height="${v}" rx="1.8" fill="${k.c}" fill-opacity="${i === 3 ? 1 : 0.5}"/>`).join('')
+    + `<circle class="e-dot" cx="${7.2 + 3 * 5 + 1.8}" cy="10" r="3.4" fill="${k.s}"/>`;
+};
+/* F: clessidra, cornice petrolio e sabbia ottone */
+const mF = (k) => `
+  <g class="f-all">
+    <path d="M13 8h22M13 40h22" ${S(3.4)} stroke="${k.c}"/>
+    <path d="M15.5 8c0 9 8.5 11 8.5 16s-8.5 7-8.5 16M32.5 8c0 9-8.5 11-8.5 16s8.5 7 8.5 16" ${S(3.2)} stroke="${k.c}"/>
+    <path class="f-top" d="M19 13.5h10c-1 3.5-5 5.5-5 7.5c0-2-4-4-5-7.5z" fill="${k.s}"/>
+    <path class="f-fl" d="M24 22v11" stroke="${k.s}" stroke-width="1.6" stroke-linecap="round"/>
+    <path class="f-bot" d="M18.5 37c.6-3 3.3-5 5.5-5.5c2.2.5 4.9 2.5 5.5 5.5z" fill="${k.s}"/>
+  </g>`;
+const svg = (m, k, size, cls = '') => `<svg ${cls ? `class="${cls}" ` : ''}width="${size}" height="${size}" viewBox="0 0 48 48" aria-hidden="true">${m(k)}</svg>`;
+const OPTS = [
+  ['A', 'Gnomone', mA, true, 'La "h" di hora è lo gnomone di una meridiana: sta sull\'orizzonte e il punto ottone è il sole. Parla dell\'ora (alba e tramonto sono già nell\'app) e fa coppia con la "f" di folio. Nello splash l\'orizzonte si traccia, la h si alza e il sole sale lungo l\'arco.'],
+  ['B', 'Quadrante', mB, false, 'L\'orologio ridotto al minimo: anello, quattro tacche, lancette alle 10 e 10, perno ottone. Il più immediato, il meno personale. Le lancette fanno un giro prima di fermarsi.'],
+  ['C', 'Foglio del giorno', mC, false, 'Il foglio del calendario con i due anelli e, dentro, una lancetta ad angolo: giorni e ore nello stesso segno. Il foglio cade, la lancetta si apre, il punto segna l\'ora.'],
+  ['D', 'Alba', mD, false, 'Mezzo sole ottone sull\'orizzonte e cinque raggi, che sono anche le tacche di un quadrante. Caldo e calmo, richiama "ogni cosa a suo tempo". Il sole sorge, i raggi compaiono uno alla volta.'],
+  ['E', 'Settimana', mE, false, 'Sette giorni come colonne di altezza diversa, oggi pieno con il punto ottone sopra: il ritmo della settimana e la vista Attività. Le colonne crescono in fila, poi il punto si posa.'],
+  ['F', 'Clessidra', mF, false, 'Cornice petrolio e sabbia ottone: il tempo che scorre, in un segno antico e riconoscibile anche a 16 px. La sabbia scende e la clessidra si gira.']
+];
+const tile = (m, size, dark) => `<span class="tile${dark ? ' dark' : ''}" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.23)}px">${svg(m, dark ? D : L, Math.round(size * 0.66))}</span>`;
+const isDark = () => matchMedia('(prefers-color-scheme: dark)').matches;
+document.getElementById('opts').innerHTML = OPTS.map(([n, name, m, cur, why], i) => `
+  <section class="opt${cur ? ' cur' : ''}" id="o${i}">
+    <h2><span>${n}</span>${name}${cur ? '<em>nell\'app</em>' : ''}</h2>
+    <p class="why">${why}</p>
+    <div class="row">
+      <div class="phone play" data-p="${i}"><div class="mid">${svg(m, isDark() ? D : L, 104)}<div class="word">hora</div><div class="sub">ogni cosa a suo tempo</div></div><div class="foot">nautargo</div></div>
+      <div class="side">
+        <div><div class="lbl">Icona dell'app</div><div class="tiles">${tile(m, 96)}${tile(m, 64)}${tile(m, 44)}${tile(m, 64, true)}</div></div>
+        <div><div class="lbl">Favicon</div><div class="fav">${svg(m, L, 32)}${svg(m, L, 16)}</div></div>
+        <div><div class="lbl">Logo nella barra</div><div class="lock">${svg(m, L, 32)}<b>hora</b></div><div class="lock dark" style="margin-top:8px">${svg(m, D, 32)}<b>hora</b></div></div>
+        <button class="replay" data-r="${i}">Rivedi l'animazione</button>
+      </div>
+    </div>
+  </section>`).join('');
+const replay = (i) => { const p = document.querySelector('#o' + i + ' [data-p]'); p.classList.remove('play'); void p.offsetWidth; p.classList.add('play'); };
+document.querySelectorAll('[data-r]').forEach((b) => b.addEventListener('click', () => replay(b.dataset.r)));
+document.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => replay(b.dataset.p)));
+</script>
+</body>
+</html>

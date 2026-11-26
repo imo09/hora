@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { parseText, voiceSave, easter, holidaysIn, fmtSpan, parseBlock, occurrences, toICS, parseICS, moveSub, moveCat, shiftItem, newItem, looksLikeBlock, expand, resolveCat, sunTimes, sunAvg, makePass, filterCat, NO_FILTER, unzip, parseZip, isTimedMulti } from '../src/hora.jsx';
+import { parseText, voiceSave, easter, holidaysIn, fmtSpan, parseBlock, occurrences, toICS, parseICS, moveSub, moveCat, shiftItem, newItem, looksLikeBlock, expand, resolveCat, sunTimes, sunAvg, makePass, filterCat, NO_FILTER, unzip, parseZip, isTimedMulti, isoWeek, pickExport, parseFolioLink, folioUrl } from '../src/hora.jsx';
 import zlib from 'node:zlib';
 
 const T = '2026-10-12'; // lunedì
@@ -288,7 +288,9 @@ ok('festività italiane e Pasqua', () => {
   assert.equal(easter(2027), '2027-03-28');
   assert.equal(easter(2024), '2024-03-31');
   const h = holidaysIn('2026-01-01', '2026-12-31');
-  assert.equal(Object.keys(h).length, 12);
+  assert.equal(Object.keys(h).length, 13);
+  assert.equal(h['2026-10-04'], "San Francesco d'Assisi");
+  assert.ok(!holidaysIn('2025-10-01', '2025-10-10')['2025-10-04'], 'prima del 2026 il 4 ottobre non è festa');
   assert.equal(h['2026-12-25'], 'Natale');
   assert.equal(h['2026-04-06'], "Lunedì dell'Angelo");
   assert.equal(h['2026-06-02'], 'Festa della Repubblica');
@@ -299,5 +301,37 @@ ok('titolo del periodo, dal lungo al corto', () => {
   assert.deepEqual([0, 1, 2].map((l) => fmtSpan('2026-09-01', '2026-09-30', l)), ['Settembre 2026', 'set 2026', 'set 26']);
   assert.deepEqual([0, 1, 2].map((l) => fmtSpan('2026-10-28', '2026-11-03', l)), ['Ott - Nov 2026', 'ott - nov 2026', 'ott - nov 26']);
   assert.equal(fmtSpan('2026-12-28', '2027-01-03', 2), 'dic 26 - gen 27');
+});
+ok('settimane ISO', () => {
+  assert.equal(isoWeek('2026-11-26'), 48);
+  assert.equal(isoWeek('2026-01-01'), 1);
+  assert.equal(isoWeek('2027-01-01'), 53);
+  assert.equal(isoWeek('2027-01-04'), 1);
+  assert.equal(isoWeek('2024-12-30'), 1);
+});
+ok('esportazione a scelta', () => {
+  const R = { f: 'none', days: [], until: null };
+  const st = { cats: [{ id: 'l', name: 'Lavoro', parent: null }, { id: 's', name: 'Sub', parent: 'l' }, { id: 'p', name: 'Personale', parent: null }], alarmGroups: [{ id: 'g' }],
+    items: [newItem({ id: 'a', title: 'A', date: '2026-01-10', cat: 's', repeat: R }), newItem({ id: 'b', title: 'B', date: '2025-01-10', cat: 'p', repeat: { f: 'week', days: [4], until: null } }),
+      newItem({ id: 'c', type: 'sveglia', title: 'S', date: '2025-01-01', group: 'g', repeat: R }), newItem({ id: 'd', type: 'promemoria', title: 'D', date: '2024-05-01', cat: null, repeat: R })],
+    todos: { '2025-12-31': [{ id: 1, t: 'x' }], '2026-02-01': [{ id: 2, t: 'y' }] } };
+  const all = pickExport(st, { types: ['evento', 'promemoria', 'sveglia'], cats: null, todos: true, allCats: true });
+  assert.equal(all.items.length, 4); assert.equal(all.cats.length, 3); assert.equal(all.alarmGroups.length, 1); assert.equal(Object.keys(all.todos).length, 2);
+  const lav = pickExport(st, { types: ['evento'], cats: ['l'], todos: false, allCats: false });
+  assert.deepEqual(lav.items.map((x) => x.id), ['a']); assert.deepEqual(lav.cats.map((x) => x.id).sort(), ['l', 's']);
+  const from = pickExport(st, { types: ['evento', 'promemoria'], cats: null, todos: true, allCats: false, from: '2026-01-01' });
+  assert.deepEqual(from.items.map((x) => x.id).sort(), ['a', 'b'], 'la serie senza fine resta'); assert.deepEqual(Object.keys(from.todos), ['2026-02-01']);
+  const none = pickExport(st, { types: ['promemoria'], cats: ['__none'], todos: false, allCats: false });
+  assert.deepEqual(none.items.map((x) => x.id), ['d']);
+});
+ok('collegamenti con folio', () => {
+  assert.deepEqual(parseFolioLink('https://folio.nautargo.com/#foglio=mx12ab'), { by: 'folio', id: 'mx12ab' });
+  assert.deepEqual(parseFolioLink('https://hora.nautargo.com/#nota=abc123xyz'), { by: 'hora', id: 'abc123xyz' });
+  assert.equal(parseFolioLink('https://example.com'), null);
+  const it = newItem({ title: 'Corso', date: '2026-11-26', start: 540, end: 600, repeat: { f: 'week', days: [3], until: null } });
+  const u = folioUrl({ by: 'hora', id: 'k1k1k1' }, it, '2026-11-26');
+  const q = new URLSearchParams(u.split('#hora?')[1]);
+  assert.equal(q.get('id'), 'k1k1k1'); assert.equal(q.get('t'), 'Corso'); assert.ok(q.get('q').includes('9:00'));
+  assert.equal(folioUrl({ by: 'folio', id: 'zz' }, it), 'https://folio.nautargo.com/#foglio=zz');
 });
 console.log(`motore: ${n} test superati`);
