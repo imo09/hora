@@ -180,11 +180,11 @@ function Splash({ onDone }) {
       <div className="sp-mid">
         <Mark size={128} anim dark={isDark()} />
         <div className="sp-word">hora</div>
-        <div className="sp-sub">{t('splashSub')}</div>
       </div>
       <div className="sp-foot">
         <span className="sp-tap"><UIcon n="tap" size={16} />{t('tapToEnter')}</span>
         <b>nautargo</b>
+        <small className="sp-ver">{t('version', { v: VERSION })}</small>
       </div>
     </div>
   );

@@ -1,9 +1,9 @@
-/* hora 1.7 - calendario locale di nautargo
+/* hora 1.8 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.7';
+export const VERSION = '1.8';
 
 /* ============ Testi IT / EN ============ */
 const STR = {
@@ -59,11 +59,16 @@ const STR = {
     aiStep1: 'Esporta o copia i dati dall\'altra app: file, testo, anche una foto.', aiStep2: 'Dai all\'IA i dati insieme a queste istruzioni.', aiStep3: 'Incolla qui il blocco che ti restituisce, poi controlla e conferma.',
     copyMd: 'Copia istruzioni', downloadMd: 'Scarica .md', pasteHere: 'Incolla qui', readBlock: 'Leggi e controlla',
     /* 1.7 */
-    wkShort: 'S', wkLong: 'Settimana {n}', todo: 'Da fare', todoEmpty: 'tocca per aggiungere', todoPh: 'Aggiungi una cosa da fare', todoMove: 'Sposta a domani i non fatti ({n})',
+    version: 'versione {v}', wkShort: 'S', wkLong: 'Settimana {n}', todo: 'Da fare', todoEmpty: 'tocca per aggiungere', todoPh: 'Aggiungi una cosa da fare', todoMove: 'Sposta a domani i non fatti ({n})',
     folioNote: 'Nota in folio', folioTxt: 'Un Foglio di folio legato a questo elemento: se si ripete, vale per tutta la serie. Il Foglio resta in folio, nel Gruppo "hora".',
     folioAll: 'Anche agli altri {n} con questo titolo', folioNew: 'Crea un Foglio in folio', folioKnown: 'Note già legate in hora', folioUsed: 'elementi legati: {n}',
     folioPaste: 'Collegamento copiato da folio', folioPasteTxt: 'In folio: menu del Foglio, Copia collegamento; poi incollalo qui.', folioBad: 'Non è un collegamento di folio.',
     folioLink: 'Collega', folioAdd: 'Aggiungi una nota in folio', folioAddTxt: 'Per appunti, liste e documenti legati a questo elemento o alla serie', folioUnlink: 'Scollega la nota',
+    folioEdit: 'Modifica qui', folioSave: 'Salva in folio', folioSaved: 'Nota salvata in folio', folioFail: 'folio non ha salvato: aprila e riprova', folioRo: 'folio è in sola lettura su questo dispositivo',
+    folioMdTxt: 'Testo in markdown, come in folio: # titolo, - elenco, - [ ] casella.', folioEmpty: 'Nota vuota: tocca la matita per scrivere.', folioLocked: 'Foglio protetto: si legge solo in folio.',
+    folioNotYet: 'Il Foglio non è ancora in folio su questo dispositivo.', folioMissing: 'Il Foglio non è su questo dispositivo.', folioCreateNow: 'Crea ora',
+    folioOff: 'Anteprima non aggiornata: folio non risponde da qui.', folioNoApp: 'folio non è ancora stata aperta su questo dispositivo.', folioLoading: 'Leggo la nota...',
+    folioMod: 'Modificata in folio: {d}', folioMade: 'Foglio creato in folio', folioWill: 'Nuovo Foglio, creato al salvataggio', folioChoose: 'Crea o collega', image: 'immagine',
     folioOpen: 'Apri in folio', folioNone: 'Nessun elemento legato a questa nota',
     export: 'Esporta', exportTxt: 'Tutto o una parte: tipi, categorie, periodo', exFormat: 'Formato', exJson: 'Backup hora (.json)', exIcs: 'Calendario (.ics)',
     exJsonTxt: 'Si ripristina in hora. Un file parziale si aggiunge ai dati che ci sono, senza sostituirli.', exIcsTxt: 'Per Google Calendar, Calendario di Apple, Outlook. Senza categorie e senza da fare.',
@@ -131,11 +136,16 @@ const STR = {
     aiStep1: 'Export or copy the data from the other app: file, text, even a photo.', aiStep2: 'Give the AI the data together with these instructions.', aiStep3: 'Paste here the block it returns, then check and confirm.',
     copyMd: 'Copy instructions', downloadMd: 'Download .md', pasteHere: 'Paste here', readBlock: 'Read and check',
     /* 1.7 */
-    wkShort: 'W', wkLong: 'Week {n}', todo: 'To do', todoEmpty: 'tap to add', todoPh: 'Add something to do', todoMove: 'Move the open ones to tomorrow ({n})',
+    version: 'version {v}', wkShort: 'W', wkLong: 'Week {n}', todo: 'To do', todoEmpty: 'tap to add', todoPh: 'Add something to do', todoMove: 'Move the open ones to tomorrow ({n})',
     folioNote: 'Note in folio', folioTxt: 'A folio Page linked to this item: if it repeats, it is for the whole series. The Page stays in folio, in the "hora" Group.',
     folioAll: 'Also the other {n} with this title', folioNew: 'Create a Page in folio', folioKnown: 'Notes already linked in hora', folioUsed: 'linked items: {n}',
     folioPaste: 'Link copied from folio', folioPasteTxt: 'In folio: Page menu, Copy link; then paste it here.', folioBad: 'This is not a folio link.',
     folioLink: 'Link', folioAdd: 'Add a note in folio', folioAddTxt: 'For notes, lists and documents about this item or the series', folioUnlink: 'Unlink the note',
+    folioEdit: 'Edit here', folioSave: 'Save to folio', folioSaved: 'Note saved to folio', folioFail: 'folio did not save: open it and try again', folioRo: 'folio is read-only on this device',
+    folioMdTxt: 'Markdown text, as in folio: # heading, - list, - [ ] checkbox.', folioEmpty: 'Empty note: tap the pencil to write.', folioLocked: 'Protected Page: readable only in folio.',
+    folioNotYet: 'The Page is not in folio on this device yet.', folioMissing: 'The Page is not on this device.', folioCreateNow: 'Create now',
+    folioOff: 'Preview not updated: folio does not answer from here.', folioNoApp: 'folio has not been opened on this device yet.', folioLoading: 'Reading the note...',
+    folioMod: 'Edited in folio: {d}', folioMade: 'Page created in folio', folioWill: 'New Page, created on save', folioChoose: 'Create or link', image: 'image',
     folioOpen: 'Open in folio', folioNone: 'No item is linked to this note',
     export: 'Export', exportTxt: 'All or part: types, categories, period', exFormat: 'Format', exJson: 'hora backup (.json)', exIcs: 'Calendar (.ics)',
     exJsonTxt: 'Restores in hora. A partial file is added to your data, without replacing it.', exIcsTxt: 'For Google Calendar, Apple Calendar, Outlook. No categories and no to-dos.',
@@ -349,16 +359,14 @@ export function UIcon({ n, size = 20, sw = 1.9, color = 'currentColor' }) {
   return <svg {...common}><path d={UI[n]} /></svg>;
 }
 
-/* Marchio: la h è lo gnomone di una meridiana, sull'orizzonte; il punto ottone è il sole */
+/* Marchio: la settimana, sette giorni come colonne; oggi pieno, con il punto ottone sopra */
+const MK_H = [14, 20, 16, 24, 18, 12, 10];
 export function Mark({ size = 26, dark = false, anim = false }) {
   const c = dark ? '#54B7A9' : '#2F9184', sun = dark ? '#E0B063' : '#C99A4E';
-  const S = { fill: 'none', stroke: c, strokeLinecap: 'round', strokeLinejoin: 'round' };
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" className={anim ? 'mk' : undefined}>
-      <path className="mk-hz" d="M7 41h34" {...S} strokeWidth="3.2" strokeOpacity="0.45" />
-      <path className="mk-st" d="M15 41V7" {...S} strokeWidth="4.2" />
-      <path className="mk-ar" d="M15 25.5a9.5 9.5 0 0 1 19 0V41" {...S} strokeWidth="4.2" />
-      <g className="mk-sun"><circle cx="37.6" cy="9.6" r="4.8" fill={sun} /></g>
+      {MK_H.map((h, i) => <rect key={i} className="mk-b" style={anim ? { animationDelay: (0.1 + i * 0.09).toFixed(2) + 's' } : undefined} x={7.2 + i * 5} y={41 - h} width="3.6" height={h} rx="1.8" fill={c} fillOpacity={i === 3 ? 1 : 0.5} />)}
+      <circle className="mk-sun" cx="24" cy="11" r="3.4" fill={sun} />
     </svg>
   );
 }
@@ -1369,11 +1377,11 @@ function Splash({ onDone }) {
       <div className="sp-mid">
         <Mark size={128} anim dark={isDark()} />
         <div className="sp-word">hora</div>
-        <div className="sp-sub">{t('splashSub')}</div>
       </div>
       <div className="sp-foot">
         <span className="sp-tap"><UIcon n="tap" size={16} />{t('tapToEnter')}</span>
         <b>nautargo</b>
+        <small className="sp-ver">{t('version', { v: VERSION })}</small>
       </div>
     </div>
   );
@@ -2351,6 +2359,7 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
   const [listening, setListening] = useState(false);
   const [help, setHelp] = useState(false);
   const [autoSave, setAutoSave] = useState(false);
+  const [folioPick, setFolioPick] = useState(false);
   const touched = useRef(new Set());
   const recRef = useRef(null), taRef = useRef(null);
   const set = (k, v) => { touched.current.add(k); setF((p) => ({ ...p, [k]: v })); };
@@ -2442,7 +2451,8 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
       } else { it.endDate = null; it.end = null; }
     }
     if (f.type === 'promemoria' && f.onlyAlert) { it.onlyAlert = true; if (it.alert == null) it.alert = 0; }
-    onSave(it);
+    if (f.folio && f.type !== 'sveglia') it.folio = { ...f.folio, title: f.folio.title || title }; else delete it.folio;
+    onSave(it, { folioNew: !!(f.folioNew && it.folio) });
   };
   const rep = f.repeat || NO_REPEAT;
   const setRep = (p) => set('repeat', { ...rep, ...p });
@@ -2595,12 +2605,19 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
               <label htmlFor="f-notes" className="fl-l"><UIcon n="note" size={16} />{t('notes')}</label>
               <textarea id="f-notes" rows={3} value={f.notes || ''} placeholder={t('notesPh')} onChange={(e) => set('notes', e.target.value)} />
             </div>
+            <div className="fl fo-fl">
+              <FL i="note">{t('folioNote')}</FL>
+              {f.folio
+                ? <span className="fo-pick"><span>{f.folioNew ? t('folioWill') : f.folio.title || f.title || t('noTitle')}</span><button className="ib sm" aria-label={t('folioUnlink')} onClick={() => setF((p) => ({ ...p, folio: null, folioNew: false }))}><UIcon n="x" size={15} /></button></span>
+                : <button className="lnk" onClick={() => setFolioPick(true)}>{t('folioChoose')}</button>}
+            </div>
             {!isNew && init.type === 'promemoria' && !init.onlyAlert && occDate && (
               <div className="fl"><FL i="done">{t('markDone')} <small>{fmtDayShort(occDate)}</small></FL><Switch on={isDone(init, occDate)} label={t('markDone')} onChange={() => onToggleDone(init, occDate)} /></div>
             )}
           </div>
         )}
       </div>
+      {folioPick && <FolioSheet st={st} it={{ ...init, title: f.title || text }} onPick={(fo, nuovo) => setF((p) => ({ ...p, folio: fo, folioNew: !!nuovo }))} onClose={() => setFolioPick(false)} />}
       <div className="sh-foot">
         {!isNew && <button className="btn danger-t" onClick={() => onDelete(init)}><UIcon n="trash" size={18} />{t('del')}</button>}
         <button className="btn pri grow" onClick={save}>{isNew ? t('add') : t('save')}</button>
@@ -2610,7 +2627,7 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
 }
 
 /* ============ Riepilogo di un elemento: tutto a colpo d'occhio, la matita porta alla modifica ============ */
-function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone, onFolioPick, onFolioUnlink }) {
+function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone, onFolioPick, onFolioUnlink, onFolioCache, toast }) {
   const d = occDate || it.date;
   const tn = catTone(st.cats, it.cat);
   const live = st.items.find((x) => x.id === it.id) || it;
@@ -2640,7 +2657,7 @@ function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone, onFolioPick,
           {it.address && row('pin', it.address, null, <a className="ib act" aria-label={t('openMaps')} href={mapsUrl(it.address)} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
           {it.link && row('link', it.link.replace(/^https?:\/\//, ''), null, <a className="ib act" aria-label={t('openLink')} href={fixLink(it.link.trim())} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
           {it.notes && <div className="iv-notes"><span className="iv-i"><UIcon n="text" size={18} /></span><p>{it.notes}</p></div>}
-          {it.type !== 'sveglia' && onFolioPick && <FolioRow it={live} d={d} onPick={onFolioPick} onUnlink={onFolioUnlink} />}
+          {it.type !== 'sveglia' && onFolioPick && <FolioRow it={live} d={d} onPick={onFolioPick} onUnlink={onFolioUnlink} onCache={onFolioCache} toast={toast} />}
         </div>
       </div>
       {it.type === 'promemoria' && !it.onlyAlert && (
@@ -3464,13 +3481,76 @@ function TodoBox({ date, list = [], onChange, onMove, strip, open, onOpen }) {
 }
 
 /* ---- Nota in folio: un Foglio legato a un evento, a una serie o a più eventi ---- */
-const FOLIO_URL = 'https://folio.nautargo.com/';
+/* indirizzo di folio; per le prove in locale si può cambiare con localStorage 'hora.folio' */
+const FOLIO_URL = (() => { try { const v = localStorage.getItem('hora.folio'); if (v && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/$/.test(v)) return v; } catch (e) { /* niente */ } return 'https://folio.nautargo.com/'; })();
+const FOLIO_ORIGIN = FOLIO_URL.replace(/\/$/, '');
+const folioWhen = (it, d) => (it ? whenText(it, d || it.date) + (it.repeat && it.repeat.f !== 'none' ? ', ' + repText(it.repeat) : '') : '');
 export function folioUrl(f, it, d) {
   if (!f) return '';
   if (f.by === 'folio') return FOLIO_URL + '#foglio=' + encodeURIComponent(f.id);
-  const rep = it && it.repeat && it.repeat.f !== 'none' ? ', ' + repText(it.repeat) : '';
-  const q = it ? whenText(it, d || it.date) + rep : '';
-  return FOLIO_URL + '#hora?' + new URLSearchParams({ id: f.id, t: f.title || (it && it.title) || '', q }).toString();
+  return FOLIO_URL + '#hora?' + new URLSearchParams({ id: f.id, t: f.title || (it && it.title) || '', q: folioWhen(it, d) }).toString();
+}
+/* ponte con folio: una pagina di folio aperta in modo invisibile legge, crea e riscrive i Fogli.
+   Stesso dominio (nautargo.com): folio vede i propri dati anche dentro hora. Senza risposta, si apre folio. */
+const PONTE = { fr: null, ready: null, ok: false, n: 0, wait: new Map(), subs: new Set() };
+function ponte() {
+  if (PONTE.ready) return PONTE.ready;
+  PONTE.ready = new Promise((res) => {
+    try {
+      if (typeof document === 'undefined' || !document.body || !(location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) { res(false); return; }
+      window.addEventListener('message', (e) => {
+        if (e.origin !== FOLIO_ORIGIN || !PONTE.fr || e.source !== PONTE.fr.contentWindow) return;
+        const m = e.data || {};
+        if (m.ponte === 'pronto') { PONTE.ok = true; res(true); }
+        else if (m.ponte === 'risposta' && PONTE.wait.has(m.req)) { const f = PONTE.wait.get(m.req); PONTE.wait.delete(m.req); f(m); }
+        else if (m.ponte === 'cambiato') PONTE.subs.forEach((f) => f());
+      });
+      const fr = document.createElement('iframe');
+      fr.src = FOLIO_URL + 'ponte.html';
+      fr.title = 'folio';
+      fr.setAttribute('aria-hidden', 'true');
+      fr.tabIndex = -1;
+      fr.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
+      document.body.appendChild(fr);
+      PONTE.fr = fr;
+      setTimeout(() => res(PONTE.ok), 8000);
+    } catch (e) { res(false); }
+  });
+  return PONTE.ready;
+}
+export async function folioAsk(op, data) {
+  if (!(await ponte())) return null;
+  return new Promise((res) => {
+    const req = ++PONTE.n;
+    PONTE.wait.set(req, res);
+    try { PONTE.fr.contentWindow.postMessage({ hora: 1, req, op, ...data }, FOLIO_ORIGIN); } catch (e) { PONTE.wait.delete(req); res(null); return; }
+    setTimeout(() => { if (PONTE.wait.has(req)) { PONTE.wait.delete(req); res(null); } }, 9000);
+  });
+}
+const folioOn = (f) => { PONTE.subs.add(f); return () => PONTE.subs.delete(f); };
+const folioCreate = (f, it) => folioAsk('crea', { hid: f.id, titolo: f.title || it.title || '', quando: folioWhen(it) });
+/* anteprima del markdown di un Foglio: righe semplici, senza segni */
+const mdInline = (s) => s.replace(/!\[[^\]]*\]\([^)]*\)/g, '[' + t('image') + ']').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/\*\*|__|~~|`/g, '').replace(/(^|\s)[*_]([^*_]+)[*_](?=\s|$|[.,;:!?])/g, '$1$2').replace(/\\([\\`*_[\]<>#|])/g, '$1');
+function mdLite(md, max = 12) {
+  const out = [];
+  let code = false;
+  for (const raw of String(md || '').split('\n')) {
+    if (out.length >= max) { out.push(<span key="more" className="fo-more">...</span>); break; }
+    const l = raw.trimEnd();
+    if (/^```/.test(l.trim())) { code = !code; continue; }
+    if (!l.trim() || /^\s*<!--.*-->\s*$/.test(l) || /^\s*\|?[\s:-]+\|[\s|:-]*$/.test(l) || /^\s*([-*_])\1{2,}\s*$/.test(l)) continue;
+    if (/^\s*\[[^\]]*\]\(https:\/\/hora\.nautargo\.com\/[^)]*\)\s*$/.test(l)) continue;
+    const k = out.length;
+    let m;
+    if (code) out.push(<code key={k} className="fo-l code">{l}</code>);
+    else if ((m = l.match(/^(#{1,6})\s+(.*)$/))) out.push(<b key={k} className={'fo-l fo-h h' + m[1].length}>{mdInline(m[2])}</b>);
+    else if ((m = l.match(/^(\s*)[-*+]\s+\[([ xX])\]\s+(.*)$/))) out.push(<span key={k} className={'fo-l fo-cb' + (m[2] !== ' ' ? ' on' : '')} style={{ paddingLeft: m[1].length * 6 }}><i />{mdInline(m[3])}</span>);
+    else if ((m = l.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/))) out.push(<span key={k} className="fo-l fo-li" style={{ paddingLeft: m[1].length * 6 }}><em>{/\d/.test(m[2]) ? m[2] : '•'}</em>{mdInline(m[3])}</span>);
+    else if ((m = l.match(/^>\s?(.*)$/))) out.push(<span key={k} className="fo-l fo-q">{mdInline(m[1])}</span>);
+    else if (/^\s*\|/.test(l)) out.push(<span key={k} className="fo-l">{mdInline(l.replace(/^\s*\||\|\s*$/g, '').split('|').map((x) => x.trim()).join(' - '))}</span>);
+    else out.push(<span key={k} className="fo-l">{mdInline(l)}</span>);
+  }
+  return out;
 }
 /* collegamento incollato da folio ("Copia collegamento") o da hora */
 export function parseFolioLink(s) {
@@ -3482,7 +3562,7 @@ export function parseFolioLink(s) {
   return null;
 }
 const openExt = (u) => { try { window.open(u, '_blank', 'noopener'); } catch (e) { location.href = u; } };
-function FolioSheet({ st, it, onLink, onClose }) {
+function FolioSheet({ st, it, onLink, onPick, onClose, onMade }) {
   const [paste, setPaste] = useState('');
   const same = st.items.filter((x) => x.id !== it.id && x.type !== 'sveglia' && norm(x.title || '') && norm(x.title || '') === norm(it.title || ''));
   const [all, setAll] = useState(false);
@@ -3493,14 +3573,22 @@ function FolioSheet({ st, it, onLink, onClose }) {
     return [...m.values()];
   }, [st.items, it.id]);
   const ids = () => [it.id, ...(all ? same.map((x) => x.id) : [])];
-  const link = (f, create) => { onLink(ids(), f); onClose(); if (create) openExt(folioUrl(f, it)); };
+  useEffect(() => { ponte(); }, []);
+  const link = (f, create) => {
+    if (onPick) { onPick(f, create); onClose(); return; }
+    onLink(ids(), f); onClose();
+    if (!create) return;
+    /* con il ponte pronto il Foglio nasce in folio senza lasciare hora; altrimenti si apre folio */
+    if (PONTE.ok) folioCreate(f, it).then((r) => { if (r && r.ok) onMade && onMade(f, r.nota); else openExt(folioUrl(f, it)); });
+    else openExt(folioUrl(f, it));
+  };
   const parsed = parseFolioLink(paste);
   return (
     <Sheet onClose={onClose} label={t('folioNote')}>
       <SheetHead title={t('folioNote')} onClose={onClose} />
       <div className="sh-body">
         <p className="muted sm-p">{t('folioTxt')}</p>
-        {same.length > 0 && (
+        {same.length > 0 && !onPick && (
           <div className="li fo-all"><SIcon n="repeat" /><span className="li-t col"><span>{t('folioAll', { n: same.length })}</span><small>{it.title}</small></span><Switch on={all} label={t('folioAll', { n: same.length })} onChange={setAll} /></div>
         )}
         <button className="btn pri wide fo-new" onClick={() => link({ by: 'hora', id: uid(), title: it.title || '' }, true)}><UIcon n="plus" size={18} />{t('folioNew')}</button>
@@ -3527,7 +3615,7 @@ function FolioSheet({ st, it, onLink, onClose }) {
     </Sheet>
   );
 }
-function FolioRow({ it, d, onPick, onUnlink }) {
+function FolioRow({ it, d, onPick, onUnlink, onCache, toast }) {
   if (!it.folio) return (
     <button className="iv-row fo-row add" onClick={onPick}>
       <span className="iv-i"><UIcon n="note" size={18} /></span>
@@ -3535,12 +3623,82 @@ function FolioRow({ it, d, onPick, onUnlink }) {
       <UIcon n="right" size={14} sw={2.4} color="var(--muted)" />
     </button>
   );
+  return <FolioCard key={it.folio.by + it.folio.id} it={it} d={d} onUnlink={onUnlink} onCache={onCache} toast={toast} />;
+}
+/* nota legata: anteprima che si aggiorna da folio, modificabile anche da qui */
+function FolioCard({ it, d, onUnlink, onCache, toast }) {
+  const f = it.folio, key = f.by + ':' + f.id;
+  const [s, setS] = useState({ stato: 'carico', nota: null });
+  const [edit, setEdit] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const R = useRef({ alive: false });
+  R.current.onCache = onCache;
+  R.current.edit = edit;
+  const load = async () => {
+    const r = await folioAsk('leggi', { chiavi: [{ by: f.by, id: f.id }] });
+    if (!R.current.alive) return;
+    if (!r) { setS((x) => ({ ...x, stato: 'off' })); return; }
+    if (!r.ok) { setS({ stato: r.motivo === 'vuoto' ? 'vuoto' : 'off', nota: null }); return; }
+    const n = r.note && r.note[key];
+    if (!n || !n.trovato) { setS({ stato: 'assente', nota: null }); return; }
+    setS({ stato: n.protetto ? 'protetto' : 'ok', nota: n });
+    if (R.current.onCache) R.current.onCache(f, n);
+  };
+  useEffect(() => {
+    R.current.alive = true;
+    load();
+    const off = folioOn(() => { if (!R.current.edit) load(); });
+    const vis = () => { if (document.visibilityState === 'visible' && !R.current.edit) load(); };
+    document.addEventListener('visibilitychange', vis);
+    return () => { R.current.alive = false; off(); document.removeEventListener('visibilitychange', vis); };
+  }, [key]);
+  const n = s.nota;
+  const md = n ? n.md : f.prev || '';
+  const create = async () => {
+    setBusy(true);
+    const r = await folioCreate(f, it);
+    setBusy(false);
+    if (r && r.ok) { setS({ stato: 'ok', nota: r.nota }); if (onCache) onCache(f, r.nota); toast && toast(t('folioMade')); } else openExt(folioUrl(f, it, d));
+  };
+  const save = async () => {
+    setBusy(true);
+    const r = await folioAsk('scrivi', { chiave: { by: f.by, id: f.id }, md: edit });
+    setBusy(false);
+    if (r && r.ok) { setS({ stato: 'ok', nota: r.nota }); setEdit(null); if (onCache) onCache(f, r.nota); toast && toast(t('folioSaved')); } else toast && toast(r && r.motivo === 'lettura' ? t('folioRo') : t('folioFail'));
+  };
+  const when = n && n.modificata ? new Date(n.modificata).toLocaleString(LANG === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
   return (
-    <div className="iv-row fo-row">
-      <span className="iv-i"><UIcon n="note" size={18} /></span>
-      <span className="li-t col"><span>{t('folioNote')}</span><small>{it.folio.title || it.title}</small></span>
-      <button className="ib act" aria-label={t('folioUnlink')} title={t('folioUnlink')} onClick={onUnlink}><UIcon n="x" size={17} /></button>
-      <a className="ib act" aria-label={t('folioOpen')} title={t('folioOpen')} href={folioUrl(it.folio, it, d)} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>
+    <div className="fo-card">
+      <div className="iv-row fo-row">
+        <span className="iv-i"><UIcon n="note" size={18} /></span>
+        <span className="li-t col"><span>{(n && n.titolo) || f.title || it.title}</span><small>{n && n.percorso ? 'folio - ' + n.percorso : t('folioNote')}</small></span>
+        {s.stato === 'ok' && !edit && <button className="ib act" aria-label={t('folioEdit')} title={t('folioEdit')} onClick={() => setEdit(n.md)}><UIcon n="edit" size={17} /></button>}
+        <button className="ib act" aria-label={t('folioUnlink')} title={t('folioUnlink')} onClick={onUnlink}><UIcon n="x" size={17} /></button>
+        <a className="ib act" aria-label={t('folioOpen')} title={t('folioOpen')} href={folioUrl(f, it, d)} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>
+      </div>
+      {edit != null ? (
+        <div className="fo-edit">
+          <textarea value={edit} rows={8} aria-label={t('folioEdit')} onChange={(e) => setEdit(e.target.value)} />
+          <small className="muted">{t('folioMdTxt')}</small>
+          <div className="row-c gap6 fo-eb">
+            <button className="btn" onClick={() => setEdit(null)}>{t('cancel')}</button>
+            <button className="btn pri grow" disabled={busy} onClick={save}>{t('folioSave')}</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {md && s.stato !== 'protetto' && <div className={'fo-prev' + (s.stato === 'ok' ? '' : ' old')} onClick={s.stato === 'ok' ? () => setEdit(n.md) : undefined}>{mdLite(md)}</div>}
+          {s.stato === 'ok' && !md && <p className="fo-st muted">{t('folioEmpty')}</p>}
+          {s.stato === 'protetto' && <p className="fo-st muted"><UIcon n="eye" size={14} /> {t('folioLocked')}</p>}
+          {s.stato === 'assente' && (
+            <div className="fo-st"><span className="muted">{f.by === 'hora' ? t('folioNotYet') : t('folioMissing')}</span>
+              {f.by === 'hora' && <button className="lnk" disabled={busy} onClick={create}>{t('folioCreateNow')}</button>}</div>
+          )}
+          {(s.stato === 'off' || s.stato === 'vuoto') && <p className="fo-st muted">{s.stato === 'vuoto' ? t('folioNoApp') : t('folioOff')}</p>}
+          {s.stato === 'carico' && !md && <p className="fo-st muted">{t('folioLoading')}</p>}
+          {when && <small className="fo-when">{t('folioMod', { d: when })}</small>}
+        </>
+      )}
     </div>
   );
 }
@@ -3876,6 +4034,20 @@ export function App() {
     return { ...s, todos: td };
   }));
   /* nota in folio: si lega a uno o più elementi (una serie è un elemento solo) */
+  /* anteprima della nota salvata nell'elemento: serve dove folio non risponde (altri dispositivi, senza rete) */
+  const cacheFolio = (f, n) => {
+    if (lockRef.current || !n) return;
+    const prev = (n.md || '').slice(0, 600), title = n.titolo || f.title || '';
+    setSt((s) => {
+      let ch = false;
+      const items = s.items.map((x) => {
+        if (!x.folio || x.folio.by !== f.by || x.folio.id !== f.id || (x.folio.prev === prev && x.folio.title === title)) return x;
+        ch = true;
+        return { ...x, folio: { ...x.folio, prev, title } };
+      });
+      return ch ? { ...s, items } : s;
+    });
+  };
   const setFolio = (ids, f) => guard(() => setSt((s) => ({ ...s, items: s.items.map((x) => { if (!ids.includes(x.id)) return x; const n = { ...x }; if (f) n.folio = f; else delete n.folio; return n; }) })));
   const [folioFor, setFolioFor] = useState(null);
   const [exportOpen, setExportOpen] = useState(false);
@@ -4184,11 +4356,12 @@ export function App() {
   const newDate = () => (view === 'gantt' ? today : view === 'month' ? anchor : vis.includes(today) ? today : vis[0]);
   const newSheet = (autoMic) => guard(() => setSheet({ item: newItem({ date: newDate(), cat: newCat }), isNew: true, autoMic }));
   const onNewAt = (d) => guard(() => setSheet({ item: newItem({ date: d.date, start: d.start, end: d.end, cat: newCat }), isNew: true, preset: true }));
-  const onSaveSheet = (it) => {
+  const onSaveSheet = (it, extra) => {
     const isNew = sheet && sheet.isNew;
     saveItem(it);
     setSheet(null);
     toast(isNew ? t('addedOne') : t('savedOk'));
+    if (extra && extra.folioNew && it.folio) folioCreate(it.folio, it).then((r) => { if (r && r.ok) { cacheFolio(it.folio, r.nota); toast(t('folioMade')); } });
     if (view !== 'gantt' && !(view === 'grid' ? vis.includes(it.date) : it.date.slice(0, 7) === anchor.slice(0, 7))) setAnchor(days === 5 ? startOfWeek(it.date) : it.date);
   };
 
@@ -4308,7 +4481,7 @@ export function App() {
 
       {sheet && sheet.view && (
         <ItemView key={'v' + sheet.item.id} st={st} it={sheet.item} occDate={sheet.occDate} onClose={() => setSheet(null)} onToggleDone={toggleDone}
-          onFolioPick={() => guard(() => setFolioFor(sheet.item.id))} onFolioUnlink={() => setFolio([sheet.item.id], null)}
+          onFolioPick={() => guard(() => setFolioFor(sheet.item.id))} onFolioUnlink={() => setFolio([sheet.item.id], null)} onFolioCache={cacheFolio} toast={toast}
           onEdit={() => guard(() => setSheet((x) => ({ ...x, view: false })))} />
       )}
       {sheet && !sheet.view && (
@@ -4316,7 +4489,7 @@ export function App() {
           onClose={() => setSheet(null)} onSave={onSaveSheet} onDelete={askDelete} onPickCat={openPicker} onBlock={openBlock}
           onToggleDone={toggleDone} toast={toast} />
       )}
-      {folioFor && st.items.some((x) => x.id === folioFor) && <FolioSheet st={st} it={st.items.find((x) => x.id === folioFor)} onLink={setFolio} onClose={() => setFolioFor(null)} />}
+      {folioFor && st.items.some((x) => x.id === folioFor) && <FolioSheet st={st} it={st.items.find((x) => x.id === folioFor)} onLink={setFolio} onMade={(f, n) => { cacheFolio(f, n); toast(t('folioMade')); }} onClose={() => setFolioFor(null)} />}
       {exportOpen && <ExportSheet st={st} onClose={() => setExportOpen(false)} onExport={doExport} />}
       {filterOpen && <FilterSheet st={st} filter={fx} onChange={setFilter} onClose={() => setFilterOpen(false)} />}
       {ganttCats && <GanttCatsSheet st={st} onClose={() => setGanttCats(false)} onSetCats={setCats} onSetting={setSettings} />}

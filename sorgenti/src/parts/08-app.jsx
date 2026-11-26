@@ -157,6 +157,20 @@ export function App() {
     return { ...s, todos: td };
   }));
   /* nota in folio: si lega a uno o più elementi (una serie è un elemento solo) */
+  /* anteprima della nota salvata nell'elemento: serve dove folio non risponde (altri dispositivi, senza rete) */
+  const cacheFolio = (f, n) => {
+    if (lockRef.current || !n) return;
+    const prev = (n.md || '').slice(0, 600), title = n.titolo || f.title || '';
+    setSt((s) => {
+      let ch = false;
+      const items = s.items.map((x) => {
+        if (!x.folio || x.folio.by !== f.by || x.folio.id !== f.id || (x.folio.prev === prev && x.folio.title === title)) return x;
+        ch = true;
+        return { ...x, folio: { ...x.folio, prev, title } };
+      });
+      return ch ? { ...s, items } : s;
+    });
+  };
   const setFolio = (ids, f) => guard(() => setSt((s) => ({ ...s, items: s.items.map((x) => { if (!ids.includes(x.id)) return x; const n = { ...x }; if (f) n.folio = f; else delete n.folio; return n; }) })));
   const [folioFor, setFolioFor] = useState(null);
   const [exportOpen, setExportOpen] = useState(false);
@@ -465,11 +479,12 @@ export function App() {
   const newDate = () => (view === 'gantt' ? today : view === 'month' ? anchor : vis.includes(today) ? today : vis[0]);
   const newSheet = (autoMic) => guard(() => setSheet({ item: newItem({ date: newDate(), cat: newCat }), isNew: true, autoMic }));
   const onNewAt = (d) => guard(() => setSheet({ item: newItem({ date: d.date, start: d.start, end: d.end, cat: newCat }), isNew: true, preset: true }));
-  const onSaveSheet = (it) => {
+  const onSaveSheet = (it, extra) => {
     const isNew = sheet && sheet.isNew;
     saveItem(it);
     setSheet(null);
     toast(isNew ? t('addedOne') : t('savedOk'));
+    if (extra && extra.folioNew && it.folio) folioCreate(it.folio, it).then((r) => { if (r && r.ok) { cacheFolio(it.folio, r.nota); toast(t('folioMade')); } });
     if (view !== 'gantt' && !(view === 'grid' ? vis.includes(it.date) : it.date.slice(0, 7) === anchor.slice(0, 7))) setAnchor(days === 5 ? startOfWeek(it.date) : it.date);
   };
 
@@ -589,7 +604,7 @@ export function App() {
 
       {sheet && sheet.view && (
         <ItemView key={'v' + sheet.item.id} st={st} it={sheet.item} occDate={sheet.occDate} onClose={() => setSheet(null)} onToggleDone={toggleDone}
-          onFolioPick={() => guard(() => setFolioFor(sheet.item.id))} onFolioUnlink={() => setFolio([sheet.item.id], null)}
+          onFolioPick={() => guard(() => setFolioFor(sheet.item.id))} onFolioUnlink={() => setFolio([sheet.item.id], null)} onFolioCache={cacheFolio} toast={toast}
           onEdit={() => guard(() => setSheet((x) => ({ ...x, view: false })))} />
       )}
       {sheet && !sheet.view && (
@@ -597,7 +612,7 @@ export function App() {
           onClose={() => setSheet(null)} onSave={onSaveSheet} onDelete={askDelete} onPickCat={openPicker} onBlock={openBlock}
           onToggleDone={toggleDone} toast={toast} />
       )}
-      {folioFor && st.items.some((x) => x.id === folioFor) && <FolioSheet st={st} it={st.items.find((x) => x.id === folioFor)} onLink={setFolio} onClose={() => setFolioFor(null)} />}
+      {folioFor && st.items.some((x) => x.id === folioFor) && <FolioSheet st={st} it={st.items.find((x) => x.id === folioFor)} onLink={setFolio} onMade={(f, n) => { cacheFolio(f, n); toast(t('folioMade')); }} onClose={() => setFolioFor(null)} />}
       {exportOpen && <ExportSheet st={st} onClose={() => setExportOpen(false)} onExport={doExport} />}
       {filterOpen && <FilterSheet st={st} filter={fx} onChange={setFilter} onClose={() => setFilterOpen(false)} />}
       {ganttCats && <GanttCatsSheet st={st} onClose={() => setGanttCats(false)} onSetCats={setCats} onSetting={setSettings} />}

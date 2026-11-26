@@ -1,9 +1,9 @@
-/* hora 1.7 - calendario locale di nautargo
+/* hora 1.8 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.7';
+export const VERSION = '1.8';
 
 /* ============ Testi IT / EN ============ */
 const STR = {
@@ -59,11 +59,16 @@ const STR = {
     aiStep1: 'Esporta o copia i dati dall\'altra app: file, testo, anche una foto.', aiStep2: 'Dai all\'IA i dati insieme a queste istruzioni.', aiStep3: 'Incolla qui il blocco che ti restituisce, poi controlla e conferma.',
     copyMd: 'Copia istruzioni', downloadMd: 'Scarica .md', pasteHere: 'Incolla qui', readBlock: 'Leggi e controlla',
     /* 1.7 */
-    wkShort: 'S', wkLong: 'Settimana {n}', todo: 'Da fare', todoEmpty: 'tocca per aggiungere', todoPh: 'Aggiungi una cosa da fare', todoMove: 'Sposta a domani i non fatti ({n})',
+    version: 'versione {v}', wkShort: 'S', wkLong: 'Settimana {n}', todo: 'Da fare', todoEmpty: 'tocca per aggiungere', todoPh: 'Aggiungi una cosa da fare', todoMove: 'Sposta a domani i non fatti ({n})',
     folioNote: 'Nota in folio', folioTxt: 'Un Foglio di folio legato a questo elemento: se si ripete, vale per tutta la serie. Il Foglio resta in folio, nel Gruppo "hora".',
     folioAll: 'Anche agli altri {n} con questo titolo', folioNew: 'Crea un Foglio in folio', folioKnown: 'Note già legate in hora', folioUsed: 'elementi legati: {n}',
     folioPaste: 'Collegamento copiato da folio', folioPasteTxt: 'In folio: menu del Foglio, Copia collegamento; poi incollalo qui.', folioBad: 'Non è un collegamento di folio.',
     folioLink: 'Collega', folioAdd: 'Aggiungi una nota in folio', folioAddTxt: 'Per appunti, liste e documenti legati a questo elemento o alla serie', folioUnlink: 'Scollega la nota',
+    folioEdit: 'Modifica qui', folioSave: 'Salva in folio', folioSaved: 'Nota salvata in folio', folioFail: 'folio non ha salvato: aprila e riprova', folioRo: 'folio è in sola lettura su questo dispositivo',
+    folioMdTxt: 'Testo in markdown, come in folio: # titolo, - elenco, - [ ] casella.', folioEmpty: 'Nota vuota: tocca la matita per scrivere.', folioLocked: 'Foglio protetto: si legge solo in folio.',
+    folioNotYet: 'Il Foglio non è ancora in folio su questo dispositivo.', folioMissing: 'Il Foglio non è su questo dispositivo.', folioCreateNow: 'Crea ora',
+    folioOff: 'Anteprima non aggiornata: folio non risponde da qui.', folioNoApp: 'folio non è ancora stata aperta su questo dispositivo.', folioLoading: 'Leggo la nota...',
+    folioMod: 'Modificata in folio: {d}', folioMade: 'Foglio creato in folio', folioWill: 'Nuovo Foglio, creato al salvataggio', folioChoose: 'Crea o collega', image: 'immagine',
     folioOpen: 'Apri in folio', folioNone: 'Nessun elemento legato a questa nota',
     export: 'Esporta', exportTxt: 'Tutto o una parte: tipi, categorie, periodo', exFormat: 'Formato', exJson: 'Backup hora (.json)', exIcs: 'Calendario (.ics)',
     exJsonTxt: 'Si ripristina in hora. Un file parziale si aggiunge ai dati che ci sono, senza sostituirli.', exIcsTxt: 'Per Google Calendar, Calendario di Apple, Outlook. Senza categorie e senza da fare.',
@@ -131,11 +136,16 @@ const STR = {
     aiStep1: 'Export or copy the data from the other app: file, text, even a photo.', aiStep2: 'Give the AI the data together with these instructions.', aiStep3: 'Paste here the block it returns, then check and confirm.',
     copyMd: 'Copy instructions', downloadMd: 'Download .md', pasteHere: 'Paste here', readBlock: 'Read and check',
     /* 1.7 */
-    wkShort: 'W', wkLong: 'Week {n}', todo: 'To do', todoEmpty: 'tap to add', todoPh: 'Add something to do', todoMove: 'Move the open ones to tomorrow ({n})',
+    version: 'version {v}', wkShort: 'W', wkLong: 'Week {n}', todo: 'To do', todoEmpty: 'tap to add', todoPh: 'Add something to do', todoMove: 'Move the open ones to tomorrow ({n})',
     folioNote: 'Note in folio', folioTxt: 'A folio Page linked to this item: if it repeats, it is for the whole series. The Page stays in folio, in the "hora" Group.',
     folioAll: 'Also the other {n} with this title', folioNew: 'Create a Page in folio', folioKnown: 'Notes already linked in hora', folioUsed: 'linked items: {n}',
     folioPaste: 'Link copied from folio', folioPasteTxt: 'In folio: Page menu, Copy link; then paste it here.', folioBad: 'This is not a folio link.',
     folioLink: 'Link', folioAdd: 'Add a note in folio', folioAddTxt: 'For notes, lists and documents about this item or the series', folioUnlink: 'Unlink the note',
+    folioEdit: 'Edit here', folioSave: 'Save to folio', folioSaved: 'Note saved to folio', folioFail: 'folio did not save: open it and try again', folioRo: 'folio is read-only on this device',
+    folioMdTxt: 'Markdown text, as in folio: # heading, - list, - [ ] checkbox.', folioEmpty: 'Empty note: tap the pencil to write.', folioLocked: 'Protected Page: readable only in folio.',
+    folioNotYet: 'The Page is not in folio on this device yet.', folioMissing: 'The Page is not on this device.', folioCreateNow: 'Create now',
+    folioOff: 'Preview not updated: folio does not answer from here.', folioNoApp: 'folio has not been opened on this device yet.', folioLoading: 'Reading the note...',
+    folioMod: 'Edited in folio: {d}', folioMade: 'Page created in folio', folioWill: 'New Page, created on save', folioChoose: 'Create or link', image: 'image',
     folioOpen: 'Open in folio', folioNone: 'No item is linked to this note',
     export: 'Export', exportTxt: 'All or part: types, categories, period', exFormat: 'Format', exJson: 'hora backup (.json)', exIcs: 'Calendar (.ics)',
     exJsonTxt: 'Restores in hora. A partial file is added to your data, without replacing it.', exIcsTxt: 'For Google Calendar, Apple Calendar, Outlook. No categories and no to-dos.',
@@ -349,16 +359,14 @@ export function UIcon({ n, size = 20, sw = 1.9, color = 'currentColor' }) {
   return <svg {...common}><path d={UI[n]} /></svg>;
 }
 
-/* Marchio: la h è lo gnomone di una meridiana, sull'orizzonte; il punto ottone è il sole */
+/* Marchio: la settimana, sette giorni come colonne; oggi pieno, con il punto ottone sopra */
+const MK_H = [14, 20, 16, 24, 18, 12, 10];
 export function Mark({ size = 26, dark = false, anim = false }) {
   const c = dark ? '#54B7A9' : '#2F9184', sun = dark ? '#E0B063' : '#C99A4E';
-  const S = { fill: 'none', stroke: c, strokeLinecap: 'round', strokeLinejoin: 'round' };
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" className={anim ? 'mk' : undefined}>
-      <path className="mk-hz" d="M7 41h34" {...S} strokeWidth="3.2" strokeOpacity="0.45" />
-      <path className="mk-st" d="M15 41V7" {...S} strokeWidth="4.2" />
-      <path className="mk-ar" d="M15 25.5a9.5 9.5 0 0 1 19 0V41" {...S} strokeWidth="4.2" />
-      <g className="mk-sun"><circle cx="37.6" cy="9.6" r="4.8" fill={sun} /></g>
+      {MK_H.map((h, i) => <rect key={i} className="mk-b" style={anim ? { animationDelay: (0.1 + i * 0.09).toFixed(2) + 's' } : undefined} x={7.2 + i * 5} y={41 - h} width="3.6" height={h} rx="1.8" fill={c} fillOpacity={i === 3 ? 1 : 0.5} />)}
+      <circle className="mk-sun" cx="24" cy="11" r="3.4" fill={sun} />
     </svg>
   );
 }

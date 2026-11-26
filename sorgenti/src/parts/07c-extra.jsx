@@ -53,13 +53,76 @@ function TodoBox({ date, list = [], onChange, onMove, strip, open, onOpen }) {
 }
 
 /* ---- Nota in folio: un Foglio legato a un evento, a una serie o a più eventi ---- */
-const FOLIO_URL = 'https://folio.nautargo.com/';
+/* indirizzo di folio; per le prove in locale si può cambiare con localStorage 'hora.folio' */
+const FOLIO_URL = (() => { try { const v = localStorage.getItem('hora.folio'); if (v && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/$/.test(v)) return v; } catch (e) { /* niente */ } return 'https://folio.nautargo.com/'; })();
+const FOLIO_ORIGIN = FOLIO_URL.replace(/\/$/, '');
+const folioWhen = (it, d) => (it ? whenText(it, d || it.date) + (it.repeat && it.repeat.f !== 'none' ? ', ' + repText(it.repeat) : '') : '');
 export function folioUrl(f, it, d) {
   if (!f) return '';
   if (f.by === 'folio') return FOLIO_URL + '#foglio=' + encodeURIComponent(f.id);
-  const rep = it && it.repeat && it.repeat.f !== 'none' ? ', ' + repText(it.repeat) : '';
-  const q = it ? whenText(it, d || it.date) + rep : '';
-  return FOLIO_URL + '#hora?' + new URLSearchParams({ id: f.id, t: f.title || (it && it.title) || '', q }).toString();
+  return FOLIO_URL + '#hora?' + new URLSearchParams({ id: f.id, t: f.title || (it && it.title) || '', q: folioWhen(it, d) }).toString();
+}
+/* ponte con folio: una pagina di folio aperta in modo invisibile legge, crea e riscrive i Fogli.
+   Stesso dominio (nautargo.com): folio vede i propri dati anche dentro hora. Senza risposta, si apre folio. */
+const PONTE = { fr: null, ready: null, ok: false, n: 0, wait: new Map(), subs: new Set() };
+function ponte() {
+  if (PONTE.ready) return PONTE.ready;
+  PONTE.ready = new Promise((res) => {
+    try {
+      if (typeof document === 'undefined' || !document.body || !(location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) { res(false); return; }
+      window.addEventListener('message', (e) => {
+        if (e.origin !== FOLIO_ORIGIN || !PONTE.fr || e.source !== PONTE.fr.contentWindow) return;
+        const m = e.data || {};
+        if (m.ponte === 'pronto') { PONTE.ok = true; res(true); }
+        else if (m.ponte === 'risposta' && PONTE.wait.has(m.req)) { const f = PONTE.wait.get(m.req); PONTE.wait.delete(m.req); f(m); }
+        else if (m.ponte === 'cambiato') PONTE.subs.forEach((f) => f());
+      });
+      const fr = document.createElement('iframe');
+      fr.src = FOLIO_URL + 'ponte.html';
+      fr.title = 'folio';
+      fr.setAttribute('aria-hidden', 'true');
+      fr.tabIndex = -1;
+      fr.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden';
+      document.body.appendChild(fr);
+      PONTE.fr = fr;
+      setTimeout(() => res(PONTE.ok), 8000);
+    } catch (e) { res(false); }
+  });
+  return PONTE.ready;
+}
+export async function folioAsk(op, data) {
+  if (!(await ponte())) return null;
+  return new Promise((res) => {
+    const req = ++PONTE.n;
+    PONTE.wait.set(req, res);
+    try { PONTE.fr.contentWindow.postMessage({ hora: 1, req, op, ...data }, FOLIO_ORIGIN); } catch (e) { PONTE.wait.delete(req); res(null); return; }
+    setTimeout(() => { if (PONTE.wait.has(req)) { PONTE.wait.delete(req); res(null); } }, 9000);
+  });
+}
+const folioOn = (f) => { PONTE.subs.add(f); return () => PONTE.subs.delete(f); };
+const folioCreate = (f, it) => folioAsk('crea', { hid: f.id, titolo: f.title || it.title || '', quando: folioWhen(it) });
+/* anteprima del markdown di un Foglio: righe semplici, senza segni */
+const mdInline = (s) => s.replace(/!\[[^\]]*\]\([^)]*\)/g, '[' + t('image') + ']').replace(/\[([^\]]+)\]\([^)]*\)/g, '$1').replace(/\*\*|__|~~|`/g, '').replace(/(^|\s)[*_]([^*_]+)[*_](?=\s|$|[.,;:!?])/g, '$1$2').replace(/\\([\\`*_[\]<>#|])/g, '$1');
+function mdLite(md, max = 12) {
+  const out = [];
+  let code = false;
+  for (const raw of String(md || '').split('\n')) {
+    if (out.length >= max) { out.push(<span key="more" className="fo-more">...</span>); break; }
+    const l = raw.trimEnd();
+    if (/^```/.test(l.trim())) { code = !code; continue; }
+    if (!l.trim() || /^\s*<!--.*-->\s*$/.test(l) || /^\s*\|?[\s:-]+\|[\s|:-]*$/.test(l) || /^\s*([-*_])\1{2,}\s*$/.test(l)) continue;
+    if (/^\s*\[[^\]]*\]\(https:\/\/hora\.nautargo\.com\/[^)]*\)\s*$/.test(l)) continue;
+    const k = out.length;
+    let m;
+    if (code) out.push(<code key={k} className="fo-l code">{l}</code>);
+    else if ((m = l.match(/^(#{1,6})\s+(.*)$/))) out.push(<b key={k} className={'fo-l fo-h h' + m[1].length}>{mdInline(m[2])}</b>);
+    else if ((m = l.match(/^(\s*)[-*+]\s+\[([ xX])\]\s+(.*)$/))) out.push(<span key={k} className={'fo-l fo-cb' + (m[2] !== ' ' ? ' on' : '')} style={{ paddingLeft: m[1].length * 6 }}><i />{mdInline(m[3])}</span>);
+    else if ((m = l.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/))) out.push(<span key={k} className="fo-l fo-li" style={{ paddingLeft: m[1].length * 6 }}><em>{/\d/.test(m[2]) ? m[2] : '•'}</em>{mdInline(m[3])}</span>);
+    else if ((m = l.match(/^>\s?(.*)$/))) out.push(<span key={k} className="fo-l fo-q">{mdInline(m[1])}</span>);
+    else if (/^\s*\|/.test(l)) out.push(<span key={k} className="fo-l">{mdInline(l.replace(/^\s*\||\|\s*$/g, '').split('|').map((x) => x.trim()).join(' - '))}</span>);
+    else out.push(<span key={k} className="fo-l">{mdInline(l)}</span>);
+  }
+  return out;
 }
 /* collegamento incollato da folio ("Copia collegamento") o da hora */
 export function parseFolioLink(s) {
@@ -71,7 +134,7 @@ export function parseFolioLink(s) {
   return null;
 }
 const openExt = (u) => { try { window.open(u, '_blank', 'noopener'); } catch (e) { location.href = u; } };
-function FolioSheet({ st, it, onLink, onClose }) {
+function FolioSheet({ st, it, onLink, onPick, onClose, onMade }) {
   const [paste, setPaste] = useState('');
   const same = st.items.filter((x) => x.id !== it.id && x.type !== 'sveglia' && norm(x.title || '') && norm(x.title || '') === norm(it.title || ''));
   const [all, setAll] = useState(false);
@@ -82,14 +145,22 @@ function FolioSheet({ st, it, onLink, onClose }) {
     return [...m.values()];
   }, [st.items, it.id]);
   const ids = () => [it.id, ...(all ? same.map((x) => x.id) : [])];
-  const link = (f, create) => { onLink(ids(), f); onClose(); if (create) openExt(folioUrl(f, it)); };
+  useEffect(() => { ponte(); }, []);
+  const link = (f, create) => {
+    if (onPick) { onPick(f, create); onClose(); return; }
+    onLink(ids(), f); onClose();
+    if (!create) return;
+    /* con il ponte pronto il Foglio nasce in folio senza lasciare hora; altrimenti si apre folio */
+    if (PONTE.ok) folioCreate(f, it).then((r) => { if (r && r.ok) onMade && onMade(f, r.nota); else openExt(folioUrl(f, it)); });
+    else openExt(folioUrl(f, it));
+  };
   const parsed = parseFolioLink(paste);
   return (
     <Sheet onClose={onClose} label={t('folioNote')}>
       <SheetHead title={t('folioNote')} onClose={onClose} />
       <div className="sh-body">
         <p className="muted sm-p">{t('folioTxt')}</p>
-        {same.length > 0 && (
+        {same.length > 0 && !onPick && (
           <div className="li fo-all"><SIcon n="repeat" /><span className="li-t col"><span>{t('folioAll', { n: same.length })}</span><small>{it.title}</small></span><Switch on={all} label={t('folioAll', { n: same.length })} onChange={setAll} /></div>
         )}
         <button className="btn pri wide fo-new" onClick={() => link({ by: 'hora', id: uid(), title: it.title || '' }, true)}><UIcon n="plus" size={18} />{t('folioNew')}</button>
@@ -116,7 +187,7 @@ function FolioSheet({ st, it, onLink, onClose }) {
     </Sheet>
   );
 }
-function FolioRow({ it, d, onPick, onUnlink }) {
+function FolioRow({ it, d, onPick, onUnlink, onCache, toast }) {
   if (!it.folio) return (
     <button className="iv-row fo-row add" onClick={onPick}>
       <span className="iv-i"><UIcon n="note" size={18} /></span>
@@ -124,12 +195,82 @@ function FolioRow({ it, d, onPick, onUnlink }) {
       <UIcon n="right" size={14} sw={2.4} color="var(--muted)" />
     </button>
   );
+  return <FolioCard key={it.folio.by + it.folio.id} it={it} d={d} onUnlink={onUnlink} onCache={onCache} toast={toast} />;
+}
+/* nota legata: anteprima che si aggiorna da folio, modificabile anche da qui */
+function FolioCard({ it, d, onUnlink, onCache, toast }) {
+  const f = it.folio, key = f.by + ':' + f.id;
+  const [s, setS] = useState({ stato: 'carico', nota: null });
+  const [edit, setEdit] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const R = useRef({ alive: false });
+  R.current.onCache = onCache;
+  R.current.edit = edit;
+  const load = async () => {
+    const r = await folioAsk('leggi', { chiavi: [{ by: f.by, id: f.id }] });
+    if (!R.current.alive) return;
+    if (!r) { setS((x) => ({ ...x, stato: 'off' })); return; }
+    if (!r.ok) { setS({ stato: r.motivo === 'vuoto' ? 'vuoto' : 'off', nota: null }); return; }
+    const n = r.note && r.note[key];
+    if (!n || !n.trovato) { setS({ stato: 'assente', nota: null }); return; }
+    setS({ stato: n.protetto ? 'protetto' : 'ok', nota: n });
+    if (R.current.onCache) R.current.onCache(f, n);
+  };
+  useEffect(() => {
+    R.current.alive = true;
+    load();
+    const off = folioOn(() => { if (!R.current.edit) load(); });
+    const vis = () => { if (document.visibilityState === 'visible' && !R.current.edit) load(); };
+    document.addEventListener('visibilitychange', vis);
+    return () => { R.current.alive = false; off(); document.removeEventListener('visibilitychange', vis); };
+  }, [key]);
+  const n = s.nota;
+  const md = n ? n.md : f.prev || '';
+  const create = async () => {
+    setBusy(true);
+    const r = await folioCreate(f, it);
+    setBusy(false);
+    if (r && r.ok) { setS({ stato: 'ok', nota: r.nota }); if (onCache) onCache(f, r.nota); toast && toast(t('folioMade')); } else openExt(folioUrl(f, it, d));
+  };
+  const save = async () => {
+    setBusy(true);
+    const r = await folioAsk('scrivi', { chiave: { by: f.by, id: f.id }, md: edit });
+    setBusy(false);
+    if (r && r.ok) { setS({ stato: 'ok', nota: r.nota }); setEdit(null); if (onCache) onCache(f, r.nota); toast && toast(t('folioSaved')); } else toast && toast(r && r.motivo === 'lettura' ? t('folioRo') : t('folioFail'));
+  };
+  const when = n && n.modificata ? new Date(n.modificata).toLocaleString(LANG === 'en' ? 'en-GB' : 'it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
   return (
-    <div className="iv-row fo-row">
-      <span className="iv-i"><UIcon n="note" size={18} /></span>
-      <span className="li-t col"><span>{t('folioNote')}</span><small>{it.folio.title || it.title}</small></span>
-      <button className="ib act" aria-label={t('folioUnlink')} title={t('folioUnlink')} onClick={onUnlink}><UIcon n="x" size={17} /></button>
-      <a className="ib act" aria-label={t('folioOpen')} title={t('folioOpen')} href={folioUrl(it.folio, it, d)} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>
+    <div className="fo-card">
+      <div className="iv-row fo-row">
+        <span className="iv-i"><UIcon n="note" size={18} /></span>
+        <span className="li-t col"><span>{(n && n.titolo) || f.title || it.title}</span><small>{n && n.percorso ? 'folio - ' + n.percorso : t('folioNote')}</small></span>
+        {s.stato === 'ok' && !edit && <button className="ib act" aria-label={t('folioEdit')} title={t('folioEdit')} onClick={() => setEdit(n.md)}><UIcon n="edit" size={17} /></button>}
+        <button className="ib act" aria-label={t('folioUnlink')} title={t('folioUnlink')} onClick={onUnlink}><UIcon n="x" size={17} /></button>
+        <a className="ib act" aria-label={t('folioOpen')} title={t('folioOpen')} href={folioUrl(f, it, d)} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>
+      </div>
+      {edit != null ? (
+        <div className="fo-edit">
+          <textarea value={edit} rows={8} aria-label={t('folioEdit')} onChange={(e) => setEdit(e.target.value)} />
+          <small className="muted">{t('folioMdTxt')}</small>
+          <div className="row-c gap6 fo-eb">
+            <button className="btn" onClick={() => setEdit(null)}>{t('cancel')}</button>
+            <button className="btn pri grow" disabled={busy} onClick={save}>{t('folioSave')}</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {md && s.stato !== 'protetto' && <div className={'fo-prev' + (s.stato === 'ok' ? '' : ' old')} onClick={s.stato === 'ok' ? () => setEdit(n.md) : undefined}>{mdLite(md)}</div>}
+          {s.stato === 'ok' && !md && <p className="fo-st muted">{t('folioEmpty')}</p>}
+          {s.stato === 'protetto' && <p className="fo-st muted"><UIcon n="eye" size={14} /> {t('folioLocked')}</p>}
+          {s.stato === 'assente' && (
+            <div className="fo-st"><span className="muted">{f.by === 'hora' ? t('folioNotYet') : t('folioMissing')}</span>
+              {f.by === 'hora' && <button className="lnk" disabled={busy} onClick={create}>{t('folioCreateNow')}</button>}</div>
+          )}
+          {(s.stato === 'off' || s.stato === 'vuoto') && <p className="fo-st muted">{s.stato === 'vuoto' ? t('folioNoApp') : t('folioOff')}</p>}
+          {s.stato === 'carico' && !md && <p className="fo-st muted">{t('folioLoading')}</p>}
+          {when && <small className="fo-when">{t('folioMod', { d: when })}</small>}
+        </>
+      )}
     </div>
   );
 }

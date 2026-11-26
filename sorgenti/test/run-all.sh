@@ -13,3 +13,4 @@ node test/v14.test.mjs
 node test/v15.test.mjs
 node test/v16.test.mjs
 node test/v17.test.mjs
+node test/v18.test.mjs

@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 
 const root = path.dirname(new URL(import.meta.url).pathname);
 const P = (...a) => path.join(root, ...a);
-const VERSION = '1.7';
+const VERSION = '1.8';
 
 // 1. file sorgente unico
 if (fs.existsSync(P('src/parts'))) {
@@ -37,7 +37,7 @@ const fonts = [
 const css = fs.readFileSync(P('src/style.css'), 'utf8');
 
 // 4. marchio e icone
-const mark = (c = '#2F9184', sun = '#C99A4E') => `<path d="M7 41h34" fill="none" stroke="${c}" stroke-width="3.2" stroke-linecap="round" stroke-opacity="0.45"/><path d="M15 41V7" fill="none" stroke="${c}" stroke-width="4.2" stroke-linecap="round"/><path d="M15 25.5a9.5 9.5 0 0 1 19 0V41" fill="none" stroke="${c}" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="37.6" cy="9.6" r="4.8" fill="${sun}"/>`;
+const mark = (c = '#2F9184', sun = '#C99A4E') => [14, 20, 16, 24, 18, 12, 10].map((h, i) => `<rect x="${(7.2 + i * 5).toFixed(1)}" y="${41 - h}" width="3.6" height="${h}" rx="1.8" fill="${c}" fill-opacity="${i === 3 ? 1 : 0.5}"/>`).join('') + `<circle cx="24" cy="11" r="3.4" fill="${sun}"/>`;
 const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">${mark()}</svg>`;
 const tile = (scale) => {
   const s = 512, m = s * scale, o = (s - m) / 2;
