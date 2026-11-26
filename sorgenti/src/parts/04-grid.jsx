@@ -502,7 +502,7 @@ function GridView({ st, dates, anchor, sx, visN = 5, pass, newCat, sun, hol, hou
 
 /* ============ Mese ============ */
 const M_WEEKS = 26;
-function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, onOpen, onToggle, onOpenDay, onPinchOut, onSwipe, onVisible, side, extra }) {
+function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, onOpen, onToggle, onOpenDay, onPinchOut, onSwipe, onVisible, side, short, extra }) {
   const today = todayStr();
   const ms = monthStart(anchor);
   // a scorrimento continuo: mezzo anno di settimane prima e dopo il mese guardato
@@ -606,7 +606,7 @@ function MonthView({ st, anchor, pass, titles, setTitles, free, hol, onSelect, o
     window.addEventListener('resize', m);
     return () => window.removeEventListener('resize', m);
   }, []);
-  const showTitles = (titles || side) && cellW >= 72;
+  const showTitles = (titles || (side && !short)) && cellW >= 72;
   const mark = (o) => {
     const tn = catTone(st.cats, o.it.cat);
     return o.it.type === 'promemoria'

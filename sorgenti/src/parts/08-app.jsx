@@ -455,8 +455,11 @@ export function App() {
   const goDate = (v) => { if (!v) return; setAnchor(v); setNonce((n) => n + 1); };
   /* tablet e computer: accanto al calendario il pannello del giorno */
   const vwNow = () => { try { return document.documentElement.clientWidth || window.innerWidth || 0; } catch (e) { return 0; } };
+  const vhNow = () => { try { return window.innerHeight || 800; } catch (e) { return 800; } };
   const [vw, setVw] = useState(vwNow);
-  useEffect(() => { const r = () => setVw(vwNow()); window.addEventListener('resize', r); return () => window.removeEventListener('resize', r); }, []);
+  const [vh, setVh] = useState(vhNow);
+  useEffect(() => { const r = () => { setVw(vwNow()); setVh(vhNow()); }; window.addEventListener('resize', r); window.addEventListener('orientationchange', r); return () => { window.removeEventListener('resize', r); window.removeEventListener('orientationchange', r); }; }, []);
+  const short = vh < 520;
   const side = (view === 'month' && vw >= 760) || (view === 'grid' && (days <= 3 ? vw >= 760 : vw >= 1180));
   const [selDay, setSelDay] = useState(null);
   const panelDay = view === 'month' ? anchor : selDay && vis.includes(selDay) ? selDay : vis.includes(today) ? today : vis[0];
@@ -586,7 +589,7 @@ export function App() {
         {view === 'month' && (
           <MonthView st={st} anchor={anchor} pass={pass} titles={!!st.settings.monthTitles} setTitles={(v) => setSettings({ monthTitles: v })} free={free} hol={hol}
             onVisible={(m) => setAnchor((a) => m.slice(0, 8) + pad(Math.min(dnum(a), daysInMonth(m))))}
-            onSelect={setAnchor} onOpen={openOcc} onToggle={toggleDone} onOpenDay={openDay} side={side}
+            onSelect={setAnchor} onOpen={openOcc} onToggle={toggleDone} onOpenDay={openDay} side={side} short={short}
             extra={<TodoBox key={anchor} {...todoProps(anchor)} />}
             onPinchOut={() => { setView('grid'); toDays(7); }} onSwipe={step} />
         )}
@@ -597,7 +600,7 @@ export function App() {
         </div>
         {side && (
           <DayPanel st={st} date={panelDay} pass={pass} onPick={pickPanel} onOpen={openOcc} onToggle={toggleDone} onTodos={setTodos} onMove={moveTodos}
-            onOpenDay={view === 'month' || days > 1 ? openDay : null} />
+            onOpenDay={view === 'month' || days > 1 ? openDay : null} mini={view !== 'month' && vh >= 600} />
         )}
       </main>
       <button ref={fabRef} className={'fab' + (draft ? ' ready' : '')} aria-label={t('add')} onClick={() => { if (draft && view === 'grid') { const d = draft; setDraft(null); onNewAt(d); } else newSheet(true); }}><UIcon n="plus" size={26} sw={2.2} /></button>
