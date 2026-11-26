@@ -1,9 +1,9 @@
-/* hora 1.8 - calendario locale di nautargo
+/* hora 1.9 - calendario locale di nautargo
    File unico React. Build: node build.mjs */
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
-export const VERSION = '1.8';
+export const VERSION = '1.9';
 
 /* ============ Testi IT / EN ============ */
 const STR = {

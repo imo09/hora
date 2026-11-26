@@ -108,12 +108,12 @@ assert.ok($('.iv-title') && $('.iv-title').textContent === 'Corso'); ok('da foli
 click($('.sheet button[aria-label="Chiudi"]')); await wait();
 // pannello del giorno su schermo largo
 width = 1300; w.dispatchEvent(new w.Event('resize')); await wait(120);
-assert.ok($('.side .mm') && $('.side .sd-day') && $('.side .todo'), 'pannello del giorno');
+assert.ok($('.side .sd-day') && $('.side .todo') && !$('.side .mm'), 'pannello del giorno, senza ripetere il mese');
 assert.ok(!$('.m-list'), 'elenco sotto il mese spostato nel pannello');
-click($$('.side .mm-d').find((b) => b.getAttribute('aria-label').toLowerCase().startsWith('mer 2 dic'))); await wait();
+click($$('.m-cell').find((b) => b.getAttribute('aria-label').toLowerCase().startsWith('mer 2 dic'))); await wait();
 assert.ok($('.side .sd-h h2').textContent.includes('2 dic'), $('.side .sd-h h2').textContent); ok('pannello del giorno accanto al mese');
 click($('.tabs button[aria-label="Giorno"]')); await wait();
-assert.ok($('.side') && !$('.todo.strip')); ok('pannello anche nella vista Giorno');
+assert.ok($('.side .mm') && !$('.todo.strip')); ok('pannello con il mese piccolo nella vista Giorno');
 // Attività: settimane nell'intestazione
 click($('.gbtn')); await wait(150);
 assert.ok($$('.gh-w').some((x) => x.textContent === 'S48')); ok('settimane in Attività');

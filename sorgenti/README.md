@@ -1,6 +1,14 @@
-# hora 1.8
+# hora 1.9
 
 Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src/hora.jsx` (React, generato da `src/parts/`), stile in `src/style.css`.
+
+## Novità della 1.9
+
+1. Telefono in orizzontale: barra in alto su una sola riga (marchio, viste, Attività, elenco, sveglie, titolo, filtro, Oggi, frecce), così il calendario ha quasi tutta l'altezza.
+2. Mese in orizzontale: sei settimane nell'altezza dello schermo; con il pannello del giorno i titoli nelle celle lasciano il posto alle icone; sui telefoni più stretti (sotto 760 px) l'elenco del giorno e i da fare stanno accanto alla griglia invece che sotto.
+3. Pannello del giorno: il mese piccolo compare solo se c'è altezza (da 600 px) e mai accanto alla vista Mese, dove sarebbe un doppione.
+4. Attività, fogli dal basso e modulo Nuovo più compatti in orizzontale; margini per la tacca dello schermo a sinistra e a destra.
+5. Nella risposta alla 1.8: la modifica delle note di folio da hora resta in markdown semplice.
 
 ## Novità della 1.8
 
@@ -104,7 +112,7 @@ Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src
 ## Pubblicazione su hora.nautargo.com
 
 1. Crea su GitHub il repository `hora`.
-2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.8.zip` (index.html, manifest, sw.js, icone, CNAME).
+2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.9.zip` (index.html, manifest, sw.js, icone, CNAME).
 3. In Settings > Pages scegli il ramo `main` e la cartella `/ (root)`.
 4. Su Aruba aggiungi un record CNAME: nome `hora`, valore `imo09.github.io`.
 5. Torna in Settings > Pages, attendi il controllo del dominio e attiva "Enforce HTTPS".
