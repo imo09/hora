@@ -35,7 +35,7 @@ const store = () => JSON.parse(w.localStorage.getItem('hora.v1'));
 let n = 0; const ok = (m) => { n++; console.log('  ok', m); };
 
 await wait(150);
-assert.ok($('.sp-sub') && $('.sp-tap'), 'sottotitolo e invito a toccare');
+assert.ok(!$('.sp-sub') && $('.sp-tap') && /versione 1\.\d+/.test($('.sp-ver').textContent), 'invito a toccare e versione, senza sottotitolo');
 await wait(3200); assert.ok($('.splash'), 'la schermata iniziale resta finché non si tocca'); ok('schermata iniziale: resta fino al tocco');
 click($('.splash')); await wait(450);
 assert.ok($$('.slot').length >= 24); ok('celle orarie');

@@ -1,6 +1,15 @@
-# hora 1.7
+# hora 1.8
 
 Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src/hora.jsx` (React, generato da `src/parts/`), stile in `src/style.css`.
+
+## Novità della 1.8
+
+1. Nota in folio già nel modulo Nuovo e Modifica (riga "Nota in folio", "Crea o collega"): un Foglio nuovo nasce al salvataggio, oppure si sceglie una nota già legata o si incolla il collegamento di folio.
+2. Anteprima della nota nel riepilogo: titolo, Quaderno e Gruppo, prime righe leggibili (titoli, elenchi, caselle), data dell'ultima modifica. Si aggiorna da sola quando la nota cambia in folio (anche con folio aperta in un'altra scheda) e quando si torna su hora. Con la matita (o un tocco sull'anteprima) si modifica il testo da hora, in markdown, e si salva direttamente in folio.
+3. Come funziona: hora apre in modo invisibile `https://folio.nautargo.com/ponte.html` (folio 9.2). Le due app sono sullo stesso dominio, quindi il ponte vede i Fogli di folio di questo dispositivo: se folio è aperta chiede a lei, altrimenti lavora sull'archivio di folio. Se il ponte non risponde (folio mai aperta su questo dispositivo, senza rete, browser che lo blocca), hora mostra l'ultima anteprima salvata nell'elemento e apre folio come prima.
+4. Colonna delle settimane nel Mese e nel mese piccolo: fondo più scuro e numeri in grassetto a contrasto, in chiaro e in scuro.
+5. Nuovo: il testo di esempio nella barra è centrato in verticale rispetto al microfono.
+6. Marchio Settimana (opzione E): sette giorni come colonne, oggi pieno con il punto ottone. Nello splash niente sottotitolo; sotto "nautargo" la versione dell'app.
 
 ## Novità della 1.7
 
@@ -95,7 +104,7 @@ Calendario calmo e locale di nautargo (prima "marea"). File sorgente unico: `src
 ## Pubblicazione su hora.nautargo.com
 
 1. Crea su GitHub il repository `hora`.
-2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.7.zip` (index.html, manifest, sw.js, icone, CNAME).
+2. Carica nella radice del repository tutti i file del pacchetto `hora-sito-1.8.zip` (index.html, manifest, sw.js, icone, CNAME).
 3. In Settings > Pages scegli il ramo `main` e la cartella `/ (root)`.
 4. Su Aruba aggiungi un record CNAME: nome `hora`, valore `imo09.github.io`.
 5. Torna in Settings > Pages, attendi il controllo del dominio e attiva "Enforce HTTPS".

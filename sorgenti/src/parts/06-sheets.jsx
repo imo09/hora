@@ -42,6 +42,7 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
   const [listening, setListening] = useState(false);
   const [help, setHelp] = useState(false);
   const [autoSave, setAutoSave] = useState(false);
+  const [folioPick, setFolioPick] = useState(false);
   const touched = useRef(new Set());
   const recRef = useRef(null), taRef = useRef(null);
   const set = (k, v) => { touched.current.add(k); setF((p) => ({ ...p, [k]: v })); };
@@ -133,7 +134,8 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
       } else { it.endDate = null; it.end = null; }
     }
     if (f.type === 'promemoria' && f.onlyAlert) { it.onlyAlert = true; if (it.alert == null) it.alert = 0; }
-    onSave(it);
+    if (f.folio && f.type !== 'sveglia') it.folio = { ...f.folio, title: f.folio.title || title }; else delete it.folio;
+    onSave(it, { folioNew: !!(f.folioNew && it.folio) });
   };
   const rep = f.repeat || NO_REPEAT;
   const setRep = (p) => set('repeat', { ...rep, ...p });
@@ -286,12 +288,19 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
               <label htmlFor="f-notes" className="fl-l"><UIcon n="note" size={16} />{t('notes')}</label>
               <textarea id="f-notes" rows={3} value={f.notes || ''} placeholder={t('notesPh')} onChange={(e) => set('notes', e.target.value)} />
             </div>
+            <div className="fl fo-fl">
+              <FL i="note">{t('folioNote')}</FL>
+              {f.folio
+                ? <span className="fo-pick"><span>{f.folioNew ? t('folioWill') : f.folio.title || f.title || t('noTitle')}</span><button className="ib sm" aria-label={t('folioUnlink')} onClick={() => setF((p) => ({ ...p, folio: null, folioNew: false }))}><UIcon n="x" size={15} /></button></span>
+                : <button className="lnk" onClick={() => setFolioPick(true)}>{t('folioChoose')}</button>}
+            </div>
             {!isNew && init.type === 'promemoria' && !init.onlyAlert && occDate && (
               <div className="fl"><FL i="done">{t('markDone')} <small>{fmtDayShort(occDate)}</small></FL><Switch on={isDone(init, occDate)} label={t('markDone')} onChange={() => onToggleDone(init, occDate)} /></div>
             )}
           </div>
         )}
       </div>
+      {folioPick && <FolioSheet st={st} it={{ ...init, title: f.title || text }} onPick={(fo, nuovo) => setF((p) => ({ ...p, folio: fo, folioNew: !!nuovo }))} onClose={() => setFolioPick(false)} />}
       <div className="sh-foot">
         {!isNew && <button className="btn danger-t" onClick={() => onDelete(init)}><UIcon n="trash" size={18} />{t('del')}</button>}
         <button className="btn pri grow" onClick={save}>{isNew ? t('add') : t('save')}</button>
@@ -301,7 +310,7 @@ function ItemSheet({ st, init, occDate, isNew, autoMic, preset, onClose, onSave,
 }
 
 /* ============ Riepilogo di un elemento: tutto a colpo d'occhio, la matita porta alla modifica ============ */
-function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone, onFolioPick, onFolioUnlink }) {
+function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone, onFolioPick, onFolioUnlink, onFolioCache, toast }) {
   const d = occDate || it.date;
   const tn = catTone(st.cats, it.cat);
   const live = st.items.find((x) => x.id === it.id) || it;
@@ -331,7 +340,7 @@ function ItemView({ st, it, occDate, onClose, onEdit, onToggleDone, onFolioPick,
           {it.address && row('pin', it.address, null, <a className="ib act" aria-label={t('openMaps')} href={mapsUrl(it.address)} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
           {it.link && row('link', it.link.replace(/^https?:\/\//, ''), null, <a className="ib act" aria-label={t('openLink')} href={fixLink(it.link.trim())} target="_blank" rel="noopener"><UIcon n="ext" size={18} /></a>)}
           {it.notes && <div className="iv-notes"><span className="iv-i"><UIcon n="text" size={18} /></span><p>{it.notes}</p></div>}
-          {it.type !== 'sveglia' && onFolioPick && <FolioRow it={live} d={d} onPick={onFolioPick} onUnlink={onFolioUnlink} />}
+          {it.type !== 'sveglia' && onFolioPick && <FolioRow it={live} d={d} onPick={onFolioPick} onUnlink={onFolioUnlink} onCache={onFolioCache} toast={toast} />}
         </div>
       </div>
       {it.type === 'promemoria' && !it.onlyAlert && (

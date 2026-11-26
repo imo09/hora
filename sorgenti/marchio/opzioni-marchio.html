@@ -30,6 +30,7 @@ header p{margin:0;color:var(--muted);max-width:720px}
 .phone .word{font-family:Poppins,sans-serif;font-weight:600;font-size:36px;letter-spacing:-.8px;line-height:1;opacity:0}
 .phone .sub{font-size:11px;color:var(--muted);opacity:0}
 .phone .foot{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-size:11px;font-weight:600;opacity:0}
+.phone .foot small{display:block;font:400 9px 'Space Mono',monospace;color:var(--muted);margin-top:3px}
 .play .word{animation:fade .8s ease-out 1.5s forwards}.play .sub{animation:fade .8s ease-out 1.7s forwards}.play .foot{animation:fade .8s ease-out 1.8s forwards}
 .side{flex:1;min-width:210px;display:flex;flex-direction:column;gap:16px}
 .lbl{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px}
@@ -93,7 +94,7 @@ header p{margin:0;color:var(--muted);max-width:720px}
 <div class="wrap">
   <header>
     <h1>Marchio hora</h1>
-    <p>Il marchio nuovo (A, già nell'app dalla 1.7) e cinque alternative. Tutti in petrolio e ottone, come la famiglia nautargo; folio usa la sua "f" con il punto ottone, hora la sua "h". Tocca il telefono o "Rivedi" per far ripartire l'animazione.</p>
+    <p>Il marchio scelto (E, Settimana, nell'app dalla 1.8) e le altre proposte; A era nell'app nella 1.7. Tutti in petrolio e ottone, come la famiglia nautargo; folio usa la sua "f" con il punto ottone, hora la sua "h". Tocca il telefono o "Rivedi" per far ripartire l'animazione.</p>
   </header>
   <div class="opts" id="opts"></div>
   <p class="note">Le animazioni durano circa 1,6 secondi, come lo splash dell'app, e si fermano se il dispositivo chiede di ridurre il movimento. Per cambiare marchio basta indicare la lettera: si sostituiscono il componente Mark, le icone e lo splash.</p>
@@ -146,11 +147,11 @@ const mF = (k) => `
   </g>`;
 const svg = (m, k, size, cls = '') => `<svg ${cls ? `class="${cls}" ` : ''}width="${size}" height="${size}" viewBox="0 0 48 48" aria-hidden="true">${m(k)}</svg>`;
 const OPTS = [
-  ['A', 'Gnomone', mA, true, 'La "h" di hora è lo gnomone di una meridiana: sta sull\'orizzonte e il punto ottone è il sole. Parla dell\'ora (alba e tramonto sono già nell\'app) e fa coppia con la "f" di folio. Nello splash l\'orizzonte si traccia, la h si alza e il sole sale lungo l\'arco.'],
+  ['E', 'Settimana', mE, true, 'Sette giorni come colonne di altezza diversa, oggi pieno con il punto ottone sopra: il ritmo della settimana e la vista Attività. Le colonne crescono in fila, poi il punto si posa.'],
+  ['A', 'Gnomone', mA, false, 'La "h" di hora è lo gnomone di una meridiana: sta sull\'orizzonte e il punto ottone è il sole. Parla dell\'ora (alba e tramonto sono già nell\'app) e fa coppia con la "f" di folio. Nello splash l\'orizzonte si traccia, la h si alza e il sole sale lungo l\'arco.'],
   ['B', 'Quadrante', mB, false, 'L\'orologio ridotto al minimo: anello, quattro tacche, lancette alle 10 e 10, perno ottone. Il più immediato, il meno personale. Le lancette fanno un giro prima di fermarsi.'],
   ['C', 'Foglio del giorno', mC, false, 'Il foglio del calendario con i due anelli e, dentro, una lancetta ad angolo: giorni e ore nello stesso segno. Il foglio cade, la lancetta si apre, il punto segna l\'ora.'],
   ['D', 'Alba', mD, false, 'Mezzo sole ottone sull\'orizzonte e cinque raggi, che sono anche le tacche di un quadrante. Caldo e calmo, richiama "ogni cosa a suo tempo". Il sole sorge, i raggi compaiono uno alla volta.'],
-  ['E', 'Settimana', mE, false, 'Sette giorni come colonne di altezza diversa, oggi pieno con il punto ottone sopra: il ritmo della settimana e la vista Attività. Le colonne crescono in fila, poi il punto si posa.'],
   ['F', 'Clessidra', mF, false, 'Cornice petrolio e sabbia ottone: il tempo che scorre, in un segno antico e riconoscibile anche a 16 px. La sabbia scende e la clessidra si gira.']
 ];
 const tile = (m, size, dark) => `<span class="tile${dark ? ' dark' : ''}" style="width:${size}px;height:${size}px;border-radius:${Math.round(size * 0.23)}px">${svg(m, dark ? D : L, Math.round(size * 0.66))}</span>`;
@@ -160,7 +161,7 @@ document.getElementById('opts').innerHTML = OPTS.map(([n, name, m, cur, why], i)
     <h2><span>${n}</span>${name}${cur ? '<em>nell\'app</em>' : ''}</h2>
     <p class="why">${why}</p>
     <div class="row">
-      <div class="phone play" data-p="${i}"><div class="mid">${svg(m, isDark() ? D : L, 104)}<div class="word">hora</div><div class="sub">ogni cosa a suo tempo</div></div><div class="foot">nautargo</div></div>
+      <div class="phone play" data-p="${i}"><div class="mid">${svg(m, isDark() ? D : L, 104)}<div class="word">hora</div></div><div class="foot">nautargo<small>versione 1.8</small></div></div>
       <div class="side">
         <div><div class="lbl">Icona dell'app</div><div class="tiles">${tile(m, 96)}${tile(m, 64)}${tile(m, 44)}${tile(m, 64, true)}</div></div>
         <div><div class="lbl">Favicon</div><div class="fav">${svg(m, L, 32)}${svg(m, L, 16)}</div></div>
